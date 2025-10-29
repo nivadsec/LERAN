@@ -27,14 +27,20 @@ export type AISelfAssessmentInput = z.infer<typeof AISelfAssessmentInputSchema>;
 
 const AISelfAssessmentOutputSchema = z.object({
   strengths: z
-    .string()
-    .describe('A summary of the student’s academic strengths.'),
+    .array(z.string())
+    .describe('A list of the student’s academic strengths.'),
   weaknesses: z
-    .string()
-    .describe('A summary of the student’s academic weaknesses.'),
-  successPlan: z
-    .string()
-    .describe(
+    .array(z.string())
+    .describe('A list of the student’s academic weaknesses.'),
+  successPlan: z.object({
+    title: z.string().describe("The title of the academic success plan."),
+    steps: z.array(z.object({
+        step: z.number(),
+        title: z.string().describe("The title of the step."),
+        description: z.string().describe("A detailed description of the step."),
+        duration: z.string().describe("The estimated duration to complete the step (e.g., '2 weeks').")
+    })).describe("A list of steps to achieve the academic goals.")
+  }).describe(
       'A detailed academic success plan tailored to the student, including recommended study strategies, resources, and a timeline for achieving their goals.'
     ),
 });
@@ -50,14 +56,16 @@ const prompt = ai.definePrompt({
   name: 'aiSelfAssessmentPrompt',
   input: {schema: AISelfAssessmentInputSchema},
   output: {schema: AISelfAssessmentOutputSchema},
-  prompt: `You are an AI assistant designed to evaluate student's academic strengths and weaknesses and create an academic success plan.
+  prompt: `You are an AI assistant designed to evaluate a student's academic profile and create a personalized success plan.
 
-  Evaluate the student based on the following data:
-  Student Data: {{{studentData}}}
-  Academic Goals: {{{academicGoals}}}
+  Analyze the student based on the following data:
+  - Student Data: {{{studentData}}}
+  - Academic Goals: {{{academicGoals}}}
 
-  Provide a detailed academic success plan tailored to the student, including recommended study strategies, resources, and a timeline for achieving their goals.
-  The output should include strengths, weaknesses and a success plan, all in text format.
+  Your response must be structured and include the following sections:
+  1.  **Strengths**: Identify and list the student's key academic strengths.
+  2.  **Weaknesses**: Identify and list the student's key academic weaknesses.
+  3.  **Success Plan**: Create a detailed, step-by-step academic success plan. The plan should have a main title and a series of steps. Each step must include a title, a detailed description of the action required, and an estimated duration.
   `,
 });
 
