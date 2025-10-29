@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +22,7 @@ const testEntrySchema = z.object({
   date: z.string(),
   correct: z.coerce.number().min(0),
   wrong: z.coerce.number().min(0),
+  totalQuestions: z.coerce.number().min(1, 'تعداد کل سوالات باید حداقل ۱ باشد.'),
   percentage: z.coerce.number().min(0).max(100),
   answered: z.coerce.number().min(0),
   satisfaction: z.enum(['happy', 'neutral', 'sad']).optional(),
@@ -43,15 +45,39 @@ export default function TestAnalysisPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
+  const { fields, append, remove, control } = useFieldArray({
+    control,
     name: 'tests',
   });
 
   const watchedTests = useWatch({
-    control: form.control,
+    control,
     name: 'tests',
   });
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name, type }) => {
+      if (name && (name.endsWith('.correct') || name.endsWith('.wrong') || name.endsWith('.totalQuestions'))) {
+        const parts = name.split('.');
+        const index = parseInt(parts[1], 10);
+        const test = form.getValues(`tests.${index}`);
+        
+        if (test) {
+          const correct = test.correct || 0;
+          const wrong = test.wrong || 0;
+          const total = test.totalQuestions || 0;
+
+          const answered = correct + wrong;
+          const percentage = total > 0 ? parseFloat((((correct - wrong / 3) / total) * 100).toFixed(2)) : 0;
+          
+          form.setValue(`tests.${index}.answered`, answered, { shouldValidate: true });
+          form.setValue(`tests.${index}.percentage`, Math.max(0, percentage), { shouldValidate: true });
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
 
   const chartData = watchedTests
     .map(t => ({ name: `آزمون ${t.testNumber}`, درصد: t.percentage }))
@@ -65,6 +91,7 @@ export default function TestAnalysisPage() {
       date: '',
       correct: 0,
       wrong: 0,
+      totalQuestions: 0,
       percentage: 0,
       answered: 0,
       satisfaction: 'neutral',
@@ -141,6 +168,7 @@ export default function TestAnalysisPage() {
                       <TableHead className="text-center min-w-[150px]">رضایت</TableHead>
                       <TableHead className="text-center">زده</TableHead>
                       <TableHead className="text-center">درصد</TableHead>
+                      <TableHead className="text-center">کل سوالات</TableHead>
                       <TableHead className="text-center">غلط</TableHead>
                       <TableHead className="text-center">درست</TableHead>
                       <TableHead className="text-center">تاریخ</TableHead>
@@ -180,8 +208,9 @@ export default function TestAnalysisPage() {
                                   )}
                                 />
                             </TableCell>
-                            <TableCell><Input type="number" {...form.register(`tests.${index}.answered`)} className="text-center" /></TableCell>
-                            <TableCell><Input type="number" {...form.register(`tests.${index}.percentage`)} className="text-center" /></TableCell>
+                            <TableCell><Input type="number" {...form.register(`tests.${index}.answered`)} className="text-center" disabled /></TableCell>
+                            <TableCell><Input type="number" {...form.register(`tests.${index}.percentage`)} className="text-center" disabled/></TableCell>
+                            <TableCell><Input type="number" {...form.register(`tests.${index}.totalQuestions`)} className="text-center" /></TableCell>
                             <TableCell><Input type="number" {...form.register(`tests.${index}.wrong`)} className="text-center" /></TableCell>
                             <TableCell><Input type="number" {...form.register(`tests.${index}.correct`)} className="text-center" /></TableCell>
                             <TableCell><Input placeholder="YYYY-MM-DD" {...form.register(`tests.${index}.date`)} className="text-center" /></TableCell>
@@ -209,4 +238,3 @@ export default function TestAnalysisPage() {
     </div>
   );
 }
-

@@ -81,6 +81,10 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if(allStudentsData.length > 0) {
       const allActivities = allStudentsData.flatMap(s => s.dailyReports).map(r => r.activities).join('\n');
+      if (allActivities.trim() === '') {
+        setPieData([{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
+        return;
+      }
       extractSubjectsFromText(allActivities).then(result => {
           const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
           const data = result.subjects.map((s, i) => ({
@@ -349,7 +353,7 @@ export default function AdminDashboardPage() {
       
       <Card>
         <CardHeader>
-          <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 text-right">
+          <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-4 text-right">
              <div className="flex gap-2 w-full md:w-auto">
                 <Button variant="outline" className="flex-1 md:flex-initial" onClick={handleExportData}>خروجی کل داده‌ها</Button>
                 <Button asChild className="flex-1 md:flex-initial">
@@ -359,7 +363,7 @@ export default function AdminDashboardPage() {
                     </Link>
                 </Button>
              </div>
-             <div className="w-full md:w-auto">
+             <div>
                 <CardTitle>نمای کلی دانش‌آموزان</CardTitle>
                 <CardDescription>برای مشاهده جزئیات، روی هر دانش‌آموز کلیک کنید.</CardDescription>
              </div>

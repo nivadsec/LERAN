@@ -344,6 +344,11 @@ function StudentNav() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}>
+                    <Link href="/review-calendar"><span>تقویم مرور</span><CalendarIcon /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="برنامه کلاسی" isActive={pathname.startsWith('/class-schedule')}>
                     <Link href="/class-schedule"><span>برنامه کلاسی</span><CalendarIcon /></Link>
                 </SidebarMenuButton>
