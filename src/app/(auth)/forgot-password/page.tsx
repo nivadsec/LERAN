@@ -1,27 +1,23 @@
 'use client';
 
-import Link from "next/link"
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { ArrowLeft } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
-  password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
 });
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const { toast } = useToast();
   const auth = useAuth();
 
@@ -29,24 +25,23 @@ export default function LoginPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
-      password: "",
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      await sendPasswordResetEmail(auth, values.email);
       toast({
-        title: "ورود موفق",
-        description: "شما با موفقیت وارد شدید.",
+        title: "ایمیل بازیابی ارسال شد",
+        description: "یک ایمیل حاوی لینک بازنشانی رمز عبور برای شما ارسال شد. لطفاً صندوق ورودی خود را بررسی کنید.",
       });
-      router.push("/dashboard");
+      form.reset();
     } catch (error: any) {
-      console.error("Login Error: ", error);
+      console.error("Forgot Password Error: ", error);
       toast({
         variant: "destructive",
-        title: "خطا در ورود",
-        description: error.message === 'Firebase: Error (auth/invalid-credential).' ? 'ایمیل یا رمز عبور اشتباه است.' : 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.',
+        title: "خطا در ارسال ایمیل",
+        description: "مشکلی پیش آمده است. لطفاً مطمئن شوید ایمیل خود را به درستی وارد کرده‌اید.",
       });
     }
   };
@@ -84,9 +79,9 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>
+            <CardTitle className="text-2xl font-headline">فراموشی رمز عبور</CardTitle>
             <CardDescription>
-              برای ورود، ایمیل و رمز عبور خود را وارد کنید.
+              ایمیل خود را برای دریافت لینک بازیابی وارد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -111,54 +106,20 @@ export default function LoginPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2 text-right">
-                       <div className="flex items-center">
-                         <FormLabel htmlFor="password">رمز عبور</FormLabel>
-                          <Link
-                            href="/forgot-password"
-                            className="mr-auto inline-block text-sm underline"
-                            prefetch={false}
-                          >
-                            فراموشی رمز عبور؟
-                          </Link>
-                        </div>
-                      <FormControl>
-                        <Input id="password" type="password" dir="ltr" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <Button type="submit" className="w-full mt-2" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "در حال ورود..." : "ورود"}
+                  {form.formState.isSubmitting ? "در حال ارسال..." : "ارسال لینک بازیابی"}
                 </Button>
               </form>
             </Form>
-            <div className="mt-4 flex items-center justify-center">
-                <Separator className="flex-1" />
-                <span className="px-2 text-sm text-muted-foreground">یا</span>
-                <Separator className="flex-1" />
-            </div>
-            <Button variant="outline" className="w-full mt-4" asChild>
-                <Link href="/signup">ایجاد حساب دانش‌آموزی</Link>
-            </Button>
             <div className="mt-4 text-center text-sm">
-              <Link href="/teacher-login" className="underline" prefetch={false}>
-                ورود معلمان
+              <Link href="/login" className="underline inline-flex items-center gap-1" prefetch={false}>
+                 بازگشت به صفحه ورود
+                <ArrowLeft className="h-4 w-4" />
               </Link>
-            </div>
-             <div className="mt-2 text-center text-sm">
-                <Link href="/" className="underline" prefetch={false}>
-                بازگشت به صفحه اصلی
-                </Link>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }
