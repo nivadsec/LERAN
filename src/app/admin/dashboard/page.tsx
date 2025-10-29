@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc } from 'firebase/firestore';
+import { collection, doc, getDocs } from 'firebase/firestore';
 import { BarChart as BarChartIcon, Users, Clock, Smartphone, Smile, Search, ArrowRight } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   firstName?: string;
@@ -22,6 +23,7 @@ export default function AdminDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -42,6 +44,47 @@ export default function AdminDashboardPage() {
       }
     }
   }, [user, userProfile, isLoading, router]);
+
+  const handleExportData = async () => {
+    toast({ title: 'در حال آماده‌سازی فایل...', description: 'این فرآیند ممکن است چند لحظه طول بکشد.' });
+    try {
+      const usersCollectionRef = collection(firestore, 'users');
+      const usersSnapshot = await getDocs(usersCollectionRef);
+      const allData: { [key: string]: any } = { users: {} };
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        if (userData.isAdmin) continue; // Skip admin user
+
+        const userId = userDoc.id;
+        allData.users[userId] = { profile: userData, dailyReports: {} };
+
+        const dailyReportsRef = collection(firestore, 'users', userId, 'dailyReports');
+        const dailyReportsSnapshot = await getDocs(dailyReportsRef);
+
+        dailyReportsSnapshot.forEach((reportDoc) => {
+          allData.users[userId].dailyReports[reportDoc.id] = reportDoc.data();
+        });
+      }
+
+      const jsonString = JSON.stringify(allData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'italk_backup.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'فایل پشتیبان با موفقیت دانلود شد!', variant: 'default' });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({ title: 'خطا در خروجی گرفتن', description: 'مشکلی در هنگام ایجاد فایل پشتیبان رخ داد.', variant: 'destructive' });
+    }
+  };
+
 
   if (isLoading || !user || !userProfile || !userProfile.isAdmin) {
     return (
@@ -192,7 +235,7 @@ export default function AdminDashboardPage() {
         <CardHeader>
           <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 text-right">
              <div className="flex gap-2 w-full md:w-auto">
-                <Button variant="outline" className="flex-1 md:flex-initial">خروجی کل داده‌ها</Button>
+                <Button variant="outline" className="flex-1 md:flex-initial" onClick={handleExportData}>خروجی کل داده‌ها</Button>
                 <Button className="flex-1 md:flex-initial">
                     مشاهده همه
                     <ArrowRight className="mr-2 h-4 w-4" />
@@ -233,3 +276,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
