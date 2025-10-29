@@ -40,7 +40,7 @@ export default function LoginPage() {
         title: "ورود موفق",
         description: "شما با موفقیت وارد شدید.",
       });
-      router.push("/dashboard");
+      router.push("/daily-report");
     } catch (error: any) {
       console.error("Login Error: ", error);
       toast({

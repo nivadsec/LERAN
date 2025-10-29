@@ -45,7 +45,8 @@ import {
   Contact,
   Library,
   Wrench,
-  PanelLeft
+  PanelLeft,
+  ClipboardEdit
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -225,6 +226,11 @@ function StudentNav() {
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname.startsWith('/dashboard')}>
                     <Link href="/dashboard"><span>داشبورد</span><Home /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="گزارش روزانه" isActive={pathname.startsWith('/daily-report')}>
+                    <Link href="/daily-report"><span>گزارش روزانه</span><ClipboardEdit /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
