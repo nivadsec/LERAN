@@ -47,9 +47,9 @@ import {
   Wrench,
   PanelLeft,
   ClipboardEdit,
-  ClipboardCheck as ClipboardCheckIcon,
   ClipboardPlus,
   Crosshair,
+  ClipboardCheck as ClipboardCheckIcon,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
