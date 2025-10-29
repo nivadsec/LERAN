@@ -1,159 +1,175 @@
 {
   "entities": {
-    "User": {
+    "Student": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
+      "title": "Student",
       "type": "object",
-      "description": "Represents a user of the iTalk Academic platform.",
+      "description": "Represents a student in the iTalk Academic platform.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Unique identifier for the Student entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The student's username for login."
         },
         "firstName": {
           "type": "string",
-          "description": "The first name of the user."
+          "description": "The first name of the student."
         },
         "lastName": {
           "type": "string",
-          "description": "The last name of the user."
+          "description": "The last name of the student."
         },
-        "email": {
+        "classId": {
           "type": "string",
-          "description": "The email address of the user.",
-          "format": "email"
-        },
-        "signupDate": {
-          "type": "string",
-          "description": "The date and time the user signed up.",
-          "format": "date-time"
-        },
-        "grade": {
-          "type": "string",
-          "description": "The academic grade of the student."
-        },
-        "major": {
-          "type": "string",
-          "description": "The academic major of the student."
-        },
-        "isAdmin": {
-          "type": "boolean",
-          "description": "Flag to indicate if the user has admin privileges."
+          "description": "Reference to Class. (Relationship: Class 1:N Student)"
         }
       },
       "required": [
         "id",
+        "username",
         "firstName",
         "lastName",
-        "email",
-        "signupDate"
+        "classId"
       ]
     },
-    "SelfAssessment": {
+    "DailyReport": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SelfAssessment",
+      "title": "DailyReport",
       "type": "object",
-      "description": "Represents a self-assessment performed by a user.",
+      "description": "Represents a student's daily report, including activities, self-assessment, and attachments.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the SelfAssessment entity."
+          "description": "Unique identifier for the DailyReport entity."
         },
-        "userId": {
+        "studentId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N SelfAssessment)"
+          "description": "Reference to Student. (Relationship: Student 1:N DailyReport)"
         },
-        "assessmentDate": {
+        "date": {
           "type": "string",
-          "description": "The date and time the self-assessment was completed.",
+          "description": "The date of the report.",
           "format": "date-time"
         },
-        "strengths": {
+        "activities": {
           "type": "string",
-          "description": "AI generated strengths of student."
+          "description": "Description of activities completed (lesson, study, exercise, project)."
         },
-        "weaknesses": {
+        "feeling": {
           "type": "string",
-          "description": "AI generated weaknesses of student."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "assessmentDate",
-        "strengths",
-        "weaknesses"
-      ]
-    },
-    "AcademicPlan": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AcademicPlan",
-      "type": "object",
-      "description": "Represents an academic plan generated for a user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AcademicPlan entity."
+          "description": "Student's feeling and self-assessment (energy level, focus, motivation)."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N AcademicPlan)"
-        },
-        "planName": {
-          "type": "string",
-          "description": "Name of the Academic Plan."
-        },
-        "creationDate": {
-          "type": "string",
-          "description": "The date and time the academic plan was created.",
-          "format": "date-time"
-        },
-        "description": {
-          "type": "string",
-          "description": "AI generated description of academic plan."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "creationDate",
-        "description",
-        "planName"
-      ]
-    },
-    "ProgressRecord": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ProgressRecord",
-      "type": "object",
-      "description": "Represents a record of a user's progress towards their academic goals.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ProgressRecord entity."
-        },
-        "academicPlanId": {
-          "type": "string",
-          "description": "Reference to AcademicPlan. (Relationship: AcademicPlan 1:N ProgressRecord)"
-        },
-        "recordDate": {
-          "type": "string",
-          "description": "The date and time the progress record was created.",
-          "format": "date-time"
-        },
-        "progressValue": {
+        "studyHours": {
           "type": "number",
-          "description": "A numerical value representing the user's progress at the time of the record."
+          "description": "Number of study hours."
         },
-        "notes": {
+        "sleepHours": {
+          "type": "number",
+          "description": "Number of sleep hours."
+        },
+        "attachment": {
           "type": "string",
-          "description": "Optional notes or comments about the progress."
+          "description": "URL or path to the attached file (PDF, image, report).",
+          "format": "uri"
         }
       },
       "required": [
         "id",
-        "academicPlanId",
-        "recordDate",
-        "progressValue"
+        "studentId",
+        "date",
+        "activities",
+        "feeling",
+        "studyHours",
+        "sleepHours"
+      ]
+    },
+    "Class": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Class",
+      "type": "object",
+      "description": "Represents a class or group of students.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Class entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the class (e.g., 'Math 101', 'Group A')."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to Teacher. (Relationship: Teacher 1:N Class)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "teacherId"
+      ]
+    },
+    "Teacher": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Teacher",
+      "type": "object",
+      "description": "Represents a teacher or administrator.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Teacher entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The teacher's username for login."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the teacher."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the teacher."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "SmartAlert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SmartAlert",
+      "type": "object",
+      "description": "Represents smart alerts sent to students.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SmartAlert entity."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to Student. (Relationship: Student 1:N SmartAlert)"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message content of the smart alert."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date the alert was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "message",
+        "date"
       ]
     }
   },
@@ -168,84 +184,92 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "User",
+          "entityName": "Student",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores user profiles.  Path-based ownership is enforced. All user related data is nested under this path.",
+          "description": "Collection to store student profiles. Only the authenticated user (student) or an admin can read/write their own profile. This path establishes ownership.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "The unique identifier for the student."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/selfAssessments/{selfAssessmentId}",
+        "path": "/users/{userId}/dailyReports/{reportId}",
         "definition": {
-          "entityName": "SelfAssessment",
+          "entityName": "DailyReport",
           "schema": {
-            "$ref": "#/backend/entities/SelfAssessment"
+            "$ref": "#/backend/entities/DailyReport"
           },
-          "description": "Stores self-assessments for a specific user. Path-based ownership derived from /users/{userId}.  Documents in this collection are owned by the user specified in the userId path parameter.",
+          "description": "Subcollection to store daily reports for each student. Only the authenticated user (student) or an admin can read/write their own reports. Path-based ownership ensures authorization independence.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "The unique identifier for the student."
             },
             {
-              "name": "selfAssessmentId",
-              "description": "The unique identifier of the self-assessment."
+              "name": "reportId",
+              "description": "The unique identifier for the daily report."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/academicPlans/{academicPlanId}",
+        "path": "/classes/{classId}",
         "definition": {
-          "entityName": "AcademicPlan",
+          "entityName": "Class",
           "schema": {
-            "$ref": "#/backend/entities/AcademicPlan"
+            "$ref": "#/backend/entities/Class"
           },
-          "description": "Stores academic plans for a specific user. Path-based ownership derived from /users/{userId}. Documents in this collection are owned by the user specified in the userId path parameter.",
+          "description": "Collection to store class information. Teachers and admins have read access; only admins can create/update/delete. The teacherId field determines the teacher responsible for the class.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "academicPlanId",
-              "description": "The unique identifier of the academic plan."
+              "name": "classId",
+              "description": "The unique identifier for the class."
             }
           ]
         }
       },
       {
-        "path": "/users/{userId}/academicPlans/{academicPlanId}/progressRecords/{progressRecordId}",
+        "path": "/teachers/{teacherId}",
         "definition": {
-          "entityName": "ProgressRecord",
+          "entityName": "Teacher",
           "schema": {
-            "$ref": "#/backend/entities/ProgressRecord"
+            "$ref": "#/backend/entities/Teacher"
           },
-          "description": "Stores progress records for a specific academic plan of a specific user.  Path-based ownership derived from /users/{userId} and /academicPlans/{academicPlanId}. Documents in this collection are owned by the user specified in the userId path parameter and are associated with the academic plan specified by the academicPlanId.",
+          "description": "Collection to store teacher profiles.  Only admins can create/update/delete teacher profiles. Teachers can read their own profile.",
+          "params": [
+            {
+              "name": "teacherId",
+              "description": "The unique identifier for the teacher."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/smartAlerts/{alertId}",
+        "definition": {
+          "entityName": "SmartAlert",
+          "schema": {
+            "$ref": "#/backend/entities/SmartAlert"
+          },
+          "description": "Subcollection to store smart alerts for each student. Only the authenticated user (student) and admins can read alerts associated with their account.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "The unique identifier for the student."
             },
             {
-              "name": "academicPlanId",
-              "description": "The unique identifier of the academic plan."
-            },
-            {
-              "name": "progressRecordId",
-              "description": "The unique identifier of the progress record."
+              "name": "alertId",
+              "description": "The unique identifier for the smart alert."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to follow best practices for security, scalability, and debuggability, prioritizing Authorization Independence and Structural Segregation.\n\n- **Authorization Independence:** Achieved through path-based ownership for User data and its subcollections. Each subcollection (SelfAssessments, AcademicPlans, and ProgressRecords) is directly nested under the `/users/{userId}` path, ensuring that access control can be implemented based on the user ID in the path, without needing to `get()` data from parent documents.\n- **Structural Segregation:** Ensures that each collection has a homogeneous security posture. User-specific data is stored under the `/users/{userId}` collection group, separating it from any potentially shared or public data (if the application were to expand to include such features). This segregation simplifies security rules and prevents unintended data exposure.\n- **QAPs Support:** The structure supports secure `list` operations because ownership is implicit in the path. Rules can allow listing documents under `/users/{userId}` only if `request.auth.uid == userId`, ensuring that users can only access their own data.\n\nThe path structure `/users/{userId}/selfAssessments/{selfAssessmentId}`, `/users/{userId}/academicPlans/{academicPlanId}`, and `/users/{userId}/academicPlans/{academicPlanId}/progressRecords/{progressRecordId}` explicitly models the relationships between users, their self-assessments, academic plans, and progress records. This structure directly translates to simple and efficient security rules."
+    "reasoning": "The Firestore structure is designed to support the iTalk Academic platform, emphasizing self-assessment and personalized learning. The structure prioritizes authorization independence, clarity, and scalability. User-owned data is organized under user-specific paths, while collaborative data, if needed in future, would utilize membership maps.  Authorization Independence is achieved via path-based ownership. Since each student's data is stored under `/users/{userId}`, access control can be implemented without needing to `get()` data from other collections or documents.  The structure also supports secure `list` operations by segregating data with different access needs into separate collections, ensuring that rules are not filters."
   }
 }
