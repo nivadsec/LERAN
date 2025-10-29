@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,9 +40,12 @@ export default function ProfilePage() {
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+        }
     });
     
-    // Set default values once userProfile is loaded
     React.useEffect(() => {
         if(userProfile) {
             form.reset({
@@ -72,30 +76,29 @@ export default function ProfilePage() {
         }
     };
 
-
     const isLoading = isUserLoading || isProfileLoading;
 
     if (isLoading) {
         return (
              <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-32" />
-                    <Skeleton className="h-4 w-48" />
+                <CardHeader className='text-right'>
+                    <Skeleton className="h-8 w-32 ml-auto" />
+                    <Skeleton className="h-4 w-48 ml-auto" />
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-24 ml-auto" />
                         <Skeleton className="h-10 w-full" />
                     </div>
                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-24 ml-auto" />
                         <Skeleton className="h-10 w-full" />
                     </div>
                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-24 ml-auto" />
                         <Skeleton className="h-10 w-full" />
                     </div>
-                    <Skeleton className="h-11 w-24" />
+                    <Skeleton className="h-11 w-32" />
                 </CardContent>
             </Card>
         )
@@ -104,7 +107,7 @@ export default function ProfilePage() {
     if (!userProfile) {
         return (
             <Card>
-                <CardHeader>
+                <CardHeader className='text-right'>
                     <CardTitle>خطا</CardTitle>
                     <CardDescription>اطلاعات پروفایل شما یافت نشد.</CardDescription>
                 </CardHeader>
