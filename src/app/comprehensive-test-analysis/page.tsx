@@ -8,8 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, CalendarDate, Trophy, Star, ClipboardCheck, ChevronsRight, BookOpen, Clock, StickyNote, Activity, Target } from 'lucide-react';
+import { PlusCircle, Trash2, CalendarDate, Trophy, Star, ClipboardCheck, ChevronsRight, BookOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
@@ -22,11 +21,11 @@ const beforeExamSchema = z.object({
 });
 
 const executionSchema = z.object({
-  correct: z.coerce.number().min(0),
-  wrong: z.coerce.number().min(0),
-  blank: z.coerce.number().min(0),
-  total: z.coerce.number().min(0),
-  time_spent: z.coerce.number().min(0),
+  correct: z.coerce.number().min(0, "تعداد نمی‌تواند منفی باشد."),
+  wrong: z.coerce.number().min(0, "تعداد نمی‌تواند منفی باشد."),
+  blank: z.coerce.number().min(0, "تعداد نمی‌تواند منفی باشد."),
+  total: z.coerce.number().min(0, "تعداد نمی‌تواند منفی باشد."),
+  time_spent: z.coerce.number().min(0, "زمان نمی‌تواند منفی باشد."),
   notes: z.string().optional(),
 });
 
@@ -63,7 +62,7 @@ export default function ComprehensiveTestAnalysisPage() {
         { 
           subject: 'ریاضی', 
           before_exam: {}, 
-          execution: { correct: 0, wrong: 0, blank: 0, total: 0, time_spent: 0 }, 
+          execution: { correct: 0, wrong: 0, blank: 0, total: 0, time_spent: 0, notes: '' }, 
           after_exam: {} 
         }
       ],
@@ -103,10 +102,18 @@ export default function ComprehensiveTestAnalysisPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <FormField name="exam_date" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel className="flex items-center justify-end gap-1"><CalendarDate className="h-4 w-4"/>تاریخ آزمون</FormLabel><FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem>
+                          <FormLabel className="flex items-center justify-end gap-1"><CalendarDate className="h-4 w-4"/>تاریخ آزمون</FormLabel>
+                          <FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
                     )} />
                     <FormField name="total_score" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel className="flex items-center justify-end gap-1"><Star className="h-4 w-4"/>تراز کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem>
+                          <FormLabel className="flex items-center justify-end gap-1"><Star className="h-4 w-4"/>تراز کل</FormLabel>
+                          <FormControl><Input type="number" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
                     )} />
                     <FormField name="rank_city" control={form.control} render={({ field }) => (
                         <FormItem><FormLabel>رتبه شهر</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -122,7 +129,7 @@ export default function ComprehensiveTestAnalysisPage() {
 
             <div>
                 <div className="flex justify-between items-center mb-4">
-                     <Button type="button" variant="outline" size="sm" onClick={() => append({ subject: '', before_exam: {}, execution: { correct: 0, wrong: 0, blank: 0, total: 0, time_spent: 0 }, after_exam: {} })}>
+                     <Button type="button" variant="outline" size="sm" onClick={() => append({ subject: '', before_exam: {}, execution: { correct: 0, wrong: 0, blank: 0, total: 0, time_spent: 0, notes:'' }, after_exam: {} })}>
                         <PlusCircle className="ml-2 h-4 w-4" />
                         افزودن درس
                     </Button>
@@ -152,54 +159,54 @@ export default function ComprehensiveTestAnalysisPage() {
                                <TabsContent value="before_exam">
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-right">
                                         <FormField name={`exam_analysis.${index}.before_exam.previous_score`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درصد قبلی</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>درصد قبلی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_first`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۱</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>هدف ۱</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_second`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۲</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>هدف ۲</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_third`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۳</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>هدف ۳</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_fourth`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۴</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>هدف ۴</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                </TabsContent>
                                <TabsContent value="execution">
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                          <FormField name={`exam_analysis.${index}.execution.correct`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درست</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>درست</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.wrong`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>غلط</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>غلط</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                           <FormField name={`exam_analysis.${index}.execution.blank`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.total`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>تعداد کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>تعداد کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.time_spent`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></Formİtem>
                                         )} />
                                     </div>
                                      <FormField name={`exam_analysis.${index}.execution.notes`} control={form.control} render={({ field }) => (
-                                        <FormItem className="mt-4"><FormLabel>یادداشت</FormLabel><FormControl><Textarea placeholder="نکات و تحلیل حین آزمون..." {...field} /></FormControl></FormItem>
+                                        <FormItem className="mt-4"><FormLabel>یادداشت</FormLabel><FormControl><Textarea placeholder="نکات و تحلیل حین آزمون..." {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                </TabsContent>
                                <TabsContent value="after_exam">
                                     <div className="grid grid-cols-3 gap-3">
                                          <FormField name={`exam_analysis.${index}.after_exam.score`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درصد نهایی</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>درصد نهایی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.after_exam.accuracy_rate`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نرخ دقت</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>نرخ دقت</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                           <FormField name={`exam_analysis.${index}.after_exam.skip_ratio`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نرخ نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                          <FormItem><FormLabel>نرخ نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                </TabsContent>
