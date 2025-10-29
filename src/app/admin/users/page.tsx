@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,12 +21,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, PlusCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+const studentSchema = z.object({
+  firstName: z.string().min(1, 'نام الزامی است.'),
+  lastName: z.string().min(1, 'نام خانوادگی الزامی است.'),
+  email: z.string().email('ایمیل نامعتبر است.'),
+  grade: z.string(),
+  major: z.string(),
+  password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد.'),
+  panelStatus: z.boolean(),
+  features: z.record(z.boolean()),
+});
 
 export default function AdminUsersPage() {
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
-  const features = [
+  const featureList = [
     { id: 'smart-bot', label: 'ربات هوشمند' },
     { id: 'daily-monitoring', label: 'پایش هوشمند روزانه' },
     { id: 'performance-stats', label: 'آمار عملکرد' },
@@ -41,6 +55,25 @@ export default function AdminUsersPage() {
     { id: 'consulting-content', label: 'محتوای مشاوره‌ای' },
   ];
 
+  const defaultFeatures = featureList.reduce((acc, feature) => {
+    acc[feature.id] = true;
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  const form = useForm<z.infer<typeof studentSchema>>({
+    resolver: zodResolver(studentSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      grade: '',
+      major: '',
+      password: '',
+      panelStatus: true,
+      features: defaultFeatures,
+    },
+  });
+
   const generatePassword = () => {
     const length = 12;
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&";
@@ -48,7 +81,11 @@ export default function AdminUsersPage() {
     for (let i = 0, n = charset.length; i < length; ++i) {
       newPassword += charset.charAt(Math.floor(Math.random() * n));
     }
-    setPassword(newPassword);
+    form.setValue('password', newPassword);
+  };
+  
+  const onSubmit = (values: z.infer<typeof studentSchema>) => {
+    console.log(values);
   };
 
   return (
@@ -70,103 +107,105 @@ export default function AdminUsersPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader className="text-right">
-                        <DialogTitle className="text-2xl font-headline">افزودن دانش‌آموز جدید</DialogTitle>
-                        <DialogDescription>
+                          <DialogTitle className="text-2xl font-headline">افزودن دانش‌آموز جدید</DialogTitle>
+                          <DialogDescription>
                             اطلاعات دانش‌آموز را وارد کرده و برای او یک حساب کاربری ایجاد کنید.
-                        </DialogDescription>
+                          </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-6 py-4 text-right">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                <Label htmlFor="first-name">نام</Label>
-                                <Input id="first-name" placeholder="مثال: سارا" />
-                                </div>
-                                <div className="grid gap-2">
-                                <Label htmlFor="last-name">نام خانوادگی</Label>
-                                <Input id="last-name" placeholder="مثال: رضایی" />
-                                </div>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">ایمیل</Label>
-                                <Input id="email" type="email" placeholder="student@example.com" dir="ltr" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                 <div className="grid gap-2">
-                                    <Label htmlFor="grade">پایه تحصیلی</Label>
-                                    <Select dir='rtl'>
-                                        <SelectTrigger id="grade">
-                                            <SelectValue placeholder="پایه را انتخاب کنید" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="10">دهم</SelectItem>
-                                            <SelectItem value="11">یازدهم</SelectItem>
-                                            <SelectItem value="12">دوازدهم</SelectItem>
-                                        </SelectContent>
+                        <Form {...form}>
+                          <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <div className="grid gap-6 py-4 text-right">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="firstName" render={({ field }) => (
+                                    <FormItem><FormLabel>نام</FormLabel><FormControl><Input placeholder="مثال: سارا" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="lastName" render={({ field }) => (
+                                    <FormItem><FormLabel>نام خانوادگی</FormLabel><FormControl><Input placeholder="مثال: رضایی" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                              </div>
+                              <FormField control={form.control} name="email" render={({ field }) => (
+                                  <FormItem><FormLabel>ایمیل</FormLabel><FormControl><Input type="email" placeholder="student@example.com" dir="ltr" {...field} /></FormControl><FormMessage /></FormItem>
+                              )}/>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="grade" render={({ field }) => (
+                                  <FormItem><FormLabel>پایه تحصیلی</FormLabel>
+                                    <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="پایه را انتخاب کنید" /></SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="10">دهم</SelectItem>
+                                        <SelectItem value="11">یازدهم</SelectItem>
+                                        <SelectItem value="12">دوازدهم</SelectItem>
+                                      </SelectContent>
                                     </Select>
-                                 </div>
-                                 <div className="grid gap-2">
-                                    <Label htmlFor="major">رشته</Label>
-                                     <Select dir='rtl'>
-                                        <SelectTrigger id="major">
-                                            <SelectValue placeholder="رشته را انتخاب کنید" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="math">ریاضی و فیزیک</SelectItem>
-                                            <SelectItem value="science">علوم تجربی</SelectItem>
-                                            <SelectItem value="humanities">ادبیات و علوم انسانی</SelectItem>
-                                        </SelectContent>
+                                  <FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="major" render={({ field }) => (
+                                  <FormItem><FormLabel>رشته</FormLabel>
+                                    <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="رشته را انتخاب کنید" /></SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="math">ریاضی و فیزیک</SelectItem>
+                                        <SelectItem value="science">علوم تجربی</SelectItem>
+                                        <SelectItem value="humanities">ادبیات و علوم انسانی</SelectItem>
+                                      </SelectContent>
                                     </Select>
-                                 </div>
-                            </div>
-                             <div className="grid gap-2">
-                                <Label htmlFor="password">رمز عبور اولیه</Label>
-                                <div className="flex gap-2">
-                                   <div className="relative w-full">
-                                      <Input id="password" type={showPassword ? "text" : "password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                                        onClick={() => setShowPassword((prev) => !prev)}
-                                      >
+                                  <FormMessage /></FormItem>
+                                )}/>
+                              </div>
+                              <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>رمز عبور اولیه</FormLabel>
+                                  <div className="flex gap-2">
+                                    <div className="relative w-full">
+                                      <FormControl>
+                                        <Input type={showPassword ? "text" : "password"} dir="ltr" {...field} />
+                                      </FormControl>
+                                      <Button type="button" variant="ghost" size="icon" className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
                                         {showPassword ? <EyeOff /> : <Eye />}
                                       </Button>
-                                   </div>
+                                    </div>
                                     <Button type="button" variant="outline" size="icon" onClick={generatePassword} aria-label="پیشنهاد رمز عبور">
-                                        <KeyRound className="h-4 w-4" />
+                                      <KeyRound className="h-4 w-4" />
                                     </Button>
-                                </div>
-                            </div>
-                             <div className="flex items-center justify-between rounded-lg border p-4">
-                                <Switch id="panel-status" dir='ltr'/>
-                                <div>
-                                    <Label htmlFor="panel-status" className="font-medium">وضعیت پنل</Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        برای دسترسی دانش‌آموز به پنل خود، این گزینه را فعال کنید.
-                                    </p>
-                                </div>
-                            </div>
-                            <div>
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}/>
+                              <FormField control={form.control} name="panelStatus" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                  <div>
+                                    <FormLabel className="font-medium">وضعیت پنل</FormLabel>
+                                    <p className="text-xs text-muted-foreground">برای دسترسی دانش‌آموز به پنل خود، این گزینه را فعال کنید.</p>
+                                  </div>
+                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr'/></FormControl>
+                                </FormItem>
+                              )}/>
+                              <div>
                                 <Label className="text-base font-semibold">دسترسی به قابلیت‌ها</Label>
                                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {features.map((feature) => (
-                                        <div key={feature.id} className="flex items-center justify-between p-2 rounded-lg border">
-                                            <Switch id={feature.id} dir='ltr' />
-                                            <Label htmlFor={feature.id} className="text-sm font-normal">
-                                                {feature.label}
-                                            </Label>
-                                        </div>
-                                    ))}
+                                  {featureList.map((feature) => (
+                                    <FormField key={feature.id} control={form.control} name={`features.${feature.id}`} render={({ field }) => (
+                                      <FormItem className="flex items-center justify-between p-2 rounded-lg border">
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr' /></FormControl>
+                                        <FormLabel className="text-sm font-normal">{feature.label}</FormLabel>
+                                      </FormItem>
+                                    )}/>
+                                  ))}
                                 </div>
+                              </div>
                             </div>
-                        </div>
-                        <DialogFooter className="gap-2 sm:justify-start flex-col-reverse sm:flex-row">
-                           <Button type="submit">ایجاد دانش‌آموز</Button>
-                           <DialogTrigger asChild>
-                             <Button type="button" variant="outline">انصراف</Button>
-                           </DialogTrigger>
-                        </DialogFooter>
+                            <DialogFooter className="gap-2 sm:justify-start flex-col-reverse sm:flex-row pt-4">
+                               <Button type="submit">ایجاد دانش‌آموز</Button>
+                               <DialogTrigger asChild>
+                                 <Button type="button" variant="outline">انصراف</Button>
+                               </DialogTrigger>
+                            </DialogFooter>
+                          </form>
+                        </Form>
                     </DialogContent>
                 </Dialog>
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { Control } from 'react-hook-form';
 
 const topicSchema = z.object({
   topic: z.string().min(1, 'نام مبحث الزامی است.'),
@@ -34,6 +35,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const TotalInvestmentCell = ({ control, index }: { control: Control<FormValues>, index: number }) => {
+    const topic = useWatch({
+        control,
+        name: `topics.${index}`
+    });
+    const total = (topic.study_hours || 0) + (topic.video_hours || 0) + (topic.test_hours || 0);
+    return <TableCell className="text-center font-bold">{total}</TableCell>;
+};
+
 export default function TopicInvestmentPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -53,11 +63,6 @@ export default function TopicInvestmentPage() {
     // Logic to save data to Firestore would go here
   };
   
-  const calculateTotalInvestment = (index: number) => {
-    const topic = form.watch(`topics.${index}`);
-    return (topic.study_hours || 0) + (topic.video_hours || 0) + (topic.test_hours || 0);
-  }
-
   return (
     <Card className="border-0 shadow-none bg-transparent">
         <CardHeader className="text-right p-0 md:p-6 md:pt-0">
@@ -134,7 +139,7 @@ export default function TopicInvestmentPage() {
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.priority`)} className="text-center" /></TableCell>
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.video_hours`)} className="text-center" /></TableCell>
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.study_hours`)} className="text-center" /></TableCell>
-                                                <TableCell className="text-center font-bold">{calculateTotalInvestment(index)}</TableCell>
+                                                <TotalInvestmentCell control={form.control} index={index} />
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.test_hours`)} className="text-center" /></TableCell>
                                                 <TableCell><Input {...form.register(`topics.${index}.extra_actions`)} /></TableCell>
                                                 <TableCell>

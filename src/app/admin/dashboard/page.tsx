@@ -54,6 +54,8 @@ export default function AdminDashboardPage() {
   const [filteredStudents, setFilteredStudents] = useState<StudentData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [pieData, setPieData] = useState<SubjectData[]>([]);
+
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -75,6 +77,22 @@ export default function AdminDashboardPage() {
       }
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+
+  useEffect(() => {
+    if(allStudentsData.length > 0) {
+      const allActivities = allStudentsData.flatMap(s => s.dailyReports).map(r => r.activities).join('\n');
+      extractSubjectsFromText(allActivities).then(result => {
+          const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+          const data = result.subjects.map((s, i) => ({
+              name: s.subject,
+              value: s.duration,
+              fill: colors[i % colors.length]
+          }));
+          setPieData(data.length > 0 ? data : [{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
+      });
+    }
+  }, [allStudentsData]);
+
 
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -164,16 +182,15 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const { totalStudents, avgStudy, avgFeeling, weeklyChartData, pieChartData } = useMemo(() => {
+  const { totalStudents, avgStudy, avgFeeling, weeklyChartData } = useMemo(() => {
     if (isDataLoading || allStudentsData.length === 0) {
-        return { totalStudents: 0, avgStudy: 0, avgFeeling: 0, weeklyChartData: [], pieChartData: [] };
+        return { totalStudents: 0, avgStudy: 0, avgFeeling: 0, weeklyChartData: [] };
     }
 
     const totalReports = allStudentsData.flatMap(s => s.dailyReports);
     const totalStudy = totalReports.reduce((acc, r) => acc + r.studyHours, 0);
     const totalFeeling = totalReports.reduce((acc, r) => acc + r.feeling, 0);
     
-    // Weekly Chart
     const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
     const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
     totalReports.forEach(report => {
@@ -188,18 +205,6 @@ export default function AdminDashboardPage() {
         }
     });
 
-    // Pie Chart (Async part)
-    const allActivities = totalReports.map(r => r.activities).join('\n');
-    extractSubjectsFromText(allActivities).then(result => {
-        const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
-        const data = result.subjects.map((s, i) => ({
-            name: s.subject,
-            value: s.duration,
-            fill: colors[i % colors.length]
-        }));
-        setPieData(data.length > 0 ? data : [{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
-    });
-
     return {
         totalStudents: allStudentsData.length,
         avgStudy: totalReports.length > 0 ? (totalStudy / totalReports.length).toFixed(1) : 0,
@@ -207,8 +212,6 @@ export default function AdminDashboardPage() {
         weeklyChartData: chartData
     };
   }, [isDataLoading, allStudentsData]);
-
-  const [pieData, setPieData] = useState<SubjectData[] | null>(null);
 
   const isLoading = isUserLoading || isProfileLoading || isDataLoading;
   
@@ -239,7 +242,7 @@ export default function AdminDashboardPage() {
   }
 
   const hasData = allStudentsData.length > 0 && allStudentsData.some(s => s.dailyReports.length > 0);
-  const hasPieData = pieData && pieData.some(d => d.name !== 'سایر');
+  const hasPieData = pieData && pieData.length > 0 && pieData.some(d => d.name !== 'سایر');
 
   return (
     <div className="space-y-6">
@@ -320,7 +323,7 @@ export default function AdminDashboardPage() {
             <CardDescription>درصد زمان مطالعه صرف شده برای هر درس</CardDescription>
           </CardHeader>
           <CardContent>
-            {hasData && hasPieData && pieData ? (
+            {hasData && hasPieData ? (
                 <ChartContainer config={{}} className="h-[250px] w-full">
                     <RechartsPieChart>
                         <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
