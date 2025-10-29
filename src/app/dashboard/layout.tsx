@@ -231,137 +231,141 @@ function StudentNav() {
 }
 
 function AdminNav() {
-    return (
-      <>
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip="داشبورد">
-            <Link href="/admin/dashboard">
-              <Home />
-              <span>داشبورد</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-  
-        <SidebarMenuSub>
-          <SidebarMenuSubButton tooltip="مدیریت اصلی">
-            <Users2 />
-            <span>مدیریت اصلی</span>
-          </SidebarMenuSubButton>
-          <ul className='space-y-1'>
+  const router = useRouter();
+  return (
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild tooltip="داشبورد" isActive={router.pathname === '/admin/dashboard'}>
+          <Link href="/admin/dashboard">
+            <Home />
+            <span>داشبورد</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      <SidebarMenuSub>
+        <SidebarMenuSubButton tooltip="مدیریت اصلی">
+          <Users2 />
+          <span>مدیریت اصلی</span>
+          <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+        </SidebarMenuSubButton>
+        <SidebarMenuSubContent>
             <SidebarMenuSubItem>
-              <Link href="/admin/users" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
+              <Link href="/admin/users">
                 <Users className="ml-2 h-4 w-4" />
                 <span>دانش‌آموزان</span>
               </Link>
             </SidebarMenuSubItem>
             <SidebarMenuSubItem>
-              <Link href="/admin/permissions" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
+              <Link href="/admin/permissions">
                 <ShieldCheck className="ml-2 h-4 w-4" />
                 <span>دسترسی‌ها</span>
               </Link>
             </SidebarMenuSubItem>
-          </ul>
-        </SidebarMenuSub>
-  
-        <SidebarMenuSub>
-          <SidebarMenuSubButton tooltip="ارتباطات">
-            <Contact />
-            <span>ارتباطات</span>
-          </SidebarMenuSubButton>
-           <ul className='space-y-1'>
-            <SidebarMenuSubItem>
-              <Link href="/admin/qna" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <HelpCircle className="ml-2 h-4 w-4" />
-                <span>پرسش و پاسخ</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/recommendations" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <ThumbsUp className="ml-2 h-4 w-4" />
-                <span>توصیه‌ها</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/messages" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <MessageSquare className="ml-2 h-4 w-4" />
-                <span>پیام‌ها</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/announcements" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <Megaphone className="ml-2 h-4 w-4" />
-                <span>اطلاعیه‌ها</span>
-              </Link>
-            </SidebarMenuSubItem>
-          </ul>
-        </SidebarMenuSub>
-  
-        <SidebarMenuSub>
-          <SidebarMenuSubButton tooltip="محتوای آموزشی">
-            <Library />
-            <span>محتوای آموزشی</span>
-          </SidebarMenuSubButton>
-           <ul className='space-y-1'>
-            <SidebarMenuSubItem>
-              <Link href="/admin/online-tests" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <FileText className="ml-2 h-4 w-4" />
-                <span>آزمون‌های آنلاین</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/surveys" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <ClipboardList className="ml-2 h-4 w-4" />
-                <span>پرسشنامه‌ها</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/strategic-plan" className="flex items-center p2 text-sm rounded-md hover:bg-sidebar-accent">
-                <Compass className="ml-2 h-4 w-4" />
-                <span>برنامه راهبردی</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/consulting" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <BookOpen className="ml-2 h-4 w-4" />
-                <span>مطالب مشاوره‌ای</span>
-              </Link>
-            </SidebarMenuSubItem>
-          </ul>
-        </SidebarMenuSub>
-  
-        <SidebarMenuSub>
-          <SidebarMenuSubButton tooltip="ابزارها و تنظیمات">
-            <Wrench />
-            <span>ابزارها و تنظیمات</span>
-          </SidebarMenuSubButton>
-           <ul className='space-y-1'>
-            <SidebarMenuSubItem>
-              <Link href="/admin/class-schedule" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <CalendarIcon className="ml-2 h-4 w-4" />
-                <span>برنامه کلاسی</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/smart-bot" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <Bot className="ml-2 h-4 w-4" />
-                <span>ربات هوشمند</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/login-history" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <History className="ml-2 h-4 w-4" />
-                <span>تاریخچه ورود</span>
-              </Link>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/settings" className="flex items-center p-2 text-sm rounded-md hover:bg-sidebar-accent">
-                <Settings className="ml-2 h-4 w-4" />
-                <span>تنظیمات</span>
-              </Link>
-            </SidebarMenuSubItem>
-          </ul>
-        </SidebarMenuSub>
-      </>
-    );
-  }
-  
+        </SidebarMenuSubContent>
+      </SidebarMenuSub>
+
+      <SidebarMenuSub>
+        <SidebarMenuSubButton tooltip="ارتباطات">
+          <Contact />
+          <span>ارتباطات</span>
+           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+        </SidebarMenuSubButton>
+        <SidebarMenuSubContent>
+          <SidebarMenuSubItem>
+            <Link href="/admin/qna">
+              <HelpCircle className="ml-2 h-4 w-4" />
+              <span>پرسش و پاسخ</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/recommendations">
+              <ThumbsUp className="ml-2 h-4 w-4" />
+              <span>توصیه‌ها</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/messages">
+              <MessageSquare className="ml-2 h-4 w-4" />
+              <span>پیام‌ها</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/announcements">
+              <Megaphone className="ml-2 h-4 w-4" />
+              <span>اطلاعیه‌ها</span>
+            </Link>
+          </SidebarMenuSubItem>
+        </SidebarMenuSubContent>
+      </SidebarMenuSub>
+
+      <SidebarMenuSub>
+        <SidebarMenuSubButton tooltip="محتوای آموزشی">
+          <Library />
+          <span>محتوای آموزشی</span>
+           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+        </SidebarMenuSubButton>
+        <SidebarMenuSubContent>
+          <SidebarMenuSubItem>
+            <Link href="/admin/online-tests">
+              <FileText className="ml-2 h-4 w-4" />
+              <span>آزمون‌های آنلاین</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/surveys">
+              <ClipboardList className="ml-2 h-4 w-4" />
+              <span>پرسشنامه‌ها</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/strategic-plan">
+              <Compass className="ml-2 h-4 w-4" />
+              <span>برنامه راهبردی</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/consulting">
+              <BookOpen className="ml-2 h-4 w-4" />
+              <span>مطالب مشاوره‌ای</span>
+            </Link>
+          </SidebarMenuSubItem>
+        </SidebarMenuSubContent>
+      </SidebarMenuSub>
+
+      <SidebarMenuSub>
+        <SidebarMenuSubButton tooltip="ابزارها و تنظیمات">
+          <Wrench />
+          <span>ابزارها و تنظیمات</span>
+           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+        </SidebarMenuSubButton>
+        <SidebarMenuSubContent>
+          <SidebarMenuSubItem>
+            <Link href="/admin/class-schedule">
+              <CalendarIcon className="ml-2 h-4 w-4" />
+              <span>برنامه کلاسی</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/smart-bot">
+              <Bot className="ml-2 h-4 w-4" />
+              <span>ربات هوشمند</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/login-history">
+              <History className="ml-2 h-4 w-4" />
+              <span>تاریخچه ورود</span>
+            </Link>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <Link href="/admin/settings">
+              <Settings className="ml-2 h-4 w-4" />
+              <span>تنظیمات</span>
+            </Link>
+          </SidebarMenuSubItem>
+        </SidebarMenuSubContent>
+      </SidebarMenuSub>
+    </>
+  );
+}

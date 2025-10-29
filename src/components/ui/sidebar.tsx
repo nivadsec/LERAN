@@ -4,6 +4,8 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import * as Collapsible from "@radix-ui/react-collapsible"
+
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -683,57 +685,80 @@ const SidebarMenuSkeleton = React.forwardRef<
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton"
 
 const SidebarMenuSub = React.forwardRef<
-  HTMLUListElement,
-  React.ComponentProps<"ul">
+  React.ElementRef<typeof Collapsible.Root>,
+  React.ComponentPropsWithoutRef<typeof Collapsible.Root>
 >(({ className, ...props }, ref) => (
-  <ul
+  <Collapsible.Root
     ref={ref}
-    data-sidebar="menu-sub"
+    className={cn("group/sub-menu", className)}
+    {...props}
+  />
+));
+SidebarMenuSub.displayName = "SidebarMenuSub";
+
+
+const SidebarMenuSubButton = React.forwardRef<
+  React.ElementRef<typeof SidebarMenuButton>,
+  React.ComponentProps<typeof SidebarMenuButton> & {
+    asChild?: boolean
+  }
+>(({ asChild, ...props }, ref) => (
+  <Collapsible.Trigger asChild>
+    <SidebarMenuButton ref={ref} {...props} />
+  </Collapsible.Trigger>
+));
+SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
+
+
+const SidebarMenuSubContent = React.forwardRef<
+  React.ElementRef<typeof Collapsible.Content>,
+  React.ComponentPropsWithoutRef<typeof Collapsible.Content>
+>(({ className, ...props }, ref) => (
+  <Collapsible.Content
+    ref={ref}
     className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
-      "group-data-[collapsible=icon]:hidden",
+      "overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down",
       className
     )}
     {...props}
-  />
-))
-SidebarMenuSub.displayName = "SidebarMenuSub"
+  >
+    <div
+      className={cn(
+        "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border py-1 pl-3.5 pr-2",
+        "group-data-[collapsible=icon]:hidden"
+      )}
+    >
+      {props.children}
+    </div>
+  </Collapsible.Content>
+));
+SidebarMenuSubContent.displayName = "SidebarMenuSubContent";
+
 
 const SidebarMenuSubItem = React.forwardRef<
   HTMLLIElement,
-  React.ComponentProps<"li">
->(({ ...props }, ref) => <li ref={ref} {...props} />)
-SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
-
-const SidebarMenuSubButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<"a"> & {
+  React.ComponentProps<"li"> & {
     asChild?: boolean
-    size?: "sm" | "md"
     isActive?: boolean
   }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
+>(({ asChild = false, isActive, className, ...props }, ref) => {
   const Comp = asChild ? Slot : "a"
-
   return (
-    <Comp
+    <li
       ref={ref}
-      data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
       className={cn(
         "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+        "text-sm",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-        size === "sm" && "text-xs",
-        size === "md" && "text-sm",
-        "group-data-[collapsible=icon]:hidden",
         className
       )}
+      data-active={isActive}
       {...props}
     />
   )
 })
-SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
+
+SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
 
 export {
   Sidebar,
@@ -754,6 +779,7 @@ export {
   SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarMenuSubContent,
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
