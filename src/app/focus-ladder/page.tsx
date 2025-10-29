@@ -12,12 +12,14 @@ import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { Brain, CheckCircle } from 'lucide-react';
+import { Brain, CheckCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   sessionName: z.string().min(3, { message: 'نام بازه باید حداقل ۳ کاراکتر باشد.' }),
   focusScore: z.number().min(0).max(10),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "فرمت ساعت معتبر نیست (HH:MM)"}),
+  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "فرمت ساعت معتبر نیست (HH:MM)"}),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -33,6 +35,8 @@ export default function FocusLadderPage() {
     defaultValues: {
       sessionName: '',
       focusScore: 5,
+      startTime: '',
+      endTime: '',
     },
   });
 
@@ -57,7 +61,7 @@ export default function FocusLadderPage() {
         description: `بازه "${values.sessionName}" با امتیاز تمرکز ${values.focusScore} از ۱۰ ثبت شد.`,
         action: <CheckCircle className="text-green-500" />,
       });
-      form.reset();
+      form.reset({ sessionName: '', focusScore: 5, startTime: '', endTime: '' });
       setSliderValue(5);
     } catch (error) {
       console.error('Error submitting focus score: ', error);
@@ -102,6 +106,42 @@ export default function FocusLadderPage() {
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center justify-end gap-2">
+                      ساعت شروع
+                      <Clock className="h-4 w-4" />
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} className="text-center" dir="ltr" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center justify-end gap-2">
+                       ساعت پایان
+                       <Clock className="h-4 w-4" />
+                    </FormLabel>
+                    <FormControl>
+                       <Input type="time" {...field} className="text-center" dir="ltr" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="focusScore"

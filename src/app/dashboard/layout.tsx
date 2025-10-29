@@ -210,7 +210,7 @@ export default function DashboardLayout({
         <main className="flex-1">
           <header className="flex items-center justify-between p-4 border-b h-16">
              <h1 className="text-xl font-semibold">
-                {userProfile?.isAdmin ? 'پنل مدیریت' : 'پنل دانش‌آموزی'}
+                {userProfile?.isAdmin ? 'پنل مدیریت' : `پنل ${userProfile?.firstName || 'دانش‌آموز'}`}
             </h1>
             <SidebarTrigger className="md:hidden" >
                 <PanelLeft className="rotate-180"/>
