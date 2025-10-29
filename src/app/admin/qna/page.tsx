@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, MessageSquare }s from 'lucide-react';
+import { Mail, MessageSquare } from 'lucide-react';
 
 export default function AdminQnAPage() {
   return (
