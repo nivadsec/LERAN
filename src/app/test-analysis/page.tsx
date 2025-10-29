@@ -56,8 +56,8 @@ export default function TestAnalysisPage() {
     
     const pieData = [
       { name: 'درست', value: correct, fill: 'hsl(var(--chart-1))' },
-      { name: 'غلط', value: wrong, fill: 'hsl(var(--destructive))' },
-      { name: 'نزده', value: unanswered, fill: 'hsl(var(--muted))' },
+      { name: 'غلط', value: wrong, fill: 'hsl(var(--muted))' },
+      { name: 'نزده', value: unanswered, fill: 'hsl(var(--secondary))' },
     ].filter(item => item.value > 0);
 
     setResult({
