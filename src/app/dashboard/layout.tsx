@@ -246,6 +246,11 @@ function StudentNav() {
                     <Link href="/test-analysis"><span>تحلیل آزمون</span><ClipboardCheckIcon /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="تحلیل آزمون جامع" isActive={pathname.startsWith('/comprehensive-test-analysis')}>
+                    <Link href="/comprehensive-test-analysis"><span>تحلیل آزمون جامع</span><ClipboardCheckIcon /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="سرمایه زمانی" isActive={pathname.startsWith('/topic-investment')}>
                     <Link href="/topic-investment"><span>سرمایه زمانی</span><Crosshair /></Link>

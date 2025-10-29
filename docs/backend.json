@@ -86,6 +86,51 @@
         "sleepHours"
       ]
     },
+    "ExamAnalysis": {
+      "title": "ExamAnalysis",
+      "description": "Represents a detailed analysis of a student's performance on a specific exam.",
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "The name of the subject (e.g., 'ریاضی')."
+        },
+        "before_exam": {
+          "type": "object",
+          "description": "Goals and status before the exam.",
+          "properties": {
+            "previous_score": { "type": "number", "description": "The student's score in the previous exam for this subject." },
+            "goal_first": { "type": "number", "description": "First target score for the exam." },
+            "goal_second": { "type": "number", "description": "Second target score for the exam." },
+            "goal_third": { "type": "number", "description": "Third target score for the exam." },
+            "goal_fourth": { "type": "number", "description": "Fourth target score for the exam." }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "description": "Performance during the exam.",
+          "properties": {
+            "correct": { "type": "number", "description": "Number of correct answers." },
+            "wrong": { "type": "number", "description": "Number of wrong answers." },
+            "blank": { "type": "number", "description": "Number of unanswered questions." },
+            "total": { "type": "number", "description": "Total number of questions." },
+            "time_spent": { "type": "number", "description": "Time spent on the subject in minutes." },
+            "notes": { "type": "string", "description": "Notes about performance during the exam." }
+          },
+          "required": ["correct", "wrong", "blank", "total", "time_spent"]
+        },
+        "after_exam": {
+          "type": "object",
+          "description": "Results and calculated metrics after the exam.",
+          "properties": {
+            "score": { "type": "number", "description": "The final score/percentage for the subject." },
+            "accuracy_rate": { "type": "number", "description": "Calculated accuracy rate." },
+            "skip_ratio": { "type": "number", "description": "Calculated skip ratio." }
+          }
+        }
+      },
+      "required": ["subject", "execution"]
+    },
     "Class": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Class",
@@ -251,6 +296,26 @@
               "description": "The unique identifier for the daily report."
             }
           ]
+        }
+      },
+      {
+        "path": "/users/{userId}/examAnalyses/{analysisId}",
+        "definition": {
+            "entityName": "ExamAnalysis",
+            "schema": {
+                "$ref": "#/backend/entities/ExamAnalysis"
+            },
+            "description": "Subcollection to store detailed exam analyses for each student. Only the authenticated user (student) can read/write their own analyses.",
+            "params": [
+                {
+                    "name": "userId",
+                    "description": "The unique identifier for the student."
+                },
+                {
+                    "name": "analysisId",
+                    "description": "The unique identifier for the exam analysis report."
+                }
+            ]
         }
       },
       {
