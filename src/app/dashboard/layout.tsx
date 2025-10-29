@@ -237,6 +237,11 @@ function StudentNav() {
                     <Link href="/daily-report"><span>گزارش روزانه</span><ClipboardEdit /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="پایش روزانه" isActive={pathname.startsWith('/daily-monitoring')}>
+                    <Link href="/daily-monitoring"><span>پایش روزانه</span><ShieldCheck /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="گزارش هفتگی" isActive={pathname.startsWith('/weekly-report')}>
                     <Link href="/weekly-report"><span>گزارش هفتگی</span><ClipboardPlus /></Link>
@@ -422,4 +427,5 @@ function AdminNav() {
 }
 
     
+
 
