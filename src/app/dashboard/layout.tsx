@@ -54,7 +54,8 @@ import {
   GraduationCap,
   Sparkles,
   Video,
-  PenSquare
+  PenSquare,
+  CalendarClock
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -332,6 +333,12 @@ function StudentNav() {
                   </SidebarMenuSubItem>
               </SidebarMenuSubContent>
             </SidebarMenuSub>
+
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}>
+                    <Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}>
@@ -341,11 +348,6 @@ function StudentNav() {
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}>
                     <Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}>
-                    <Link href="/review-calendar"><span>تقویم مرور</span><CalendarIcon /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
