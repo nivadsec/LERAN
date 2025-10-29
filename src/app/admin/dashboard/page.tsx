@@ -12,8 +12,6 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart } from 'recha
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from "@/components/ui/label";
 
 interface UserProfile {
   firstName?: string;
@@ -231,28 +229,6 @@ export default function AdminDashboardPage() {
             </Table>
           </div>
         </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="text-right">
-          <CardTitle>ارسال اطلاعیه سریع</CardTitle>
-          <CardDescription>
-            این اطلاعیه در صفحه اصلی زیر فرم لاگین برای همه نمایش داده می‌شود.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-right">
-            <div>
-                 <Label htmlFor="announcement-title" className="text-right block mb-2">اطلاعیه جدید</Label>
-                 <Input id="announcement-title" placeholder="عنوان اطلاعیه" className="text-right"/>
-            </div>
-            <div>
-                 <Label htmlFor="announcement-text" className="text-right block mb-2">متن اطلاعیه</Label>
-                 <Textarea id="announcement-text" placeholder="پیام خود را در اینجا بنویسید..." className="text-right min-h-[100px]"/>
-            </div>
-        </CardContent>
-        <CardFooter className="justify-start">
-          <Button>انتشار اطلاعیه</Button>
-        </CardFooter>
       </Card>
     </div>
   );
