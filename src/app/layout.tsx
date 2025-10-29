@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
+import { Vazirmatn } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'iTalk Academic',
   description: 'پلتفرم هوشمند خودارزیابی و نظم شخصی برای موفقیت تحصیلی',
 };
+
+const vazirmatn = Vazirmatn({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-vazirmatn',
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -15,19 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-body antialiased">
+      <body className={cn("font-body antialiased", vazirmatn.variable)}>
         <FirebaseClientProvider>
           {children}
           <Toaster />

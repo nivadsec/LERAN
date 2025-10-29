@@ -46,7 +46,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "خطا در ورود",
-        description: error.message === 'Firebase: Error (auth/invalid-credential).' ? 'ایمیل یا رمز عبور اشتباه است.' : 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.',
+        description: error.code === 'auth/invalid-credential' ? 'ایمیل یا رمز عبور اشتباه است.' : 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.',
       });
     }
   };
