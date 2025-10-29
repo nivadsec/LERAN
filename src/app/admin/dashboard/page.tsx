@@ -2,28 +2,58 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, doc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { BarChart as BarChartIcon, Users, Clock, Smartphone, Smile, Search, ArrowRight } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
+import { extractSubjectsFromText } from '@/ai/flows/extract-subjects-from-text';
 
 interface UserProfile {
+  id: string;
   firstName?: string;
+  lastName?: string;
   isAdmin?: boolean;
 }
+
+interface DailyReport {
+  id: string;
+  studyHours: number;
+  feeling: number;
+  activities: string;
+  date: Timestamp;
+}
+
+interface StudentData extends UserProfile {
+    dailyReports: DailyReport[];
+    avgStudyHours: number;
+    avgFeeling: number;
+}
+
+interface SubjectData {
+    name: string;
+    value: number;
+    fill: string;
+}
+
 
 export default function AdminDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+
+  const [allStudentsData, setAllStudentsData] = useState<StudentData[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<StudentData[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -32,18 +62,67 @@ export default function AdminDashboardPage() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const isLoading = isUserLoading || isProfileLoading;
-
   useEffect(() => {
-    if (!isLoading) {
+    const initialLoading = isUserLoading || isProfileLoading;
+    if (!initialLoading) {
       if (!user) {
         router.replace('/admin/login');
       } else if (userProfile && !userProfile.isAdmin) {
         console.warn("Access denied. User is not an admin.");
-        router.replace('/dashboard'); 
+        router.replace('/dashboard');
+      } else if (userProfile?.isAdmin) {
+        fetchAllStudentsData();
       }
     }
-  }, [user, userProfile, isLoading, router]);
+  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+
+  useEffect(() => {
+    const lowercasedFilter = searchTerm.toLowerCase();
+    const filteredData = allStudentsData.filter(student =>
+      `${student.firstName} ${student.lastName}`.toLowerCase().includes(lowercasedFilter)
+    );
+    setFilteredStudents(filteredData);
+  }, [searchTerm, allStudentsData]);
+
+
+  const fetchAllStudentsData = async () => {
+    setIsDataLoading(true);
+    try {
+        const usersQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
+        const usersSnapshot = await getDocs(usersQuery);
+        const students: StudentData[] = [];
+
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data() as UserProfile;
+            userData.id = userDoc.id;
+
+            const reportsRef = collection(firestore, 'users', userDoc.id, 'dailyReports');
+            const reportsSnapshot = await getDocs(reportsRef);
+            const dailyReports = reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyReport));
+            
+            const totalStudy = dailyReports.reduce((acc, r) => acc + r.studyHours, 0);
+            const totalFeeling = dailyReports.reduce((acc, r) => acc + r.feeling, 0);
+
+            students.push({
+                ...userData,
+                dailyReports,
+                avgStudyHours: dailyReports.length > 0 ? totalStudy / dailyReports.length : 0,
+                avgFeeling: dailyReports.length > 0 ? totalFeeling / dailyReports.length : 0,
+            });
+        }
+        setAllStudentsData(students);
+    } catch (error) {
+        console.error("Error fetching students data:", error);
+        toast({
+            variant: "destructive",
+            title: "خطا در دریافت اطلاعات",
+            description: "مشکلی در دریافت اطلاعات دانش‌آموزان رخ داده است."
+        });
+    } finally {
+        setIsDataLoading(false);
+    }
+  };
+
 
   const handleExportData = async () => {
     toast({ title: 'در حال آماده‌سازی فایل...', description: 'این فرآیند ممکن است چند لحظه طول بکشد.' });
@@ -85,14 +164,61 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const { totalStudents, avgStudy, avgFeeling, weeklyChartData, pieChartData } = useMemo(() => {
+    if (isDataLoading || allStudentsData.length === 0) {
+        return { totalStudents: 0, avgStudy: 0, avgFeeling: 0, weeklyChartData: [], pieChartData: [] };
+    }
 
+    const totalReports = allStudentsData.flatMap(s => s.dailyReports);
+    const totalStudy = totalReports.reduce((acc, r) => acc + r.studyHours, 0);
+    const totalFeeling = totalReports.reduce((acc, r) => acc + r.feeling, 0);
+    
+    // Weekly Chart
+    const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
+    const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
+    totalReports.forEach(report => {
+        if(report.date) {
+            const date = new Date(report.date.seconds * 1000);
+            const faDayIndex = (date.getDay() + 1) % 7;
+            const dayName = dayNames[faDayIndex];
+            const chartEntry = chartData.find(d => d.day === dayName);
+            if (chartEntry) {
+                chartEntry.hours += report.studyHours;
+            }
+        }
+    });
+
+    // Pie Chart (Async part)
+    const allActivities = totalReports.map(r => r.activities).join('\n');
+    extractSubjectsFromText(allActivities).then(result => {
+        const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+        const data = result.subjects.map((s, i) => ({
+            name: s.subject,
+            value: s.duration,
+            fill: colors[i % colors.length]
+        }));
+        setPieData(data.length > 0 ? data : [{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
+    });
+
+    return {
+        totalStudents: allStudentsData.length,
+        avgStudy: totalReports.length > 0 ? (totalStudy / totalReports.length).toFixed(1) : 0,
+        avgFeeling: totalReports.length > 0 ? (totalFeeling / totalReports.length).toFixed(1) : 0,
+        weeklyChartData: chartData
+    };
+  }, [isDataLoading, allStudentsData]);
+
+  const [pieData, setPieData] = useState<SubjectData[] | null>(null);
+
+  const isLoading = isUserLoading || isProfileLoading || isDataLoading;
+  
   if (isLoading || !user || !userProfile || !userProfile.isAdmin) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
             <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-5 w-24" />
                 <Skeleton className="h-6 w-6" />
                 </CardHeader>
@@ -112,25 +238,8 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const chartData = [
-    { day: "شنبه", hours: 0 },
-    { day: "۱شنبه", hours: 0 },
-    { day: "۲شنبه", hours: 0 },
-    { day: "۳شنبه", hours: 0 },
-    { day: "۴شنبه", hours: 0 },
-    { day: "۵شنبه", hours: 0 },
-    { day: "جمعه", hours: 0 },
-  ];
-  
-  const pieChartData = [
-    { name: 'زیست', value: 0, fill: 'hsl(var(--chart-1))' },
-    { name: 'شیمی', value: 0, fill: 'hsl(var(--chart-2))' },
-    { name: 'فیزیک', value: 0, fill: 'hsl(var(--chart-3))' },
-    { name: 'ریاضی', value: 0, fill: 'hsl(var(--chart-4))' },
-    { name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }, // To show a full circle
-  ];
-
-  const hasData = false;
+  const hasData = allStudentsData.length > 0 && allStudentsData.some(s => s.dailyReports.length > 0);
+  const hasPieData = pieData && pieData.some(d => d.name !== 'سایر');
 
   return (
     <div className="space-y-6">
@@ -141,7 +250,7 @@ export default function AdminDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-right">0</div>
+            <div className="text-2xl font-bold text-right">{totalStudents}</div>
             <p className="text-xs text-muted-foreground text-right">دانش‌آموز فعال در سیستم</p>
           </CardContent>
         </Card>
@@ -151,7 +260,7 @@ export default function AdminDashboardPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-right">0 ساعت</div>
+            <div className="text-2xl font-bold text-right">{avgStudy} ساعت</div>
             <p className="text-xs text-muted-foreground text-right">میانگین کل دانش‌آموزان</p>
           </CardContent>
         </Card>
@@ -162,7 +271,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-right">0 ساعت</div>
-            <p className="text-xs text-muted-foreground text-right">میانگین کل دانش‌آموزان</p>
+            <p className="text-xs text-muted-foreground text-right">داده‌ای ثبت نشده</p>
           </CardContent>
         </Card>
         <Card>
@@ -171,7 +280,7 @@ export default function AdminDashboardPage() {
             <Smile className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-right">0</div>
+            <div className="text-2xl font-bold text-right">{avgFeeling}</div>
             <p className="text-xs text-muted-foreground text-right">میانگین کل دانش‌آموزان</p>
           </CardContent>
         </Card>
@@ -186,7 +295,7 @@ export default function AdminDashboardPage() {
           <CardContent className="pl-2">
              {hasData ? (
               <ChartContainer config={{}} className="h-[250px] w-full">
-                <BarChart data={chartData} accessibilityLayer>
+                <BarChart data={weeklyChartData} accessibilityLayer>
                    <CartesianGrid vertical={false} />
                    <XAxis dataKey="day" tickLine={false} tickMargin={10} axisLine={false} />
                    <YAxis tickLine={false} axisLine={false} />
@@ -211,12 +320,16 @@ export default function AdminDashboardPage() {
             <CardDescription>درصد زمان مطالعه صرف شده برای هر درس</CardDescription>
           </CardHeader>
           <CardContent>
-            {hasData ? (
+            {hasData && hasPieData && pieData ? (
                 <ChartContainer config={{}} className="h-[250px] w-full">
-                    <PieChart>
+                    <RechartsPieChart>
                         <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                        <Pie data={pieChartData} dataKey="value" nameKey="name" />
-                    </PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50}>
+                            {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </RechartsPieChart>
                 </ChartContainer>
             ) : (
                 <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed text-center p-4">
@@ -236,9 +349,11 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 text-right">
              <div className="flex gap-2 w-full md:w-auto">
                 <Button variant="outline" className="flex-1 md:flex-initial" onClick={handleExportData}>خروجی کل داده‌ها</Button>
-                <Button className="flex-1 md:flex-initial">
-                    مشاهده همه
-                    <ArrowRight className="mr-2 h-4 w-4" />
+                <Button asChild className="flex-1 md:flex-initial">
+                    <Link href="/admin/users">
+                        مشاهده همه
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                    </Link>
                 </Button>
              </div>
              <div className="w-full md:w-auto">
@@ -248,7 +363,12 @@ export default function AdminDashboardPage() {
           </div>
            <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="جستجوی دانش‌آموز..." className="pl-10 text-right" />
+              <Input
+                placeholder="جستجوی دانش‌آموز..."
+                className="pl-10 text-right"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
         </CardHeader>
         <CardContent>
@@ -263,11 +383,25 @@ export default function AdminDashboardPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">
-                            نتیجه‌ای یافت نشد.
-                        </TableCell>
-                    </TableRow>
+                    {filteredStudents.length > 0 ? (
+                        filteredStudents.map(student => (
+                            <TableRow key={student.id}>
+                                <TableCell>
+                                    {/* Placeholder for status */}
+                                    <span className="text-green-500">●</span> خوب
+                                </TableCell>
+                                <TableCell>{student.avgFeeling.toFixed(1)} / 10</TableCell>
+                                <TableCell>{student.avgStudyHours.toFixed(1)}</TableCell>
+                                <TableCell>{student.firstName} {student.lastName}</TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={4} className="text-center h-24">
+                                {searchTerm ? 'دانش‌آموزی با این نام یافت نشد.' : 'دانش‌آموزی برای نمایش وجود ندارد.'}
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
           </div>
@@ -276,5 +410,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
