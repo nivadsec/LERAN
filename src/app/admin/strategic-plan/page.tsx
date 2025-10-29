@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function AdminStrategicPlanPage() {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-right">
         <CardTitle>برنامه راهبردی</CardTitle>
         <CardDescription>در این بخش می‌توانید برنامه راهبردی را مدیریت کنید.</CardDescription>
       </CardHeader>

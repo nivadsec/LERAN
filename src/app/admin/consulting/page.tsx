@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function AdminConsultingPage() {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-right">
         <CardTitle>مطالب مشاوره‌ای</CardTitle>
         <CardDescription>در این بخش می‌توانید مطالب مشاوره‌ای را مدیریت کنید.</CardDescription>
       </CardHeader>      <CardContent>
