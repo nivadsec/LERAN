@@ -1,0 +1,239 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the iTalk Academic platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "signupDate": {
+          "type": "string",
+          "description": "The date and time the user signed up.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "signupDate"
+      ]
+    },
+    "SelfAssessment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SelfAssessment",
+      "type": "object",
+      "description": "Represents a self-assessment performed by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SelfAssessment entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N SelfAssessment)"
+        },
+        "assessmentDate": {
+          "type": "string",
+          "description": "The date and time the self-assessment was completed.",
+          "format": "date-time"
+        },
+        "strengths": {
+          "type": "string",
+          "description": "AI generated strengths of student."
+        },
+        "weaknesses": {
+          "type": "string",
+          "description": "AI generated weaknesses of student."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "assessmentDate",
+        "strengths",
+        "weaknesses"
+      ]
+    },
+    "AcademicPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AcademicPlan",
+      "type": "object",
+      "description": "Represents an academic plan generated for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AcademicPlan entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N AcademicPlan)"
+        },
+        "planName": {
+          "type": "string",
+          "description": "Name of the Academic Plan."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "The date and time the academic plan was created.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "AI generated description of academic plan."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "creationDate",
+        "description",
+        "planName"
+      ]
+    },
+    "ProgressRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProgressRecord",
+      "type": "object",
+      "description": "Represents a record of a user's progress towards their academic goals.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ProgressRecord entity."
+        },
+        "academicPlanId": {
+          "type": "string",
+          "description": "Reference to AcademicPlan. (Relationship: AcademicPlan 1:N ProgressRecord)"
+        },
+        "recordDate": {
+          "type": "string",
+          "description": "The date and time the progress record was created.",
+          "format": "date-time"
+        },
+        "progressValue": {
+          "type": "number",
+          "description": "A numerical value representing the user's progress at the time of the record."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes or comments about the progress."
+        }
+      },
+      "required": [
+        "id",
+        "academicPlanId",
+        "recordDate",
+        "progressValue"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Path-based ownership is enforced. All user related data is nested under this path.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/selfAssessments/{selfAssessmentId}",
+        "definition": {
+          "entityName": "SelfAssessment",
+          "schema": {
+            "$ref": "#/backend/entities/SelfAssessment"
+          },
+          "description": "Stores self-assessments for a specific user. Path-based ownership derived from /users/{userId}.  Documents in this collection are owned by the user specified in the userId path parameter.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "selfAssessmentId",
+              "description": "The unique identifier of the self-assessment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/academicPlans/{academicPlanId}",
+        "definition": {
+          "entityName": "AcademicPlan",
+          "schema": {
+            "$ref": "#/backend/entities/AcademicPlan"
+          },
+          "description": "Stores academic plans for a specific user. Path-based ownership derived from /users/{userId}. Documents in this collection are owned by the user specified in the userId path parameter.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "academicPlanId",
+              "description": "The unique identifier of the academic plan."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/academicPlans/{academicPlanId}/progressRecords/{progressRecordId}",
+        "definition": {
+          "entityName": "ProgressRecord",
+          "schema": {
+            "$ref": "#/backend/entities/ProgressRecord"
+          },
+          "description": "Stores progress records for a specific academic plan of a specific user.  Path-based ownership derived from /users/{userId} and /academicPlans/{academicPlanId}. Documents in this collection are owned by the user specified in the userId path parameter and are associated with the academic plan specified by the academicPlanId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "academicPlanId",
+              "description": "The unique identifier of the academic plan."
+            },
+            {
+              "name": "progressRecordId",
+              "description": "The unique identifier of the progress record."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to follow best practices for security, scalability, and debuggability, prioritizing Authorization Independence and Structural Segregation.\n\n- **Authorization Independence:** Achieved through path-based ownership for User data and its subcollections. Each subcollection (SelfAssessments, AcademicPlans, and ProgressRecords) is directly nested under the `/users/{userId}` path, ensuring that access control can be implemented based on the user ID in the path, without needing to `get()` data from parent documents.\n- **Structural Segregation:** Ensures that each collection has a homogeneous security posture. User-specific data is stored under the `/users/{userId}` collection group, separating it from any potentially shared or public data (if the application were to expand to include such features). This segregation simplifies security rules and prevents unintended data exposure.\n- **QAPs Support:** The structure supports secure `list` operations because ownership is implicit in the path. Rules can allow listing documents under `/users/{userId}` only if `request.auth.uid == userId`, ensuring that users can only access their own data.\n\nThe path structure `/users/{userId}/selfAssessments/{selfAssessmentId}`, `/users/{userId}/academicPlans/{academicPlanId}`, and `/users/{userId}/academicPlans/{academicPlanId}/progressRecords/{progressRecordId}` explicitly models the relationships between users, their self-assessments, academic plans, and progress records. This structure directly translates to simple and efficient security rules."
+  }
+}
