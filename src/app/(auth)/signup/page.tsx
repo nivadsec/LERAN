@@ -1,0 +1,66 @@
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { BookOpenCheck } from "lucide-react"
+
+export default function SignupPage() {
+  return (
+    <div className="flex items-center min-h-screen justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-sm">
+         <div className="text-center mb-6">
+          <Link href="/" className="inline-block" prefetch={false}>
+            <BookOpenCheck className="h-10 w-10 text-primary mx-auto" />
+             <span className="mt-2 block text-xl font-bold font-headline text-primary">آی‌تاک</span>
+          </Link>
+        </div>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-headline">ثبت‌نام</CardTitle>
+            <CardDescription>
+              برای ایجاد حساب کاربری اطلاعات خود را وارد کنید
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2 text-right">
+                  <Label htmlFor="first-name">نام</Label>
+                  <Input id="first-name" placeholder="حسین" required />
+                </div>
+                <div className="grid gap-2 text-right">
+                  <Label htmlFor="last-name">نام خانوادگی</Label>
+                  <Input id="last-name" placeholder="طاهری" required />
+                </div>
+              </div>
+              <div className="grid gap-2 text-right">
+                <Label htmlFor="email">ایمیل</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  dir="ltr"
+                />
+              </div>
+              <div className="grid gap-2 text-right">
+                <Label htmlFor="password">رمز عبور</Label>
+                <Input id="password" type="password" required dir="ltr"/>
+              </div>
+              <Button type="submit" className="w-full mt-2">
+                ایجاد حساب کاربری
+              </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+              قبلاً ثبت‌نام کرده‌اید؟{" "}
+              <Link href="/login" className="underline" prefetch={false}>
+                وارد شوید
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
