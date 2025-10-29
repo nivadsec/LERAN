@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 
-export default function LoginPage() {
+export default function TeacherLoginPage() {
   return (
     <div className="flex items-center min-h-screen justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
@@ -39,9 +38,9 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>
+            <CardTitle className="text-2xl font-headline">ورود به پنل مدیریت</CardTitle>
             <CardDescription>
-              برای ورود، ایمیل و رمز عبور خود را وارد کنید.
+              برای ورود به پنل مدیریت، ایمیل و رمز عبور خود را وارد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -51,42 +50,20 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="student@example.com"
+                  placeholder="teacher@example.com"
                   required
                   dir="ltr"
                 />
               </div>
               <div className="grid gap-2 text-right">
-                <div className="flex items-center">
-                  <Label htmlFor="password">رمز عبور</Label>
-                  <Link
-                    href="#"
-                    className="mr-auto inline-block text-sm underline"
-                    prefetch={false}
-                  >
-                    فراموشی رمز عبور؟
-                  </Link>
-                </div>
+                <Label htmlFor="password">رمز عبور</Label>
                 <Input id="password" type="password" required dir="ltr" placeholder="••••••••" />
               </div>
               <Button type="submit" className="w-full mt-2">
                 ورود
               </Button>
             </form>
-            <div className="mt-4 flex items-center justify-center">
-                <Separator className="flex-1" />
-                <span className="px-2 text-sm text-muted-foreground">یا</span>
-                <Separator className="flex-1" />
-            </div>
-            <Button variant="outline" className="w-full mt-4" asChild>
-                <Link href="/signup">ایجاد حساب دانش‌آموزی</Link>
-            </Button>
             <div className="mt-4 text-center text-sm">
-              <Link href="/teacher-login" className="underline" prefetch={false}>
-                ورود معلمان
-              </Link>
-            </div>
-             <div className="mt-2 text-center text-sm">
                 <Link href="/" className="underline" prefetch={false}>
                 بازگشت به صفحه اصلی
                 </Link>
