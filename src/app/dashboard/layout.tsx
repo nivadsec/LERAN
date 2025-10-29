@@ -50,6 +50,7 @@ import {
   ClipboardPlus,
   Crosshair,
   ClipboardCheck as ClipboardCheckIcon,
+  TrendingUp,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -254,6 +255,11 @@ function StudentNav() {
              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="سرمایه زمانی" isActive={pathname.startsWith('/topic-investment')}>
                     <Link href="/topic-investment"><span>سرمایه زمانی</span><Crosshair /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="نردبان تمرکز" isActive={pathname.startsWith('/focus-ladder')}>
+                    <Link href="/focus-ladder"><span>نردبان تمرکز</span><TrendingUp /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

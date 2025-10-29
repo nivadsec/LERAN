@@ -131,6 +131,35 @@
       },
       "required": ["subject", "execution"]
     },
+    "FocusSession": {
+      "title": "FocusSession",
+      "description": "Represents a single focus rating session by a student.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the focus session."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the Student."
+        },
+        "sessionName": {
+          "type": "string",
+          "description": "The name of the study interval (e.g., 'Physics - Interval 1')."
+        },
+        "focusScore": {
+          "type": "number",
+          "description": "The focus score from 0 to 10."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the session was recorded."
+        }
+      },
+      "required": ["id", "studentId", "sessionName", "focusScore", "createdAt"]
+    },
     "Class": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Class",
@@ -316,6 +345,26 @@
                     "description": "The unique identifier for the exam analysis report."
                 }
             ]
+        }
+      },
+      {
+        "path": "/users/{userId}/focusSessions/{sessionId}",
+        "definition": {
+          "entityName": "FocusSession",
+          "schema": {
+            "$ref": "#/backend/entities/FocusSession"
+          },
+          "description": "Subcollection to store focus session ratings for each student. Only the authenticated student can create, read, update, or delete their own focus sessions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the student."
+            },
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for the focus session."
+            }
+          ]
         }
       },
       {
