@@ -73,8 +73,8 @@ export default function WeeklyReportPage() {
   };
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-        <CardHeader className="text-right p-0 md:p-6 md:pt-0">
+    <div className="space-y-6">
+        <CardHeader className="text-right p-0">
             <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <CalendarDays className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default function WeeklyReportPage() {
                 </div>
             </div>
         </CardHeader>
-        <CardContent className="p-0 md:p-6">
+        <CardContent className="p-0">
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
 
@@ -236,8 +236,6 @@ export default function WeeklyReportPage() {
             </form>
         </Form>
         </CardContent>
-    </Card>
+    </div>
   );
 }
-
-    

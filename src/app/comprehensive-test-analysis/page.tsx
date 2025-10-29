@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2, CalendarDate, Trophy, Star, ClipboardCheck, ChevronsRight, BookOpen } from 'lucide-react';
+import { PlusCircle, Trash2, CalendarDays, Trophy, Star, ClipboardCheck, ChevronsRight, BookOpen, BarChart2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
@@ -103,7 +103,7 @@ export default function ComprehensiveTestAnalysisPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <FormField name="exam_date" control={form.control} render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center justify-end gap-1"><CalendarDate className="h-4 w-4"/>تاریخ آزمون</FormLabel>
+                          <FormLabel className="flex items-center justify-end gap-1"><CalendarDays className="h-4 w-4"/>تاریخ آزمون</FormLabel>
                           <FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
@@ -154,7 +154,7 @@ export default function ComprehensiveTestAnalysisPage() {
                                <TabsList className="grid w-full grid-cols-3 mb-4">
                                    <TabsTrigger value="before_exam"><Star className="ml-1 h-4 w-4"/>قبل آزمون</TabsTrigger>
                                    <TabsTrigger value="execution"><ChevronsRight className="ml-1 h-4 w-4"/>حین آزمون</TabsTrigger>
-                                   <TabsTrigger value="after_exam"><Activity className="ml-1 h-4 w-4"/>بعد آزمون</TabsTrigger>
+                                   <TabsTrigger value="after_exam"><BarChart2 className="ml-1 h-4 w-4"/>بعد آزمون</TabsTrigger>
                                </TabsList>
                                <TabsContent value="before_exam">
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-right">
@@ -190,7 +190,7 @@ export default function ComprehensiveTestAnalysisPage() {
                                           <FormItem><FormLabel>تعداد کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.time_spent`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></Formİtem>
+                                          <FormItem><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                      <FormField name={`exam_analysis.${index}.execution.notes`} control={form.control} render={({ field }) => (

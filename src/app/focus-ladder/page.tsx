@@ -28,8 +28,7 @@ export default function FocusLadderPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const firestore = useFirestore();
-  const [sliderValue, setSliderValue] = useState(5);
-
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,7 +61,6 @@ export default function FocusLadderPage() {
         action: <CheckCircle className="text-green-500" />,
       });
       form.reset({ sessionName: '', focusScore: 5, startTime: '', endTime: '' });
-      setSliderValue(5);
     } catch (error) {
       console.error('Error submitting focus score: ', error);
       toast({
@@ -73,10 +71,12 @@ export default function FocusLadderPage() {
     }
   };
 
+  const focusScore = form.watch('focusScore');
+
   const getSliderColor = (value: number) => {
     if (value <= 4) return 'bg-red-500';
     if (value <= 7) return 'bg-yellow-500';
-    return 'bg-teal-500'; // --primary color
+    return 'bg-teal-500';
   };
 
   return (
@@ -118,7 +118,7 @@ export default function FocusLadderPage() {
                       <Clock className="h-4 w-4" />
                     </FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} className="text-center" dir="ltr" />
+                      <Input type="text" {...field} className="text-center" dir="ltr" placeholder="HH:MM" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -134,7 +134,7 @@ export default function FocusLadderPage() {
                        <Clock className="h-4 w-4" />
                     </FormLabel>
                     <FormControl>
-                       <Input type="time" {...field} className="text-center" dir="ltr" />
+                       <Input type="text" {...field} className="text-center" dir="ltr" placeholder="HH:MM" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -145,27 +145,24 @@ export default function FocusLadderPage() {
             <FormField
               control={form.control}
               name="focusScore"
-              render={({ field: { onChange, ...restField } }) => (
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>امتیاز تمرکز: {sliderValue}</FormLabel>
+                  <FormLabel>امتیاز تمرکز: {field.value}</FormLabel>
                   <FormControl>
                     <div dir="ltr">
                        <Slider
                         min={0}
                         max={10}
                         step={1}
-                        value={[sliderValue]}
-                        onValueChange={(value) => {
-                          setSliderValue(value[0]);
-                          onChange(value[0]);
-                        }}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
                         className="py-2"
-                        {...restField}
-                       />
-                       <style>{`
-                        .irs-bar { background: ${getSliderColor(sliderValue)} !important; }
-                        .irs-slider { border-color: ${getSliderColor(sliderValue)} !important; }
-                       `}</style>
+                       >
+                         <style>{`
+                            .slider-thumb { background-color: ${getSliderColor(focusScore)}; }
+                            .slider-range { background-color: ${getSliderColor(focusScore)}; }
+                         `}</style>
+                       </Slider>
                     </div>
                   </FormControl>
                   <FormDescription>
