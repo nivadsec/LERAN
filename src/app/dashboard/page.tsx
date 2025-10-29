@@ -2,16 +2,17 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { BarChart as BarChartIcon, Clock, Smile, TrendingUp, BookOpen, BarChart2, AlertCircle } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { extractSubjectsFromText } from '@/ai/flows/extract-subjects-from-text';
 
 interface UserProfile {
   firstName?: string;
@@ -19,33 +20,31 @@ interface UserProfile {
   isAdmin?: boolean;
 }
 
-const weeklyChartData = [
-    { day: "شنبه", hours: 0 },
-    { day: "۱شنبه", hours: 0 },
-    { day: "۲شنبه", hours: 0 },
-    { day: "۳شنبه", hours: 0 },
-    { day: "۴شنبه", hours: 0 },
-    { day: "۵شنبه", hours: 0 },
-    { day: "جمعه", hours: 0 },
-];
-
-const subjectsPieData = [
-  { name: 'زیست', value: 0, fill: 'hsl(var(--chart-1))' },
-  { name: 'شیمی', value: 0, fill: 'hsl(var(--chart-2))' },
-  { name: 'فیزیک', value: 0, fill: 'hsl(var(--chart-3))' },
-  { name: 'ریاضی', value: 0, fill: 'hsl(var(--chart-4))' },
-  { name: 'سایر', value: 1, fill: 'hsl(var(--muted))' },
-];
+interface DailyReport {
+    id: string;
+    studyHours: number;
+    feeling: number;
+    activities: string;
+    date: Timestamp;
+}
 
 interface Announcement {
     id: string;
     message: string;
 }
 
+interface SubjectData {
+    name: string;
+    value: number;
+    fill: string;
+}
+
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+
+  const [subjectsPieData, setSubjectsPieData] = useState<SubjectData[] | null>(null);
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -59,7 +58,7 @@ export default function DashboardPage() {
     return query(collection(firestore, 'users', user.uid, 'dailyReports'), orderBy('date', 'desc'), limit(7));
   }, [firestore, user]);
 
-  const { data: dailyReports, isLoading: isReportsLoading } = useCollection(dailyReportsQuery);
+  const { data: dailyReports, isLoading: isReportsLoading } = useCollection<DailyReport>(dailyReportsQuery);
 
   const announcementsQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'), limit(1));
@@ -70,7 +69,7 @@ export default function DashboardPage() {
 
   const isLoading = isUserLoading || isProfileLoading || isReportsLoading || isAnnouncementsLoading;
 
-  useEffect(() => {
+   useEffect(() => {
     if (!isUserLoading && !isProfileLoading) {
       if (!user) {
         router.replace('/login');
@@ -80,7 +79,90 @@ export default function DashboardPage() {
     }
   }, [user, userProfile, isUserLoading, isProfileLoading, router]);
 
+  useEffect(() => {
+    if (dailyReports && dailyReports.length > 0) {
+      const allActivities = dailyReports.map(r => r.activities).join('\n');
+      extractSubjectsFromText(allActivities)
+        .then(result => {
+           const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+           const pieData = result.subjects.map((s, i) => ({
+             name: s.subject,
+             value: s.duration,
+             fill: colors[i % colors.length]
+           }));
+           if(pieData.length === 0) {
+              pieData.push({ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' });
+           }
+           setSubjectsPieData(pieData);
+        })
+        .catch(console.error);
+    } else {
+        setSubjectsPieData(null);
+    }
+  }, [dailyReports]);
+
+  const { weeklyAvgStudy, weeklyAvgFeeling, streak, weeklyChartData } = useMemo(() => {
+    if (!dailyReports || dailyReports.length === 0) {
+      return {
+        weeklyAvgStudy: 0,
+        weeklyAvgFeeling: 0,
+        streak: 0,
+        weeklyChartData: [
+            { day: "شنبه", hours: 0 }, { day: "۱شنبه", hours: 0 }, { day: "۲شنبه", hours: 0 },
+            { day: "۳شنبه", hours: 0 }, { day: "۴شنبه", hours: 0 }, { day: "۵شنبه", hours: 0 }, { day: "جمعه", hours: 0 },
+        ],
+      };
+    }
+    
+    const totalStudy = dailyReports.reduce((acc, r) => acc + r.studyHours, 0);
+    const totalFeeling = dailyReports.reduce((acc, r) => acc + r.feeling, 0);
+
+    const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
+    const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
+
+    let consecutiveDays = 0;
+    if(dailyReports.length > 0) {
+        const sortedReports = [...dailyReports].sort((a, b) => b.date.seconds - a.date.seconds);
+        let lastDate = new Date(sortedReports[0].date.seconds * 1000);
+        lastDate.setHours(0,0,0,0);
+        consecutiveDays = 1;
+
+        for(let i=1; i<sortedReports.length; i++) {
+            const currentDate = new Date(sortedReports[i].date.seconds * 1000);
+            currentDate.setHours(0,0,0,0);
+            const diff = lastDate.getTime() - currentDate.getTime();
+            if (diff === 86400000) { // 24 * 60 * 60 * 1000
+                consecutiveDays++;
+                lastDate = currentDate;
+            } else if (diff > 86400000) {
+                break;
+            }
+        }
+    }
+
+
+    dailyReports.forEach(report => {
+        const date = new Date(report.date.seconds * 1000);
+        const dayIndex = date.getDay(); // 0 (Sun) to 6 (Sat) -> (fa-IR: 6, 0, 1, 2, 3, 4, 5)
+        const faDayIndex = (dayIndex + 1) % 7; // Shanbe:0, Yekshanbe:1 ...
+        const dayName = dayNames[faDayIndex];
+        const chartEntry = chartData.find(d => d.day === dayName);
+        if(chartEntry) {
+            chartEntry.hours += report.studyHours;
+        }
+    });
+
+    return {
+      weeklyAvgStudy: (totalStudy / dailyReports.length).toFixed(1),
+      weeklyAvgFeeling: (totalFeeling / dailyReports.length).toFixed(1),
+      streak: consecutiveDays,
+      weeklyChartData: chartData
+    };
+  }, [dailyReports]);
+
   const hasData = dailyReports && dailyReports.length > 0;
+  const hasPieData = subjectsPieData && subjectsPieData.some(d => d.name !== 'سایر');
+
 
   if (isLoading || !user || userProfile?.isAdmin) {
     return (
@@ -141,7 +223,7 @@ export default function DashboardPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-right">۰ ساعت</div>
+                    <div className="text-2xl font-bold text-right">{weeklyAvgStudy} ساعت</div>
                 </CardContent>
             </Card>
             <Card>
@@ -150,7 +232,7 @@ export default function DashboardPage() {
                     <Smile className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-right">۰ / ۱۰</div>
+                    <div className="text-2xl font-bold text-right">{weeklyAvgFeeling} / ۱۰</div>
                 </CardContent>
             </Card>
             <Card>
@@ -159,7 +241,7 @@ export default function DashboardPage() {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-right">۰ روز</div>
+                    <div className="text-2xl font-bold text-right">{streak} روز</div>
                 </CardContent>
             </Card>
         </div>
@@ -189,11 +271,13 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="text-right">
                 <CardTitle>تقسیم‌بندی دروس</CardTitle>
-                <CardDescription>درصد زمان مطالعه صرف شده برای هر درس</CardDescription>
+                <CardDescription>درصد زمان مطالعه صرف شده برای هر درس (تخمین هوشمند)</CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
                 {!hasData ? (
                    <EmptyStateChart icon={BookOpen} title="نمودار تقسیم‌بندی دروس" description="درصد مطالعه هر درس پس از ثبت فعالیت‌ها در گزارش روزانه نمایش داده می‌شود."/>
+                ) : !subjectsPieData || !hasPieData ? (
+                   <EmptyStateChart icon={BookOpen} title="در حال تحلیل دروس..." description="هوش مصنوعی در حال تحلیل گزارش‌های شما برای استخراج دروس است."/>
                 ) : (
                     <ChartContainer config={{}} className="h-[250px] w-full">
                         <RechartsPieChart>
