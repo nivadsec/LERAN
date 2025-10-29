@@ -53,6 +53,8 @@ import {
   TrendingUp,
   GraduationCap,
   Sparkles,
+  Video,
+  PenSquare
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -318,6 +320,11 @@ function StudentNav() {
                       <span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" />
                     </Link>
                   </SidebarMenuSubItem>
+                   <SidebarMenuSubItem asChild>
+                    <Link href="/recommendations" className="justify-end">
+                      <span>توصیه‌ها</span><ThumbsUp className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
                   <SidebarMenuSubItem asChild>
                     <Link href="/surveys" className="justify-end">
                       <span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" />
@@ -326,6 +333,16 @@ function StudentNav() {
               </SidebarMenuSubContent>
             </SidebarMenuSub>
             
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}>
+                    <Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}>
+                    <Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="برنامه کلاسی" isActive={pathname.startsWith('/class-schedule')}>
                     <Link href="/class-schedule"><span>برنامه کلاسی</span><CalendarIcon /></Link>
@@ -427,6 +444,12 @@ function AdminNav() {
             <Link href="/admin/surveys" className="justify-end">
               <span>پرسشنامه‌ها</span>
               <ClipboardList className="mr-2 h-4 w-4" />
+            </Link>
+          </SidebarMenuSubItem>
+           <SidebarMenuSubItem asChild>
+            <Link href="/admin/online-class" className="justify-end">
+              <span>کلاس آنلاین</span>
+              <Video className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
           <SidebarMenuSubItem asChild>
