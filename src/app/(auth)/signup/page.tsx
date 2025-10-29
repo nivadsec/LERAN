@@ -46,8 +46,16 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Store additional user data in Firestore
-      await setDoc(doc(firestore, "users", user.uid), {
+      const userData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        grade: string;
+        major: string;
+        signupDate: string;
+        id: string;
+        isAdmin?: boolean;
+      } = {
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
@@ -55,13 +63,27 @@ export default function SignupPage() {
         major: values.major,
         signupDate: new Date().toISOString(),
         id: user.uid,
-      });
+      };
+
+      // Check if the user is an admin
+      if (values.email === 'admin@italk.com') {
+        userData.isAdmin = true;
+      }
+
+      // Store additional user data in Firestore
+      await setDoc(doc(firestore, "users", user.uid), userData);
 
       toast({
         title: "ثبت‌نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد.",
       });
-      router.push("/dashboard");
+
+      if (userData.isAdmin) {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+      
     } catch (error: any) {
       console.error("Signup Error: ", error);
       toast({
