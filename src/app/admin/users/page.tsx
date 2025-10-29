@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -16,9 +17,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, PlusCircle } from 'lucide-react';
+import { Search, PlusCircle, KeyRound } from 'lucide-react';
 
 export default function AdminUsersPage() {
+  const [password, setPassword] = useState('');
+  
   const features = [
     { id: 'smart-bot', label: 'ربات هوشمند' },
     { id: 'daily-monitoring', label: 'پایش هوشمند روزانه' },
@@ -36,6 +39,16 @@ export default function AdminUsersPage() {
     { id: 'strategic-plans', label: 'برنامه‌های راهبردی' },
     { id: 'consulting-content', label: 'محتوای مشاوره‌ای' },
   ];
+
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&";
+    let newPassword = "";
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      newPassword += charset.charAt(Math.floor(Math.random() * n));
+    }
+    setPassword(newPassword);
+  };
 
   return (
     <div className="space-y-6">
@@ -106,7 +119,12 @@ export default function AdminUsersPage() {
                             </div>
                              <div className="grid gap-2">
                                 <Label htmlFor="password">رمز عبور اولیه</Label>
-                                <Input id="password" type="password" dir="ltr" />
+                                <div className="flex gap-2">
+                                    <Input id="password" type="text" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} />
+                                    <Button type="button" variant="outline" size="icon" onClick={generatePassword} aria-label="پیشنهاد رمز عبور">
+                                        <KeyRound className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                              <div className="flex items-center justify-between rounded-lg border p-4">
                                 <Switch id="panel-status" dir='ltr'/>
