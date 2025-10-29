@@ -51,8 +51,8 @@ export default function AdminLoginPage() {
         await auth.signOut();
         toast({
           variant: "destructive",
-          title: "خطا در ورود",
-          description: "شما دسترسی مدیر را ندارید.",
+          title: "خطا در دسترسی",
+          description: "شما اجازه ورود به پنل مدیریت را ندارید.",
         });
       }
     } catch (error: any) {
