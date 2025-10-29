@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 
 export default function LoginPage() {
   return (
@@ -38,9 +39,9 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">ورود</CardTitle>
+            <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>
             <CardDescription>
-              ایمیل و رمز عبور خود را برای ورود وارد کنید
+              برای ورود، ایمیل و رمز عبور خود را وارد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -50,7 +51,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="student@example.com"
                   required
                   dir="ltr"
                 />
@@ -63,20 +64,32 @@ export default function LoginPage() {
                     className="mr-auto inline-block text-sm underline"
                     prefetch={false}
                   >
-                    رمز عبور خود را فراموش کرده‌اید؟
+                    فراموشی رمز عبور؟
                   </Link>
                 </div>
-                <Input id="password" type="password" required dir="ltr" />
+                <Input id="password" type="password" required dir="ltr" placeholder="••••••••" />
               </div>
               <Button type="submit" className="w-full mt-2">
                 ورود
               </Button>
             </form>
+            <div className="mt-4 flex items-center justify-center">
+                <Separator className="flex-1" />
+                <span className="px-2 text-sm text-muted-foreground">یا</span>
+                <Separator className="flex-1" />
+            </div>
+            <Button variant="outline" className="w-full mt-4" asChild>
+                <Link href="/signup">ایجاد حساب دانش‌آموزی</Link>
+            </Button>
             <div className="mt-4 text-center text-sm">
-              حساب کاربری ندارید؟{" "}
-              <Link href="/signup" className="underline" prefetch={false}>
-                ثبت‌نام
+              <Link href="#" className="underline" prefetch={false}>
+                ورود معلمان
               </Link>
+            </div>
+             <div className="mt-2 text-center text-sm">
+                <Link href="/" className="underline" prefetch={false}>
+                بازگشت به صفحه اصلی
+                </Link>
             </div>
           </CardContent>
         </Card>
