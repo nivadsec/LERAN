@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { BarChart as BarChartIcon, Clock, Smile, TrendingUp, BookOpen, BarChart2 } from 'lucide-react';
+import { BarChart as BarChartIcon, Clock, Smile, TrendingUp, BookOpen, BarChart2, AlertCircle } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface UserProfile {
   firstName?: string;
@@ -36,6 +37,11 @@ const subjectsPieData = [
   { name: 'سایر', value: 1, fill: 'hsl(var(--muted))' },
 ];
 
+interface Announcement {
+    id: string;
+    message: string;
+}
+
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -55,7 +61,14 @@ export default function DashboardPage() {
 
   const { data: dailyReports, isLoading: isReportsLoading } = useCollection(dailyReportsQuery);
 
-  const isLoading = isUserLoading || isProfileLoading || isReportsLoading;
+  const announcementsQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'), limit(1));
+  }, [firestore]);
+
+  const { data: announcements, isLoading: isAnnouncementsLoading } = useCollection<Announcement>(announcementsQuery);
+  const latestAnnouncement = announcements?.[0];
+
+  const isLoading = isUserLoading || isProfileLoading || isReportsLoading || isAnnouncementsLoading;
 
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading) {
@@ -72,6 +85,7 @@ export default function DashboardPage() {
   if (isLoading || !user || userProfile?.isAdmin) {
     return (
       <div className="space-y-6">
+        <Skeleton className="h-12 w-full" />
         <div className="flex justify-between items-center">
             <Skeleton className="h-9 w-48" />
         </div>
@@ -98,6 +112,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+        {latestAnnouncement && (
+            <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>اطلاعیه جدید</AlertTitle>
+                <AlertDescription>
+                    {latestAnnouncement.message}
+                </AlertDescription>
+            </Alert>
+        )}
+
         <div className="flex flex-col-reverse sm:flex-row items-end sm:items-center justify-between gap-4 text-right">
             <div>
                 <h1 className="text-2xl font-bold">داشبورد شما</h1>
