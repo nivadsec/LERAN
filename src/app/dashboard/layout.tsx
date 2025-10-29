@@ -28,6 +28,18 @@ import {
   Users,
   LogOut,
   ChevronDown,
+  ShieldCheck,
+  HelpCircle,
+  ThumbsUp,
+  MessageSquare,
+  Megaphone,
+  FileText,
+  Compass,
+  BookOpen,
+  Calendar as CalendarIcon,
+  Bot,
+  History,
+  Settings,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -38,6 +50,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface UserProfile {
   firstName?: string;
@@ -129,9 +142,11 @@ export default function DashboardLayout({
             </Link>
           </SidebarHeader>
           <SidebarContent className="flex-1 p-2">
-            <SidebarMenu>
-              {userProfile?.isAdmin ? <AdminNav /> : <StudentNav />}
-            </SidebarMenu>
+            <ScrollArea className="h-full">
+              <SidebarMenu>
+                {userProfile?.isAdmin ? <AdminNav /> : <StudentNav />}
+              </SidebarMenu>
+            </ScrollArea>
           </SidebarContent>
           <SidebarHeader className="border-t border-sidebar-border p-2">
              <DropdownMenu>
@@ -218,13 +233,73 @@ function AdminNav() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="مدیریت کاربران">
-                    <Link href="/admin/users"><Users /><span>مدیریت کاربران</span></Link>
+                <SidebarMenuButton asChild tooltip="دانش‌آموزان">
+                    <Link href="/admin/users"><Users /><span>دانش‌آموزان</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="دسترسی‌ها">
+                    <Link href="/admin/permissions"><ShieldCheck /><span>دسترسی‌ها</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="پرسش و پاسخ">
+                    <Link href="/admin/qna"><HelpCircle /><span>پرسش و پاسخ</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="توصیه‌ها">
+                    <Link href="/admin/recommendations"><ThumbsUp /><span>توصیه‌ها</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="پیام‌ها">
+                    <Link href="/admin/messages"><MessageSquare /><span>پیام‌ها</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="اطلاعیه‌ها">
+                    <Link href="/admin/announcements"><Megaphone /><span>اطلاعیه‌ها</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="آزمون‌های آنلاین">
+                    <Link href="/admin/online-tests"><FileText /><span>آزمون‌های آنلاین</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="پرسشنامه‌ها">
+                    <Link href="/admin/surveys"><ClipboardList /><span>پرسشنامه‌ها</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="برنامه راهبردی">
+                    <Link href="/admin/strategic-plan"><Compass /><span>برنامه راهبردی</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="مطالب مشاوره‌ای">
+                    <Link href="/admin/consulting"><BookOpen /><span>مطالب مشاوره‌ای</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="برنامه کلاسی">
+                    <Link href="/admin/class-schedule"><CalendarIcon /><span>برنامه کلاسی</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="ربات هوشمند">
+                    <Link href="/admin/smart-bot"><Bot /><span>ربات هوشمند</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="تاریخچه ورود">
+                    <Link href="/admin/login-history"><History /><span>تاریخچه ورود</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="پروفایل">
-                    <Link href="/admin/profile"><User /><span>پروفایل</span></Link>
+                <SidebarMenuButton asChild tooltip="تنظیمات">
+                    <Link href="/admin/settings"><Settings /><span>تنظیمات</span></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </>

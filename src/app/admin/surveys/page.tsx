@@ -2,12 +2,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function AdminUsersPage() {
+export default function AdminSurveysPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>دانش‌آموزان</CardTitle>
-        <CardDescription>در این بخش می‌توانید لیست دانش‌آموزان را مشاهده و مدیریت کنید.</CardDescription>
+        <CardTitle>پرسشنامه‌ها</CardTitle>
+        <CardDescription>در این بخش می‌توانید پرسشنامه‌ها را مدیریت کنید.</CardDescription>
       </CardHeader>
       <CardContent>
         <p>این صفحه در حال ساخت است.</p>
