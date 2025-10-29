@@ -51,6 +51,8 @@ import {
   Crosshair,
   ClipboardCheck as ClipboardCheckIcon,
   TrendingUp,
+  GraduationCap,
+  Sparkles,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -198,8 +200,14 @@ export default function DashboardLayout({
                             <User className="mr-2 h-4 w-4" />
                         </Link>
                     </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                         <Link href={userProfile?.isAdmin ? "/admin/settings" : "/settings"} className="justify-end">
+                            <span>تنظیمات</span>
+                            <Settings className="mr-2 h-4 w-4" />
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="justify-end">
+                    <DropdownMenuItem onClick={handleLogout} className="justify-end text-red-500 focus:text-red-500">
                         <span>خروج</span>
                         <LogOut className="mr-2 h-4 w-4" />
                     </DropdownMenuItem>
@@ -208,7 +216,7 @@ export default function DashboardLayout({
           </SidebarHeader>
         </Sidebar>
         <main className="flex-1">
-          <header className="flex items-center justify-between p-4 border-b h-16">
+          <header className="flex items-center justify-between p-4 border-b h-16 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
              <h1 className="text-xl font-semibold">
                 {userProfile?.isAdmin ? 'پنل مدیریت' : `پنل ${userProfile?.firstName || 'دانش‌آموز'}`}
             </h1>
@@ -228,58 +236,99 @@ function StudentNav() {
     return (
         <>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname.startsWith('/dashboard')}>
+                <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname === ('/dashboard')}>
                     <Link href="/dashboard"><span>داشبورد</span><Home /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            <SidebarMenuSub>
+              <SidebarMenuSubButton tooltip="گزارش‌ها">
+                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                <span>گزارش‌ها</span>
+                <ClipboardList />
+              </SidebarMenuSubButton>
+              <SidebarMenuSubContent>
+                 <SidebarMenuSubItem asChild>
+                    <Link href="/daily-report" className="justify-end">
+                      <span>گزارش روزانه</span><ClipboardEdit className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/daily-monitoring" className="justify-end">
+                      <span>پایش روزانه</span><ShieldCheck className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/weekly-report" className="justify-end">
+                      <span>گزارش هفتگی</span><ClipboardPlus className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+              </SidebarMenuSubContent>
+            </SidebarMenuSub>
+
+            <SidebarMenuSub>
+              <SidebarMenuSubButton tooltip="تحلیل و برنامه‌ریزی">
+                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                <span>تحلیل و برنامه‌ریزی</span>
+                <Sparkles />
+              </SidebarMenuSubButton>
+              <SidebarMenuSubContent>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/test-analysis" className="justify-end">
+                      <span>تحلیل آزمون</span><ClipboardCheckIcon className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/comprehensive-test-analysis" className="justify-end">
+                      <span>تحلیل آزمون جامع</span><GraduationCap className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/topic-investment" className="justify-end">
+                      <span>سرمایه زمانی</span><Crosshair className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/focus-ladder" className="justify-end">
+                      <span>نردبان تمرکز</span><TrendingUp className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                   <SidebarMenuSubItem asChild>
+                    <Link href="/self-assessment" className="justify-end">
+                      <span>خودارزیابی هوشمند</span><Bot className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+              </SidebarMenuSubContent>
+            </SidebarMenuSub>
+            
+             <SidebarMenuSub>
+              <SidebarMenuSubButton tooltip="محتوا و ارتباطات">
+                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                <span>محتوا و ارتباطات</span>
+                <BookOpen />
+              </SidebarMenuSubButton>
+              <SidebarMenuSubContent>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/qna" className="justify-end">
+                      <span>پرسش و پاسخ</span><HelpCircle className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                   <SidebarMenuSubItem asChild>
+                    <Link href="/consulting-content" className="justify-end">
+                      <span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/surveys" className="justify-end">
+                      <span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+              </SidebarMenuSubContent>
+            </SidebarMenuSub>
+            
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="گزارش روزانه" isActive={pathname.startsWith('/daily-report')}>
-                    <Link href="/daily-report"><span>گزارش روزانه</span><ClipboardEdit /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="پایش روزانه" isActive={pathname.startsWith('/daily-monitoring')}>
-                    <Link href="/daily-monitoring"><span>پایش روزانه</span><ShieldCheck /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="گزارش هفتگی" isActive={pathname.startsWith('/weekly-report')}>
-                    <Link href="/weekly-report"><span>گزارش هفتگی</span><ClipboardPlus /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="تحلیل آزمون" isActive={pathname.startsWith('/test-analysis')}>
-                    <Link href="/test-analysis"><span>تحلیل آزمون</span><ClipboardCheckIcon /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="تحلیل آزمون جامع" isActive={pathname.startsWith('/comprehensive-test-analysis')}>
-                    <Link href="/comprehensive-test-analysis"><span>تحلیل آزمون جامع</span><ClipboardCheckIcon /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="سرمایه زمانی" isActive={pathname.startsWith('/topic-investment')}>
-                    <Link href="/topic-investment"><span>سرمایه زمانی</span><Crosshair /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="نردبان تمرکز" isActive={pathname.startsWith('/focus-ladder')}>
-                    <Link href="/focus-ladder"><span>نردبان تمرکز</span><TrendingUp /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="خودارزیابی" isActive={pathname.startsWith('/self-assessment')}>
-                    <Link href="/self-assessment"><span>خودارزیابی</span><ClipboardList /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="برنامه تحصیلی" isActive={pathname.startsWith('/academic-plan')}>
-                    <Link href="/academic-plan"><span>برنامه تحصیلی</span><CalendarCheck /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="پروفایل" isActive={pathname.startsWith('/profile')}>
-                    <Link href="/profile"><span>پروفایل</span><User /></Link>
+                <SidebarMenuButton asChild tooltip="برنامه کلاسی" isActive={pathname.startsWith('/class-schedule')}>
+                    <Link href="/class-schedule"><span>برنامه کلاسی</span><CalendarIcon /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </>
@@ -362,6 +411,12 @@ function AdminNav() {
            <Library />
         </SidebarMenuSubButton>
         <SidebarMenuSubContent>
+           <SidebarMenuSubItem asChild>
+            <Link href="/admin/consulting" className="justify-end">
+              <span>مطالب مشاوره‌ای</span>
+              <BookOpen className="mr-2 h-4 w-4" />
+            </Link>
+          </SidebarMenuSubItem>
           <SidebarMenuSubItem asChild>
             <Link href="/admin/online-tests" className="justify-end">
               <span>آزمون‌های آنلاین</span>
@@ -378,12 +433,6 @@ function AdminNav() {
             <Link href="/admin/strategic-plan" className="justify-end">
               <span>برنامه راهبردی</span>
               <Compass className="mr-2 h-4 w-4" />
-            </Link>
-          </SidebarMenuSubItem>
-          <SidebarMenuSubItem asChild>
-            <Link href="/admin/consulting" className="justify-end">
-              <span>مطالب مشاوره‌ای</span>
-              <BookOpen className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
         </SidebarMenuSubContent>
@@ -414,18 +463,8 @@ function AdminNav() {
               <History className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem asChild>
-            <Link href="/admin/settings" className="justify-end">
-              <span>تنظیمات</span>
-              <Settings className="mr-2 h-4 w-4" />
-            </Link>
-          </SidebarMenuSubItem>
         </SidebarMenuSubContent>
       </SidebarMenuSub>
     </>
   );
 }
-
-    
-
-
