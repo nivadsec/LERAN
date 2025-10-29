@@ -2,18 +2,18 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { doc } from 'firebase/firestore';
-import { BarChart, Users, Clock, Smartphone, Smile, Search, ArrowRight } from 'lucide-react';
+import { BarChart as BarChartIcon, Users, Clock, Smartphone, Smile, Search, ArrowRight } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from "@/components/ui/label"
+import { Label } from "@/components/ui/label";
 
 interface UserProfile {
   firstName?: string;
@@ -47,19 +47,26 @@ export default function AdminDashboardPage() {
 
   if (isLoading || !user || !userProfile || !userProfile.isAdmin) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-6 w-6" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-4 w-40 mt-2" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-6" />
+                </CardHeader>
+                <CardContent>
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-4 w-40 mt-2" />
+                </CardContent>
+            </Card>
+            ))}
+        </div>
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[300px] w-full" />
+        </div>
+        <Skeleton className="h-[200px] w-full" />
       </div>
     );
   }
@@ -86,7 +93,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row-reverse items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">کل دانش‌آموزان</CardTitle>
@@ -131,7 +138,7 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="text-right">
             <CardTitle>روند مطالعه هفتگی</CardTitle>
             <CardDescription>میانگین ساعت مطالعه کل دانش‌آموزان در هفته گذشته</CardDescription>
           </CardHeader>
@@ -147,8 +154,8 @@ export default function AdminDashboardPage() {
                 </BarChart>
               </ChartContainer>
              ) : (
-                <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed text-center">
-                    <BarChart className="h-10 w-10 text-muted" />
+                <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed text-center p-4">
+                    <BarChartIcon className="h-10 w-10 text-muted" />
                     <p className="mt-4 text-lg font-semibold">داده کافی برای نمایش نمودار وجود ندارد</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                         پس از ثبت اولین گزارش توسط دانش‌آموزان، نمودارها در اینجا نمایش داده خواهند شد.
@@ -158,7 +165,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="text-right">
             <CardTitle>تقسیم زمان بین دروس</CardTitle>
             <CardDescription>درصد زمان مطالعه صرف شده برای هر درس</CardDescription>
           </CardHeader>
@@ -171,8 +178,8 @@ export default function AdminDashboardPage() {
                     </PieChart>
                 </ChartContainer>
             ) : (
-                <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed text-center">
-                    <BarChart className="h-10 w-10 text-muted" />
+                <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed text-center p-4">
+                    <BarChartIcon className="h-10 w-10 text-muted" />
                     <p className="mt-4 text-lg font-semibold">داده کافی برای نمایش نمودار وجود ندارد</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                         پس از ثبت اولین گزارش توسط دانش‌آموزان، نمودارها در اینجا نمایش داده خواهند شد.
@@ -185,15 +192,15 @@ export default function AdminDashboardPage() {
       
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-             <div className="flex gap-2">
-                <Button variant="outline">خروجی کل داده‌ها</Button>
-                <Button>
+          <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 text-right">
+             <div className="flex gap-2 w-full md:w-auto">
+                <Button variant="outline" className="flex-1 md:flex-initial">خروجی کل داده‌ها</Button>
+                <Button className="flex-1 md:flex-initial">
                     مشاهده همه
                     <ArrowRight className="mr-2 h-4 w-4" />
                 </Button>
              </div>
-             <div>
+             <div className="w-full md:w-auto">
                 <CardTitle>نمای کلی دانش‌آموزان</CardTitle>
                 <CardDescription>برای مشاهده جزئیات، روی هر دانش‌آموز کلیک کنید.</CardDescription>
              </div>
@@ -204,34 +211,36 @@ export default function AdminDashboardPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">وضعیت</TableHead>
-                <TableHead className="text-right">میانگین روانی</TableHead>
-                <TableHead className="text-right">میانگین مطالعه (ساعت)</TableHead>
-                <TableHead className="text-right">نام دانش آموز</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+         <div className="w-full overflow-x-auto">
+            <Table>
+                <TableHeader>
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center">
-                        نتیجه‌ای یافت نشد.
-                    </TableCell>
+                    <TableHead className="text-right">وضعیت</TableHead>
+                    <TableHead className="text-right">میانگین روانی</TableHead>
+                    <TableHead className="text-right">میانگین مطالعه (ساعت)</TableHead>
+                    <TableHead className="text-right">نام دانش آموز</TableHead>
                 </TableRow>
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">
+                            نتیجه‌ای یافت نشد.
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader>
+        <CardHeader className="text-right">
           <CardTitle>ارسال اطلاعیه سریع</CardTitle>
           <CardDescription>
             این اطلاعیه در صفحه اصلی زیر فرم لاگین برای همه نمایش داده می‌شود.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 text-right">
             <div>
                  <Label htmlFor="announcement-title" className="text-right block mb-2">اطلاعیه جدید</Label>
                  <Input id="announcement-title" placeholder="عنوان اطلاعیه" className="text-right"/>
@@ -241,12 +250,10 @@ export default function AdminDashboardPage() {
                  <Textarea id="announcement-text" placeholder="پیام خود را در اینجا بنویسید..." className="text-right min-h-[100px]"/>
             </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="justify-start">
           <Button>انتشار اطلاعیه</Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
-    

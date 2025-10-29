@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export default function Home() {
   return (
@@ -26,7 +27,7 @@ export default function Home() {
 function Header() {
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center bg-transparent backdrop-blur-sm sticky top-0 z-50 justify-between">
-      <div className="flex items-center gap-4">
+      <div className="hidden md:flex items-center gap-4">
         <Button variant="ghost" asChild>
           <Link href="/login">ورود</Link>
         </Button>
@@ -34,40 +35,71 @@ function Header() {
           <Link href="/signup">ثبت‌نام</Link>
         </Button>
       </div>
+       <div className="md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">باز کردن منو</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <div className="grid gap-4 py-6">
+               <Link href="/" className="flex items-center justify-center mb-6" prefetch={false}>
+                 <Logo/>
+               </Link>
+              <Button variant="ghost" asChild>
+                <Link href="/login">ورود</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/signup">ثبت‌نام</Link>
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
       <Link
         href="#"
         className="flex items-center justify-center"
         prefetch={false}
       >
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-primary"
-        >
-          <path
-            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="ml-2 text-xl font-bold font-headline text-primary">
-          آی‌تاک
-        </span>
+       <Logo/>
       </Link>
     </header>
   );
+}
+
+function Logo() {
+    return (
+        <>
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-primary"
+                >
+                <path
+                    d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+                <path
+                    d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+            <span className="ml-2 text-xl font-bold font-headline text-primary">
+            آی‌تاک
+            </span>
+        </>
+    )
 }
 
 function HeroSection() {

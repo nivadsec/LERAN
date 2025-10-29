@@ -9,15 +9,15 @@ import {
   SidebarMenuButton,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarMenuSubContent,
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,8 @@ import {
   Users2,
   Contact,
   Library,
-  Wrench
+  Wrench,
+  PanelLeft
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -100,13 +101,26 @@ export default function DashboardLayout({
 
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col space-y-3">
-          <Skeleton className="h-[125px] w-[250px] rounded-xl" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-[250px]" />
-            <Skeleton className="h-4 w-[200px]" />
-          </div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center space-y-4">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-10 w-10 text-primary animate-spin"
+            >
+              <path
+                d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="8 8"
+              />
+            </svg>
+            <p className="text-muted-foreground">در حال بارگذاری...</p>
         </div>
       </div>
     );
@@ -157,7 +171,7 @@ export default function DashboardLayout({
           <SidebarHeader className="border-t border-sidebar-border p-2">
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start gap-2 p-2 h-auto">
+                  <Button variant="ghost" className="w-full justify-start gap-2 p-2 h-auto text-right">
                     <Avatar className="h-8 w-8">
                        <AvatarImage src={user.photoURL || ''} alt="User avatar" />
                        <AvatarFallback>{getInitials(userProfile?.firstName, userProfile?.lastName)}</AvatarFallback>
@@ -171,30 +185,31 @@ export default function DashboardLayout({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="start" className="w-56">
-                    <DropdownMenuLabel>{userProfile?.firstName} {userProfile?.lastName}</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-right">{userProfile?.firstName} {userProfile?.lastName}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                         <Link href={userProfile?.isAdmin ? "/admin/profile" : "/profile"}>
-                            <User className="ml-2 h-4 w-4" />
+                         <Link href={userProfile?.isAdmin ? "/admin/profile" : "/profile"} className="justify-end">
                             <span>پروفایل</span>
+                            <User className="mr-2 h-4 w-4" />
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="ml-2 h-4 w-4" />
+                    <DropdownMenuItem onClick={handleLogout} className="justify-end">
                         <span>خروج</span>
+                        <LogOut className="mr-2 h-4 w-4" />
                     </DropdownMenuItem>
                 </DropdownMenuContent>
              </DropdownMenu>
           </SidebarHeader>
         </Sidebar>
         <main className="flex-1">
-          <header className="flex items-center justify-between p-4 border-b">
-            <SidebarTrigger className="md:hidden" />
+          <header className="flex items-center justify-between p-4 border-b h-16">
              <h1 className="text-xl font-semibold">
                 {userProfile?.isAdmin ? 'پنل مدیریت' : 'پنل دانش‌آموزی'}
             </h1>
-            <div></div>
+            <SidebarTrigger className="md:hidden" >
+                <PanelLeft className="rotate-180"/>
+            </SidebarTrigger>
           </header>
           <div className="p-4 md:p-6">{children}</div>
         </main>
@@ -204,26 +219,27 @@ export default function DashboardLayout({
 }
 
 function StudentNav() {
+    const pathname = usePathname();
     return (
         <>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="داشبورد">
-                    <Link href="/dashboard"><Home /><span>داشبورد</span></Link>
+                <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname.startsWith('/dashboard')}>
+                    <Link href="/dashboard"><span>داشبورد</span><Home /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="خودارزیابی">
-                    <Link href="/self-assessment"><ClipboardList /><span>خودارزیابی</span></Link>
+                <SidebarMenuButton asChild tooltip="خودارزیابی" isActive={pathname.startsWith('/self-assessment')}>
+                    <Link href="/self-assessment"><span>خودارزیابی</span><ClipboardList /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="برنامه تحصیلی">
-                    <Link href="/academic-plan"><CalendarCheck /><span>برنامه تحصیلی</span></Link>
+                <SidebarMenuButton asChild tooltip="برنامه تحصیلی" isActive={pathname.startsWith('/academic-plan')}>
+                    <Link href="/academic-plan"><span>برنامه تحصیلی</span><CalendarCheck /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="پروفایل">
-                    <Link href="/profile"><User /><span>پروفایل</span></Link>
+                <SidebarMenuButton asChild tooltip="پروفایل" isActive={pathname.startsWith('/profile')}>
+                    <Link href="/profile"><span>پروفایل</span><User /></Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </>
@@ -231,35 +247,35 @@ function StudentNav() {
 }
 
 function AdminNav() {
-  const router = useRouter();
+  const pathname = usePathname();
   return (
     <>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="داشبورد" isActive={router.pathname === '/admin/dashboard'}>
+        <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname === '/admin/dashboard'}>
           <Link href="/admin/dashboard">
+             <span>داشبورد</span>
             <Home />
-            <span>داشبورد</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       
       <SidebarMenuSub>
         <SidebarMenuSubButton tooltip="مدیریت اصلی">
-          <Users2 />
+          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
           <span>مدیریت اصلی</span>
-          <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+          <Users2 />
         </SidebarMenuSubButton>
         <SidebarMenuSubContent>
-            <SidebarMenuSubItem>
-              <Link href="/admin/users">
-                <Users className="ml-2 h-4 w-4" />
+            <SidebarMenuSubItem asChild>
+              <Link href="/admin/users" className="justify-end">
                 <span>دانش‌آموزان</span>
+                <Users className="mr-2 h-4 w-4" />
               </Link>
             </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <Link href="/admin/permissions">
-                <ShieldCheck className="ml-2 h-4 w-4" />
+            <SidebarMenuSubItem asChild>
+              <Link href="/admin/permissions" className="justify-end">
                 <span>دسترسی‌ها</span>
+                <ShieldCheck className="mr-2 h-4 w-4" />
               </Link>
             </SidebarMenuSubItem>
         </SidebarMenuSubContent>
@@ -267,33 +283,33 @@ function AdminNav() {
 
       <SidebarMenuSub>
         <SidebarMenuSubButton tooltip="ارتباطات">
-          <Contact />
-          <span>ارتباطات</span>
-           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <span>ارتباطات</span>
+           <Contact />
         </SidebarMenuSubButton>
         <SidebarMenuSubContent>
-          <SidebarMenuSubItem>
-            <Link href="/admin/qna">
-              <HelpCircle className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/qna" className="justify-end">
               <span>پرسش و پاسخ</span>
+              <HelpCircle className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/recommendations">
-              <ThumbsUp className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/recommendations" className="justify-end">
               <span>توصیه‌ها</span>
+              <ThumbsUp className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/messages">
-              <MessageSquare className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/messages" className="justify-end">
               <span>پیام‌ها</span>
+              <MessageSquare className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/announcements">
-              <Megaphone className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/announcements" className="justify-end">
               <span>اطلاعیه‌ها</span>
+              <Megaphone className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
         </SidebarMenuSubContent>
@@ -301,33 +317,33 @@ function AdminNav() {
 
       <SidebarMenuSub>
         <SidebarMenuSubButton tooltip="محتوای آموزشی">
-          <Library />
-          <span>محتوای آموزشی</span>
-           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <span>محتوای آموزشی</span>
+           <Library />
         </SidebarMenuSubButton>
         <SidebarMenuSubContent>
-          <SidebarMenuSubItem>
-            <Link href="/admin/online-tests">
-              <FileText className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/online-tests" className="justify-end">
               <span>آزمون‌های آنلاین</span>
+              <FileText className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/surveys">
-              <ClipboardList className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/surveys" className="justify-end">
               <span>پرسشنامه‌ها</span>
+              <ClipboardList className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/strategic-plan">
-              <Compass className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/strategic-plan" className="justify-end">
               <span>برنامه راهبردی</span>
+              <Compass className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/consulting">
-              <BookOpen className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/consulting" className="justify-end">
               <span>مطالب مشاوره‌ای</span>
+              <BookOpen className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
         </SidebarMenuSubContent>
@@ -335,33 +351,33 @@ function AdminNav() {
 
       <SidebarMenuSub>
         <SidebarMenuSubButton tooltip="ابزارها و تنظیمات">
-          <Wrench />
-          <span>ابزارها و تنظیمات</span>
-           <ChevronDown className="mr-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+           <span>ابزارها و تنظیمات</span>
+           <Wrench />
         </SidebarMenuSubButton>
         <SidebarMenuSubContent>
-          <SidebarMenuSubItem>
-            <Link href="/admin/class-schedule">
-              <CalendarIcon className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/class-schedule" className="justify-end">
               <span>برنامه کلاسی</span>
+              <CalendarIcon className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/smart-bot">
-              <Bot className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/smart-bot" className="justify-end">
               <span>ربات هوشمند</span>
+              <Bot className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/login-history">
-              <History className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/login-history" className="justify-end">
               <span>تاریخچه ورود</span>
+              <History className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
-          <SidebarMenuSubItem>
-            <Link href="/admin/settings">
-              <Settings className="ml-2 h-4 w-4" />
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/settings" className="justify-end">
               <span>تنظیمات</span>
+              <Settings className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
         </SidebarMenuSubContent>
