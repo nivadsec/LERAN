@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,8 +25,9 @@ export default function DashboardPage() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
+  const isLoading = isUserLoading || isProfileLoading;
+
   useEffect(() => {
-    const isLoading = isUserLoading || isProfileLoading;
     if (!isLoading) {
       if (!user) {
         router.replace('/login');
@@ -35,9 +36,8 @@ export default function DashboardPage() {
         router.replace('/admin/dashboard');
       }
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isLoading, router]);
 
-  const isLoading = isUserLoading || isProfileLoading;
 
   if (isLoading || !user || userProfile?.isAdmin) {
     // Show skeleton or nothing while loading or redirecting

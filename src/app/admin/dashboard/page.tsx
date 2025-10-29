@@ -24,23 +24,23 @@ export default function AdminDashboardPage() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
+  const isLoading = isUserLoading || isProfileLoading;
+
   useEffect(() => {
-    const isLoading = isUserLoading || isProfileLoading;
     if (!isLoading) {
       if (!user) {
         // Not logged in, redirect to admin login
         router.replace('/admin/login');
-      } else if (!userProfile?.isAdmin) {
+      } else if (userProfile && !userProfile.isAdmin) {
         // Logged in but not an admin, redirect to student dashboard
         console.warn("Access denied. User is not an admin.");
         router.replace('/dashboard'); 
       }
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isLoading, router]);
 
-  const isLoading = isUserLoading || isProfileLoading;
 
-  if (isLoading || !userProfile?.isAdmin) {
+  if (isLoading || !user || !userProfile || !userProfile.isAdmin) {
     return (
        <Card>
         <CardHeader>

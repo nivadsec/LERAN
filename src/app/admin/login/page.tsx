@@ -10,9 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
@@ -39,9 +39,6 @@ export default function AdminLoginPage() {
       const user = userCredential.user;
 
       const userDocRef = doc(firestore, "users", user.uid);
-      
-      // We can't use useDoc here as it's a hook. We need to get the doc once.
-      const { getDoc } = await import("firebase/firestore");
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists() && userDoc.data()?.isAdmin) {
@@ -60,10 +57,14 @@ export default function AdminLoginPage() {
       }
     } catch (error: any) {
       console.error("Admin Login Error: ", error);
+      let description = 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          description = 'ایمیل یا رمز عبور اشتباه است.';
+      }
       toast({
         variant: "destructive",
         title: "خطا در ورود",
-        description: error.message === 'Firebase: Error (auth/invalid-credential).' ? 'ایمیل یا رمز عبور اشتباه است.' : 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.',
+        description: description,
       });
     }
   };
