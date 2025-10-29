@@ -1,11 +1,56 @@
+'use client';
+
 import Link from "next/link"
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+const formSchema = z.object({
+  email: z.string().email({ message: "ایمیل معتبر نیست." }),
+  password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
+});
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const auth = useAuth();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "ورود موفق",
+        description: "شما با موفقیت وارد شدید.",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login Error: ", error);
+      toast({
+        variant: "destructive",
+        title: "خطا در ورود",
+        description: error.message === 'Firebase: Error (auth/invalid-credential).' ? 'ایمیل یا رمز عبور اشتباه است.' : 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.',
+      });
+    }
+  };
+
   return (
     <div className="flex items-center min-h-screen justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
@@ -45,34 +90,54 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-4">
-              <div className="grid gap-2 text-right">
-                <Label htmlFor="email">ایمیل</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="student@example.com"
-                  required
-                  dir="ltr"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="grid gap-2 text-right">
+                      <FormLabel htmlFor="email">ایمیل</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="student@example.com"
+                          dir="ltr"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="grid gap-2 text-right">
-                <div className="flex items-center">
-                  <Label htmlFor="password">رمز عبور</Label>
-                  <Link
-                    href="#"
-                    className="mr-auto inline-block text-sm underline"
-                    prefetch={false}
-                  >
-                    فراموشی رمز عبور؟
-                  </Link>
-                </div>
-                <Input id="password" type="password" required dir="ltr" placeholder="••••••••" />
-              </div>
-              <Button type="submit" className="w-full mt-2">
-                ورود
-              </Button>
-            </form>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="grid gap-2 text-right">
+                       <div className="flex items-center">
+                         <FormLabel htmlFor="password">رمز عبور</FormLabel>
+                          <Link
+                            href="#"
+                            className="mr-auto inline-block text-sm underline"
+                            prefetch={false}
+                          >
+                            فراموشی رمز عبور؟
+                          </Link>
+                        </div>
+                      <FormControl>
+                        <Input id="password" type="password" dir="ltr" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full mt-2" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "در حال ورود..." : "ورود"}
+                </Button>
+              </form>
+            </Form>
             <div className="mt-4 flex items-center justify-center">
                 <Separator className="flex-1" />
                 <span className="px-2 text-sm text-muted-foreground">یا</span>
