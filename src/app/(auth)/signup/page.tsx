@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function SignupPage() {
   return (
     <div className="flex items-center min-h-screen justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
          <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center" prefetch={false}>
              <svg
@@ -38,9 +39,9 @@ export default function SignupPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">ثبت‌نام</CardTitle>
+            <CardTitle className="text-2xl font-headline">ایجاد حساب کاربری جدید</CardTitle>
             <CardDescription>
-              برای ایجاد حساب کاربری اطلاعات خود را وارد کنید
+              اطلاعات خود را برای ثبت‌نام در سیستم وارد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -48,11 +49,11 @@ export default function SignupPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="first-name">نام</Label>
-                  <Input id="first-name" placeholder="حسین" required />
+                  <Input id="first-name" placeholder="مثال: سارا" required />
                 </div>
                 <div className="grid gap-2 text-right">
                   <Label htmlFor="last-name">نام خانوادگی</Label>
-                  <Input id="last-name" placeholder="طاهری" required />
+                  <Input id="last-name" placeholder="مثال: رضایی" required />
                 </div>
               </div>
               <div className="grid gap-2 text-right">
@@ -60,7 +61,7 @@ export default function SignupPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="student@example.com"
                   required
                   dir="ltr"
                 />
@@ -69,15 +70,46 @@ export default function SignupPage() {
                 <Label htmlFor="password">رمز عبور</Label>
                 <Input id="password" type="password" required dir="ltr"/>
               </div>
+               <div className="grid gap-2 text-right">
+                <Label htmlFor="grade">پایه تحصیلی</Label>
+                <Select>
+                  <SelectTrigger id="grade">
+                    <SelectValue placeholder="پایه را انتخاب کنید" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">دهم</SelectItem>
+                    <SelectItem value="11">یازدهم</SelectItem>
+                    <SelectItem value="12">دوازدهم</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2 text-right">
+                <Label htmlFor="major">رشته</Label>
+                <Select>
+                  <SelectTrigger id="major">
+                    <SelectValue placeholder="رشته را انتخاب کنید" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="math">ریاضی و فیزیک</SelectItem>
+                    <SelectItem value="science">علوم تجربی</SelectItem>
+                    <SelectItem value="humanities">ادبیات و علوم انسانی</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button type="submit" className="w-full mt-2">
                 ایجاد حساب کاربری
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">
-              قبلاً ثبت‌نام کرده‌اید؟{" "}
+              حساب کاربری دارید؟{" "}
               <Link href="/login" className="underline" prefetch={false}>
                 وارد شوید
               </Link>
+            </div>
+             <div className="mt-2 text-center text-sm">
+                <Link href="/" className="underline" prefetch={false}>
+                بازگشت به صفحه اصلی
+                </Link>
             </div>
           </CardContent>
         </Card>
