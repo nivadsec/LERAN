@@ -2,14 +2,14 @@
 
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { BarChart, Clock, Smile, TrendingUp, BookOpen, BarChart2 } from 'lucide-react';
+import { BarChart as BarChartIcon, Clock, Smile, TrendingUp, BookOpen, BarChart2 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import Link from 'next/link';
 
 interface UserProfile {
@@ -18,7 +18,6 @@ interface UserProfile {
   isAdmin?: boolean;
 }
 
-// Dummy data for chart placeholders
 const weeklyChartData = [
     { day: "شنبه", hours: 0 },
     { day: "۱شنبه", hours: 0 },
@@ -34,7 +33,7 @@ const subjectsPieData = [
   { name: 'شیمی', value: 0, fill: 'hsl(var(--chart-2))' },
   { name: 'فیزیک', value: 0, fill: 'hsl(var(--chart-3))' },
   { name: 'ریاضی', value: 0, fill: 'hsl(var(--chart-4))' },
-  { name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }, // To show a full circle
+  { name: 'سایر', value: 1, fill: 'hsl(var(--muted))' },
 ];
 
 export default function DashboardPage() {
@@ -152,13 +151,13 @@ export default function DashboardPage() {
                    <EmptyStateChart icon={BarChart2} title="نمودار مطالعه هفتگی" description="با ثبت گزارش‌های روزانه، روند مطالعه خود را در اینجا دنبال کنید." />
                  ) : (
                   <ChartContainer config={{}} className="h-[250px] w-full">
-                    <RechartsBarChart data={weeklyChartData} accessibilityLayer>
+                    <BarChart data={weeklyChartData} accessibilityLayer>
                        <CartesianGrid vertical={false} />
                        <XAxis dataKey="day" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 3)} />
                        <YAxis tickLine={false} axisLine={false} />
                        <ChartTooltip content={<ChartTooltipContent />} />
                        <Bar dataKey="hours" fill="hsl(var(--primary))" radius={4} />
-                    </RechartsBarChart>
+                    </BarChart>
                   </ChartContainer>
                  )}
               </CardContent>
@@ -190,7 +189,6 @@ export default function DashboardPage() {
   );
 }
 
-// Helper component for empty chart states
 function EmptyStateChart({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) {
     return (
         <div className="flex h-[250px] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-6 text-center">
@@ -204,8 +202,3 @@ function EmptyStateChart({ icon: Icon, title, description }: { icon: React.Eleme
         </div>
     );
 }
-
-// Renaming Recharts' BarChart to avoid conflict with our own component
-const RechartsBarChart = BarChart;
-
-    
