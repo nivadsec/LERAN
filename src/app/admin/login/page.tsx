@@ -8,22 +8,22 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc } from "firebase/firestore";
 
 const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
 });
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,14 +35,31 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: "ورود موفق",
-        description: "شما با موفقیت وارد شدید.",
-      });
-      router.push("/dashboard");
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      
+      // We can't use useDoc here as it's a hook. We need to get the doc once.
+      const { getDoc } = await import("firebase/firestore");
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data()?.isAdmin) {
+        toast({
+          title: "ورود موفق",
+          description: "شما با موفقیت به عنوان مدیر وارد شدید.",
+        });
+        router.push("/admin/dashboard");
+      } else {
+        await auth.signOut();
+        toast({
+          variant: "destructive",
+          title: "خطا در ورود",
+          description: "شما دسترسی مدیر را ندارید.",
+        });
+      }
     } catch (error: any) {
-      console.error("Login Error: ", error);
+      console.error("Admin Login Error: ", error);
       toast({
         variant: "destructive",
         title: "خطا در ورود",
@@ -84,9 +101,9 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>
+            <CardTitle className="text-2xl font-headline">ورود مدیر</CardTitle>
             <CardDescription>
-              برای ورود، ایمیل و رمز عبور خود را وارد کنید.
+              برای ورود به پنل مدیریت، ایمیل و رمز عبور خود را وارد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -102,7 +119,7 @@ export default function LoginPage() {
                         <Input
                           id="email"
                           type="email"
-                          placeholder="student@example.com"
+                          placeholder="admin@example.com"
                           dir="ltr"
                           {...field}
                         />
@@ -116,16 +133,7 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem className="grid gap-2 text-right">
-                       <div className="flex items-center">
-                         <FormLabel htmlFor="password">رمز عبور</FormLabel>
-                          <Link
-                            href="/forgot-password"
-                            className="mr-auto inline-block text-sm underline"
-                            prefetch={false}
-                          >
-                            فراموشی رمز عبور؟
-                          </Link>
-                        </div>
+                      <FormLabel htmlFor="password">رمز عبور</FormLabel>
                       <FormControl>
                         <Input id="password" type="password" dir="ltr" placeholder="••••••••" {...field} />
                       </FormControl>
@@ -138,20 +146,7 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
-            <div className="mt-4 flex items-center justify-center">
-                <Separator className="flex-1" />
-                <span className="px-2 text-sm text-muted-foreground">یا</span>
-                <Separator className="flex-1" />
-            </div>
-            <Button variant="outline" className="w-full mt-4" asChild>
-                <Link href="/signup">ایجاد حساب دانش‌آموزی</Link>
-            </Button>
-            <div className="mt-4 text-center text-sm">
-              <Link href="/admin/login" className="underline" prefetch={false}>
-                ورود مدیر
-              </Link>
-            </div>
-             <div className="mt-2 text-center text-sm">
+             <div className="mt-4 text-center text-sm">
                 <Link href="/" className="underline" prefetch={false}>
                 بازگشت به صفحه اصلی
                 </Link>

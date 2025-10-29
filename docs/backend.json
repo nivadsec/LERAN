@@ -27,6 +27,18 @@
           "type": "string",
           "description": "The date and time the user signed up.",
           "format": "date-time"
+        },
+        "grade": {
+          "type": "string",
+          "description": "The academic grade of the student."
+        },
+        "major": {
+          "type": "string",
+          "description": "The academic major of the student."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Flag to indicate if the user has admin privileges."
         }
       },
       "required": [
