@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ کاراکتر باشد." }),
@@ -30,6 +32,7 @@ export default function SignupPage() {
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -189,7 +192,18 @@ export default function SignupPage() {
                     <FormItem className="grid gap-2 text-right">
                       <FormLabel htmlFor="password">رمز عبور</FormLabel>
                       <FormControl>
-                        <Input id="password" type="password" dir="ltr" {...field} />
+                        <div className="relative">
+                          <Input id="password" type={showPassword ? "text" : "password"} dir="ltr" {...field} />
+                           <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                          >
+                            {showPassword ? <EyeOff /> : <Eye />}
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

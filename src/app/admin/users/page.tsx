@@ -17,10 +17,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, PlusCircle, KeyRound } from 'lucide-react';
+import { Search, PlusCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminUsersPage() {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const features = [
     { id: 'smart-bot', label: 'ربات هوشمند' },
@@ -120,7 +121,18 @@ export default function AdminUsersPage() {
                              <div className="grid gap-2">
                                 <Label htmlFor="password">رمز عبور اولیه</Label>
                                 <div className="flex gap-2">
-                                    <Input id="password" type="text" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} />
+                                   <div className="relative w-full">
+                                      <Input id="password" type={showPassword ? "text" : "password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                      >
+                                        {showPassword ? <EyeOff /> : <Eye />}
+                                      </Button>
+                                   </div>
                                     <Button type="button" variant="outline" size="icon" onClick={generatePassword} aria-label="پیشنهاد رمز عبور">
                                         <KeyRound className="h-4 w-4" />
                                     </Button>
