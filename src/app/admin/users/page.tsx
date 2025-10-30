@@ -61,17 +61,18 @@ export default function AdminUsersPage() {
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
+  const { user: adminUser } = useUser();
 
   useEffect(() => {
     // A simple (and not very secure) way to keep admin credentials in memory
     // In a real-world app, you'd use a more secure session management or refresh token mechanism
-    if (auth.currentUser && auth.currentUser.email) {
+    if (adminUser && adminUser.email) {
       const pass = sessionStorage.getItem('adminPass');
       if (pass) {
-        setAdminCredentials({ email: auth.currentUser.email, pass });
+        setAdminCredentials({ email: adminUser.email, pass });
       }
     }
-  }, [auth.currentUser]);
+  }, [adminUser]);
 
 
   useEffect(() => {
@@ -149,7 +150,14 @@ export default function AdminUsersPage() {
   };
   
   const onSubmit = async (values: z.infer<typeof studentSchema>) => {
-    if (!auth) return;
+    if (!auth || !firestore || !adminCredentials) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "سرویس احراز هویت در دسترس نیست یا شما وارد نشده‌اید.",
+        });
+        return;
+    }
     
     try {
         // Create the new student user
@@ -173,29 +181,18 @@ export default function AdminUsersPage() {
         // Save the student's data in Firestore
         await setDoc(doc(firestore, "users", newUser.uid), studentData);
 
-        toast({
-            title: "دانش‌آموز با موفقیت ایجاد شد!",
-            description: `حساب کاربری برای ${values.firstName} ${values.lastName} ایجاد شد.`,
-        });
-
-        // Re-login the admin
-        if (adminCredentials) {
-            await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.pass);
-        } else {
-            toast({
-                variant: "destructive",
-                title: "خطا در ورود مجدد",
-                description: "لطفاً برای ادامه، صفحه را رفرش کنید یا مجدداً وارد شوید.",
-            });
-        }
-        
-        // Add new student to the local state to update UI
+        // Add new student to the local state to update UI immediately
         setAllStudents(prev => [...prev, {
             id: newUser.uid,
             firstName: values.firstName,
             lastName: values.lastName,
             email: values.email,
         }]);
+
+        toast({
+            title: "دانش‌آموز با موفقیت ایجاد شد!",
+            description: `حساب کاربری برای ${values.firstName} ${values.lastName} ایجاد شد.`,
+        });
 
         form.reset();
         setAddUserOpen(false);
@@ -211,10 +208,16 @@ export default function AdminUsersPage() {
             title: "خطا در ایجاد دانش‌آموز",
             description: errorMessage,
         });
-        // Re-login the admin even if creation fails to prevent being logged out
-        if (adminCredentials) {
-            await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.pass).catch(reloginError => {
-                console.error('Admin re-login failed:', reloginError)
+    } finally {
+        // IMPORTANT: Re-login the admin to restore their session
+        try {
+            await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.pass);
+        } catch (reloginError) {
+            console.error('Admin re-login failed:', reloginError);
+            toast({
+                variant: "destructive",
+                title: "خطا در ورود مجدد ادمین",
+                description: "لطفاً برای ادامه، صفحه را رفرش کنید یا مجدداً وارد شوید.",
             });
         }
     }
