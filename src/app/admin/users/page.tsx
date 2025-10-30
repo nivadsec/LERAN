@@ -106,106 +106,106 @@ export default function AdminUsersPage() {
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader className="text-right">
-                          <DialogTitle className="text-2xl font-headline">افزودن دانش‌آموز جدید</DialogTitle>
-                          <DialogDescription>
-                            اطلاعات دانش‌آموز را وارد کرده و برای او یک حساب کاربری ایجاد کنید.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)}>
-                            <div className="grid gap-6 py-4 text-right">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="firstName" render={({ field }) => (
-                                    <FormItem><FormLabel>نام</FormLabel><FormControl><Input placeholder="مثال: سارا" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="lastName" render={({ field }) => (
-                                    <FormItem><FormLabel>نام خانوادگی</FormLabel><FormControl><Input placeholder="مثال: رضایی" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                              </div>
-                              <FormField control={form.control} name="email" render={({ field }) => (
-                                  <FormItem><FormLabel>ایمیل</FormLabel><FormControl><Input type="email" placeholder="student@example.com" dir="ltr" {...field} /></FormControl><FormMessage /></FormItem>
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                          <DialogHeader className="text-right">
+                            <DialogTitle className="text-2xl font-headline">افزودن دانش‌آموز جدید</DialogTitle>
+                            <DialogDescription>
+                              اطلاعات دانش‌آموز را وارد کرده و برای او یک حساب کاربری ایجاد کنید.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-6 py-4 text-right">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField control={form.control} name="firstName" render={({ field }) => (
+                                  <FormItem><FormLabel>نام</FormLabel><FormControl><Input placeholder="مثال: سارا" {...field} /></FormControl><FormMessage /></FormItem>
                               )}/>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="grade" render={({ field }) => (
-                                  <FormItem><FormLabel>پایه تحصیلی</FormLabel>
-                                    <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="پایه را انتخاب کنید" /></SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="10">دهم</SelectItem>
-                                        <SelectItem value="11">یازدهم</SelectItem>
-                                        <SelectItem value="12">دوازدهم</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  <FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="major" render={({ field }) => (
-                                  <FormItem><FormLabel>رشته</FormLabel>
-                                    <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="رشته را انتخاب کنید" /></SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="math">ریاضی و فیزیک</SelectItem>
-                                        <SelectItem value="science">علوم تجربی</SelectItem>
-                                        <SelectItem value="humanities">ادبیات و علوم انسانی</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  <FormMessage /></FormItem>
-                                )}/>
-                              </div>
-                              <FormField control={form.control} name="password" render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>رمز عبور اولیه</FormLabel>
-                                  <div className="flex gap-2">
-                                    <div className="relative w-full">
-                                      <FormControl>
-                                        <Input type={showPassword ? "text" : "password"} dir="ltr" {...field} />
-                                      </FormControl>
-                                      <Button type="button" variant="ghost" size="icon" className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
-                                        {showPassword ? <EyeOff /> : <Eye />}
-                                      </Button>
-                                    </div>
-                                    <Button type="button" variant="outline" size="icon" onClick={generatePassword} aria-label="پیشنهاد رمز عبور">
-                                      <KeyRound className="h-4 w-4" />
+                              <FormField control={form.control} name="lastName" render={({ field }) => (
+                                  <FormItem><FormLabel>نام خانوادگی</FormLabel><FormControl><Input placeholder="مثال: رضایی" {...field} /></FormControl><FormMessage /></FormItem>
+                              )}/>
+                            </div>
+                            <FormField control={form.control} name="email" render={({ field }) => (
+                                <FormItem><FormLabel>ایمیل</FormLabel><FormControl><Input type="email" placeholder="student@example.com" dir="ltr" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField control={form.control} name="grade" render={({ field }) => (
+                                <FormItem><FormLabel>پایه تحصیلی</FormLabel>
+                                  <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger><SelectValue placeholder="پایه را انتخاب کنید" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="10">دهم</SelectItem>
+                                      <SelectItem value="11">یازدهم</SelectItem>
+                                      <SelectItem value="12">دوازدهم</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                <FormMessage /></FormItem>
+                              )}/>
+                              <FormField control={form.control} name="major" render={({ field }) => (
+                                <FormItem><FormLabel>رشته</FormLabel>
+                                  <Select dir='rtl' onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger><SelectValue placeholder="رشته را انتخاب کنید" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="math">ریاضی و فیزیک</SelectItem>
+                                      <SelectItem value="science">علوم تجربی</SelectItem>
+                                      <SelectItem value="humanities">ادبیات و علوم انسانی</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                <FormMessage /></FormItem>
+                              )}/>
+                            </div>
+                            <FormField control={form.control} name="password" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>رمز عبور اولیه</FormLabel>
+                                <div className="flex gap-2">
+                                  <div className="relative w-full">
+                                    <FormControl>
+                                      <Input type={showPassword ? "text" : "password"} dir="ltr" {...field} />
+                                    </FormControl>
+                                    <Button type="button" variant="ghost" size="icon" className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
+                                      {showPassword ? <EyeOff /> : <Eye />}
                                     </Button>
                                   </div>
-                                  <FormMessage />
-                                </FormItem>
-                              )}/>
-                              <FormField control={form.control} name="panelStatus" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                  <div>
-                                    <FormLabel className="font-medium">وضعیت پنل</FormLabel>
-                                    <p className="text-xs text-muted-foreground">برای دسترسی دانش‌آموز به پنل خود، این گزینه را فعال کنید.</p>
-                                  </div>
-                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr'/></FormControl>
-                                </FormItem>
-                              )}/>
-                              <div>
-                                <Label className="text-base font-semibold">دسترسی به قابلیت‌ها</Label>
-                                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {featureList.map((feature) => (
-                                    <FormField key={feature.id} control={form.control} name={`features.${feature.id}`} render={({ field }) => (
-                                      <FormItem className="flex items-center justify-between p-2 rounded-lg border">
-                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr' /></FormControl>
-                                        <FormLabel className="text-sm font-normal">{feature.label}</FormLabel>
-                                      </FormItem>
-                                    )}/>
-                                  ))}
+                                  <Button type="button" variant="outline" size="icon" onClick={generatePassword} aria-label="پیشنهاد رمز عبور">
+                                    <KeyRound className="h-4 w-4" />
+                                  </Button>
                                 </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}/>
+                            <FormField control={form.control} name="panelStatus" render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr'/></FormControl>
+                                <div>
+                                  <FormLabel className="font-medium">وضعیت پنل</FormLabel>
+                                  <p className="text-xs text-muted-foreground">برای دسترسی دانش‌آموز به پنل خود، این گزینه را فعال کنید.</p>
+                                </div>
+                              </FormItem>
+                            )}/>
+                            <div>
+                              <Label className="text-base font-semibold">دسترسی به قابلیت‌ها</Label>
+                              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {featureList.map((feature) => (
+                                  <FormField key={feature.id} control={form.control} name={`features.${feature.id}`} render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between p-2 rounded-lg border">
+                                      <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr' /></FormControl>
+                                      <FormLabel className="text-sm font-normal">{feature.label}</FormLabel>
+                                    </FormItem>
+                                  )}/>
+                                ))}
                               </div>
                             </div>
-                            <DialogFooter className="gap-2 sm:justify-start flex-col-reverse sm:flex-row pt-4">
-                               <Button type="submit">ایجاد دانش‌آموز</Button>
-                               <DialogTrigger asChild>
-                                 <Button type="button" variant="outline">انصراف</Button>
-                               </DialogTrigger>
-                            </DialogFooter>
-                          </form>
-                        </Form>
+                          </div>
+                          <DialogFooter className="gap-2 sm:justify-start flex-col-reverse sm:flex-row pt-4">
+                             <Button type="submit">ایجاد دانش‌آموز</Button>
+                             <DialogTrigger asChild>
+                               <Button type="button" variant="outline">انصراف</Button>
+                             </DialogTrigger>
+                          </DialogFooter>
+                        </form>
+                      </Form>
                     </DialogContent>
                 </Dialog>
             </div>

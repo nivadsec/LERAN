@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch, Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { Control } from 'react-hook-form';
+
 
 const topicSchema = z.object({
   topic: z.string().min(1, 'نام مبحث الزامی است.'),
@@ -116,17 +116,17 @@ export default function TopicInvestmentPage() {
                                         <TableRow>
                                             <TableHead className="text-right">مبحث</TableHead>
                                             <TableHead className="text-center w-24">اولویت</TableHead>
-                                            <TableHead className="text-center w-48" colSpan={3}>سرمایه زمانی</TableHead>
-                                            <TableHead className="text-center w-24">تست</TableHead>
+                                            <TableHead className="text-center w-48" colSpan={3}>سرمایه زمانی (ساعت)</TableHead>
+                                            <TableHead className="text-center w-24">تست (ساعت)</TableHead>
                                             <TableHead className="text-right">سایر اقدامات</TableHead>
                                             <TableHead className="w-12"></TableHead>
                                         </TableRow>
                                         <TableRow>
                                             <TableHead></TableHead>
                                             <TableHead></TableHead>
+                                            <TableHead className="text-center text-xs">مجموع</TableHead>
                                             <TableHead className="text-center text-xs">ویدئو</TableHead>
                                             <TableHead className="text-center text-xs">مطالعه</TableHead>
-                                            <TableHead className="text-center text-xs">مجموع</TableHead>
                                             <TableHead></TableHead>
                                             <TableHead></TableHead>
                                             <TableHead></TableHead>
@@ -137,9 +137,9 @@ export default function TopicInvestmentPage() {
                                             <TableRow key={field.id}>
                                                 <TableCell><Input {...form.register(`topics.${index}.topic`)} /></TableCell>
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.priority`)} className="text-center" /></TableCell>
+                                                <TotalInvestmentCell control={form.control} index={index} />
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.video_hours`)} className="text-center" /></TableCell>
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.study_hours`)} className="text-center" /></TableCell>
-                                                <TotalInvestmentCell control={form.control} index={index} />
                                                 <TableCell><Input type="number" {...form.register(`topics.${index}.test_hours`)} className="text-center" /></TableCell>
                                                 <TableCell><Input {...form.register(`topics.${index}.extra_actions`)} /></TableCell>
                                                 <TableCell>
