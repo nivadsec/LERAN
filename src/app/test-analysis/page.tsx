@@ -15,6 +15,9 @@ import { PlusCircle, Trash2, TrendingUp, Smile, Meh, Frown } from 'lucide-react'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth, useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const testEntrySchema = z.object({
   id: z.string(),
@@ -37,6 +40,10 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function TestAnalysisPage() {
+  const { user } = useAuth();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -101,8 +108,35 @@ export default function TestAnalysisPage() {
     });
   };
   
-  const onSubmit = (data: FormData) => {
-    console.log(data);
+  const onSubmit = async (data: FormData) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "برای ذخیره تحلیل باید وارد شده باشید.",
+      });
+      return;
+    }
+
+    try {
+      const analysesRef = collection(firestore, 'users', user.uid, 'testAnalyses');
+      await addDoc(analysesRef, {
+        ...data,
+        createdAt: serverTimestamp(),
+        studentId: user.uid,
+      });
+      toast({
+        title: "موفقیت",
+        description: "تحلیل آزمون شما با موفقیت ذخیره شد.",
+      });
+    } catch (error) {
+      console.error("Error saving test analysis: ", error);
+      toast({
+        variant: "destructive",
+        title: "خطا در ذخیره‌سازی",
+        description: "مشکلی در هنگام ذخیره تحلیل رخ داد. لطفاً دوباره تلاش کنید.",
+      });
+    }
   };
 
   return (

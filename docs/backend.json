@@ -86,6 +86,79 @@
         "sleepHours"
       ]
     },
+    "TestAnalysis": {
+      "title": "TestAnalysis",
+      "description": "Represents a detailed analysis of a student's performance on a series of tests for a specific subject.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the analysis."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to the student."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the analysis was saved."
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "The name of the subject being analyzed (e.g., 'فیزیک ۳')."
+        },
+        "tests": {
+          "type": "array",
+          "description": "An array of individual test results.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "testNumber": {
+                "type": "number",
+                "description": "The sequential number of the test."
+              },
+              "date": {
+                "type": "string",
+                "format": "date",
+                "description": "The date of the test."
+              },
+              "correct": {
+                "type": "number",
+                "description": "Number of correct answers."
+              },
+              "wrong": {
+                "type": "number",
+                "description": "Number of wrong answers."
+              },
+              "totalQuestions": {
+                "type": "number",
+                "description": "Total number of questions in the test."
+              },
+              "percentage": {
+                "type": "number",
+                "description": "Calculated percentage for the test."
+              },
+              "answered": {
+                "type": "number",
+                "description": "Total number of answered questions (correct + wrong)."
+              },
+              "satisfaction": {
+                "type": "string",
+                "enum": ["happy", "neutral", "sad"],
+                "description": "Student's satisfaction with their performance."
+              },
+              "notes": {
+                "type": "string",
+                "description": "Student's notes or reflections on the test."
+              }
+            },
+            "required": ["testNumber", "correct", "wrong", "totalQuestions"]
+          }
+        }
+      },
+      "required": ["id", "studentId", "createdAt", "subjectName", "tests"]
+    },
     "ExamAnalysis": {
       "title": "ExamAnalysis",
       "description": "Represents a detailed analysis of a student's performance on a specific exam.",
@@ -368,6 +441,26 @@
             {
               "name": "reportId",
               "description": "The unique identifier for the daily report."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/testAnalyses/{analysisId}",
+        "definition": {
+          "entityName": "TestAnalysis",
+          "schema": {
+            "$ref": "#/backend/entities/TestAnalysis"
+          },
+          "description": "Subcollection to store a student's trend analysis for a specific subject over multiple tests.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the student."
+            },
+            {
+              "name": "analysisId",
+              "description": "The unique identifier for the test analysis series."
             }
           ]
         }
