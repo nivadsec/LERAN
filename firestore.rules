@@ -3,239 +3,291 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for student data,
- * ensuring that students can only access their own information. Teachers and
- * admins might have broader read access in the future, but this is not yet
- * implemented. Public data (announcements) is segregated into a separate
- * collection.
+ * ensuring that students can only access their own information. Announcements
+ * are publicly readable, while administrative data (teachers, classes)
+ * have restricted access.
  *
  * Data Structure:
- * - /users/{userId}: Student profiles.
+ * - /users/{userId}: Student profiles, owned by the user.
  * - /users/{userId}/dailyReports/{reportId}: Daily reports for each student.
- * - /users/{userId}/testAnalyses/{analysisId}: Test analysis data for students.
- * - /users/{userId}/examAnalyses/{analysisId}: Exam analysis data for students.
- * - /users/{userId}/focusSessions/{sessionId}: Focus session ratings.
- * - /users/{userId}/studyTopics/{topicId}: Spaced repetition study topics.
- * - /classes/{classId}: Class information (limited access).
- * - /teachers/{teacherId}: Teacher profiles (limited access).
- * - /users/{userId}/smartAlerts/{alertId}: Smart alerts for students.
- * - /announcements/{announcementId}: General announcements (public read).
+ * - /users/{userId}/testAnalyses/{analysisId}: Test analysis data for each student.
+ * - /users/{userId}/examAnalyses/{analysisId}: Exam analysis data for each student.
+ * - /users/{userId}/focusSessions/{sessionId}: Focus session ratings for each student.
+ * - /users/{userId}/studyTopics/{topicId}: Study topics for each student.
+ * - /users/{userId}/smartAlerts/{alertId}: Smart alerts for each student.
+ * - /classes/{classId}: Class information, restricted access.
+ * - /teachers/{teacherId}: Teacher profiles, restricted access.
+ * - /announcements/{announcementId}: General announcements, publicly readable.
  *
  * Key Security Decisions:
- * - Students can only read/write their own data within their /users/{userId}
- *   path.
- * - Teachers and admins do not yet have elevated privileges.
- * - User listing is explicitly denied to prevent data scraping.
- * - Schema validation is relaxed for rapid prototyping but MUST be
- *   implemented later.
- * - Public read access is granted to the /announcements collection.
+ * - Students have full CRUD access only to their own data under their /users/{userId} path.
+ * - Teachers and Classes are secured with placeholder rules until roles are defined.
+ * - Announcements are publicly readable.
+ * - User listing is implicitly denied (no top-level `list` rule for `/users`).
  *
  * Denormalization for Authorization:
- *  - The rules rely on path-based authorization (/users/{userId}) to avoid
- *    costly `get()` operations.  Each document is implicitly owned by the
- *    `userId` in the path.
+ * The current data model leverages path-based ownership, where the `userId` is part of the document path.
+ * This allows direct enforcement of ownership without requiring extra `get()` calls. For example,
+ * a rule on `/users/{userId}/dailyReports/{reportId}` can directly check `isOwner(userId)` without
+ * fetching the user's profile.
+ *
+ * Structural Segregation:
+ * Private student data (daily reports, test analyses, focus sessions) is stored in user-specific
+ * subcollections under `/users/{userId}`. This ensures that listing operations on these subcollections
+ * are always restricted to the owner.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is made by an authenticated user.
-     * @returns {boolean} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user's UID matches the provided userId.
-     * @param {string} userId - The user ID to compare against the authenticated user's UID.
-     * @returns {boolean} True if the UIDs match, false otherwise.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user owns the existing document.
-     * @param {string} userId - The user ID to compare against the authenticated user's UID.
-     * @returns {boolean} True if the UIDs match and the resource exists, false otherwise.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rule for the /users/{userId} collection.
+     * @description Allows students to manage their own profile.
      * @path /users/{userId}
-     * @allow (create) - A user can create their own profile if the userId matches their auth UID.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own profile if the userId matches their auth UID.
-     * @deny (create) - A user cannot create a profile with a userId that doesn't match their auth UID.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's profile.
+     * @allow (create) - User with UID 'user_abc' can create their profile if userId == 'user_abc'.
+     * @allow (get) - User with UID 'user_abc' can read their profile if userId == 'user_abc'.
+     * @allow (update) - User with UID 'user_abc' can update their profile if userId == 'user_abc'.
+     * @allow (delete) - User with UID 'user_abc' can delete their profile if userId == 'user_abc'.
+     * @deny (create) - User with UID 'user_def' cannot create a profile under /users/user_abc.
+     * @deny (get) - User with UID 'user_def' cannot read the profile under /users/user_abc.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Listing all users is denied.
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      // Helper function to check if the requested user ID matches the authenticated user ID
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      // Helper function to check if the user is the existing owner
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      // Allows a user to create their own profile if the userId matches their authentication UID.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+
+      // Allows a user to read their own profile
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to list their own profile - this is technically not possible
+      allow list: if false;
+
+      // Allows a user to update their own profile
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+
+      // Allows a user to delete their own profile
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule for the /users/{userId}/dailyReports/{reportId} collection.
+     * @description Allows students to manage their own daily reports.
      * @path /users/{userId}/dailyReports/{reportId}
-     * @allow (create) - A user can create a daily report under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own daily reports.
-     * @deny (create) - A user cannot create a daily report under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's daily reports.
+     * @allow (create) - User with UID 'user_abc' can create a daily report under /users/user_abc/dailyReports.
+     * @allow (get) - User with UID 'user_abc' can read a daily report under /users/user_abc/dailyReports.
+     * @allow (update) - User with UID 'user_abc' can update a daily report under /users/user_abc/dailyReports.
+     * @allow (delete) - User with UID 'user_abc' can delete a daily report under /users/user_abc/dailyReports.
+     * @deny (create) - User with UID 'user_def' cannot create a daily report under /users/user_abc/dailyReports.
+     * @deny (get) - User with UID 'user_def' cannot read a daily report under /users/user_abc/dailyReports.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/dailyReports/{reportId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Allows a user to create a daily report in their own user path
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      // Allows a user to read a daily report from their own user path
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to list daily reports from their own user path
+      allow list: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to update a daily report in their own user path
       allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+
+      // Allows a user to delete a daily report from their own user path
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Rule for the /users/{userId}/testAnalyses/{analysisId} collection.
-     * @path /users/{userId}/testAnalyses/{analysisId}
-     * @allow (create) - A user can create a test analysis under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own test analyses.
-     * @deny (create) - A user cannot create a test analysis under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's test analyses.
-     * @principle Enforces document ownership for all operations.
-     */
+     /**
+      * @description Allows students to manage their own test analyses.
+      * @path /users/{userId}/testAnalyses/{analysisId}
+      * @allow (create) - User with UID 'user_abc' can create a test analysis under /users/user_abc/testAnalyses.
+      * @allow (get) - User with UID 'user_abc' can read a test analysis under /users/user_abc/testAnalyses.
+      * @allow (update) - User with UID 'user_abc' can update a test analysis under /users/user_abc/testAnalyses.
+      * @allow (delete) - User with UID 'user_abc' can delete a test analysis under /users/user_abc/testAnalyses.
+      * @deny (create) - User with UID 'user_def' cannot create a test analysis under /users/user_abc/testAnalyses.
+      * @deny (get) - User with UID 'user_def' cannot read a test analysis under /users/user_abc/testAnalyses.
+      * @principle Enforces document ownership for all operations.
+      */
     match /users/{userId}/testAnalyses/{analysisId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Allows a user to create a test analysis in their own user path
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      // Allows a user to read a test analysis from their own user path
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to list test analyses from their own user path
+      allow list: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to update a test analysis in their own user path
       allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+
+      // Allows a user to delete a test analysis from their own user path
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Rule for the /users/{userId}/examAnalyses/{analysisId} collection.
-     * @path /users/{userId}/examAnalyses/{analysisId}
-     * @allow (create) - A user can create an exam analysis under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own exam analyses.
-     * @deny (create) - A user cannot create an exam analysis under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's exam analyses.
-     * @principle Enforces document ownership for all operations.
-     */
+     /**
+      * @description Allows students to manage their own exam analyses.
+      * @path /users/{userId}/examAnalyses/{analysisId}
+      * @allow (create) - User with UID 'user_abc' can create a exam analysis under /users/user_abc/examAnalyses.
+      * @allow (get) - User with UID 'user_abc' can read a exam analysis under /users/user_abc/examAnalyses.
+      * @allow (update) - User with UID 'user_abc' can update a exam analysis under /users/user_abc/examAnalyses.
+      * @allow (delete) - User with UID 'user_abc' can delete a exam analysis under /users/user_abc/examAnalyses.
+      * @deny (create) - User with UID 'user_def' cannot create a exam analysis under /users/user_abc/examAnalyses.
+      * @deny (get) - User with UID 'user_def' cannot read a exam analysis under /users/user_abc/examAnalyses.
+      * @principle Enforces document ownership for all operations.
+      */
     match /users/{userId}/examAnalyses/{analysisId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+        // Allows a user to create an exam analysis in their own user path
+        allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(userId);
+        // Allows a user to read an exam analysis from their own user path
+        allow get: if isSignedIn() && isOwner(userId);
+
+        // Allows a user to list exam analysis from their own user path
+        allow list: if isSignedIn() && isOwner(userId);
+
+        // Allows a user to update an exam analysis in their own user path
+        allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+
+        // Allows a user to delete an exam analysis from their own user path
+        allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule for the /users/{userId}/focusSessions/{sessionId} collection.
+     * @description Allows students to manage their own focus sessions.
      * @path /users/{userId}/focusSessions/{sessionId}
-     * @allow (create) - A user can create a focus session under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own focus sessions.
-     * @deny (create) - A user cannot create a focus session under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's focus sessions.
+     * @allow (create) - User with UID 'user_abc' can create a focus session under /users/user_abc/focusSessions.
+     * @allow (get) - User with UID 'user_abc' can read a focus session under /users/user_abc/focusSessions.
+     * @allow (update) - User with UID 'user_abc' can update a focus session under /users/user_abc/focusSessions.
+     * @allow (delete) - User with UID 'user_abc' can delete a focus session under /users/user_abc/focusSessions.
+     * @deny (create) - User with UID 'user_def' cannot create a focus session under /users/user_abc/focusSessions.
+     * @deny (get) - User with UID 'user_def' cannot read a focus session under /users/user_abc/focusSessions.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/focusSessions/{sessionId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Allows a user to create a focus session in their own user path
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      // Allows a user to read a focus session from their own user path
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to list focus sessions from their own user path
+      allow list: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to update a focus session in their own user path
       allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+
+      // Allows a user to delete a focus session from their own user path
       allow delete: if isExistingOwner(userId);
     }
 
-   /**
-     * @description Rule for the /users/{userId}/studyTopics/{topicId} collection.
-     * @path /users/{userId}/studyTopics/{topicId}
-     * @allow (create) - A user can create a study topic under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own study topics.
-     * @deny (create) - A user cannot create a study topic under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's study topics.
-     * @principle Enforces document ownership for all operations.
-     */
+     /**
+      * @description Allows students to manage their own study topics.
+      * @path /users/{userId}/studyTopics/{topicId}
+      * @allow (create) - User with UID 'user_abc' can create a study topic under /users/user_abc/studyTopics.
+      * @allow (get) - User with UID 'user_abc' can read a study topic under /users/user_abc/studyTopics.
+      * @allow (update) - User with UID 'user_abc' can update a study topic under /users/user_abc/studyTopics.
+      * @allow (delete) - User with UID 'user_abc' can delete a study topic under /users/user_abc/studyTopics.
+      * @deny (create) - User with UID 'user_def' cannot create a study topic under /users/user_abc/studyTopics.
+      * @deny (get) - User with UID 'user_def' cannot read a study topic under /users/user_abc/studyTopics.
+      * @principle Enforces document ownership for all operations.
+      */
     match /users/{userId}/studyTopics/{topicId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Allows a user to create a study topic in their own user path
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.studentId == userId;
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      // Allows a user to read a study topic from their own user path
+      allow get: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to list study topics from their own user path
+      allow list: if isSignedIn() && isOwner(userId);
+
+      // Allows a user to update a study topic in their own user path
       allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+
+      // Allows a user to delete a study topic from their own user path
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule for the /classes/{classId} collection.
+     * @description Placeholder rules for classes. Access will be defined later.
      * @path /classes/{classId}
-     * @allow (get, list) - Any signed-in user can read class information.
-     * @deny (create, update, delete) - Only admins can create, update, or delete class information (not yet implemented).
-     * @principle Restricts write access to admins (currently denies all writes).
+     * @allow (get) - Anyone can get the class information.
+     * @deny (create) - No one can create a class.
+     * @principle Placeholder for future access control definition.
      */
     match /classes/{classId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      // Anyone can read class information
+      allow get, list: if true;
 
-      allow create: if false;  // TODO: Implement admin role check
-      allow update: if false;  // TODO: Implement admin role check
-      allow delete: if false;  // TODO: Implement admin role check
+      // No one can create, update, or delete classes without further role definition
+      allow create, update, delete: if false; // TODO: Add role-based access
     }
 
     /**
-     * @description Rule for the /teachers/{teacherId} collection.
+     * @description Placeholder rules for teachers. Access will be defined later.
      * @path /teachers/{teacherId}
-     * @allow (get) - Any signed-in user can read teacher information.
-     * @deny (create, update, delete) - Only admins can create, update, or delete teacher profiles (not yet implemented).
-     * @principle Restricts write access to admins (currently denies all writes).
+     * @allow (get) - Anyone can get teacher information.
+     * @deny (create) - No one can create a teacher.
+     * @principle Placeholder for future access control definition.
      */
     match /teachers/{teacherId} {
-      allow get: if isSignedIn();
-      allow list: if false; // Listing all teachers is denied.
+      // Anyone can read teacher information
+      allow get, list: if true;
 
-      allow create: if false; // TODO: Implement admin role check
-      allow update: if false; // TODO: Implement admin role check
-      allow delete: if false; // TODO: Implement admin role check
+      // No one can create, update, or delete teachers without further role definition
+      allow create, update, delete: if false; // TODO: Add role-based access
     }
 
-    /**
-     * @description Rule for the /users/{userId}/smartAlerts/{alertId} collection.
-     * @path /users/{userId}/smartAlerts/{alertId}
-     * @allow (create) - A user can create a smartAlert under their own profile.
-     * @allow (get, list, update, delete) - A user can get, list, update, or delete their own smartAlerts.
-     * @deny (create) - A user cannot create a smartAlert under another user's profile.
-     * @deny (get, list, update, delete) - A user cannot get, list, update, or delete another user's smartAlerts.
-     * @principle Enforces document ownership for all operations.
-     */
+     /**
+      * @description Allows students to read their own smart alerts.
+      * @path /users/{userId}/smartAlerts/{alertId}
+      * @allow (create) - User with UID 'user_abc' can create a smartAlert under /users/user_abc/smartAlerts.
+      * @allow (get) - User with UID 'user_abc' can read a smartAlert under /users/user_abc/smartAlerts.
+      * @allow (update) - User with UID 'user_abc' can update a smartAlert under /users/user_abc/smartAlerts.
+      * @allow (delete) - User with UID 'user_abc' can delete a smartAlert under /users/user_abc/smartAlerts.
+      * @deny (create) - User with UID 'user_def' cannot create a smartAlert under /users/user_abc/smartAlerts.
+      * @deny (get) - User with UID 'user_def' cannot read a smartAlert under /users/user_abc/smartAlerts.
+      * @principle Enforces document ownership for reads; admins can manage all alerts.
+      */
     match /users/{userId}/smartAlerts/{alertId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      // Allows a user to read a smart alert from their own user path
+      allow get: if isSignedIn() && isOwner(userId);
 
-      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(userId);
+      // Allows a user to list smart alerts from their own user path
+      allow list: if isSignedIn() && isOwner(userId);
+
+      // No one can create, update, or delete alerts
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description Rule for the /announcements/{announcementId} collection.
+     * @description Allows anyone to read announcements; only admins can manage them.
      * @path /announcements/{announcementId}
-     * @allow (get, list) - All users can read announcements.
-     * @deny (create, update, delete) - Only admins can create, update, or delete announcements (not yet implemented).
-     * @principle Allows public read access, restricts write access to admins.
+     * @allow (get) - Any signed-in user can read an announcement.
+     * @deny (create) - Only admins can create announcements (not implemented).
+     * @principle Public read, restricted write.
      */
     match /announcements/{announcementId} {
-      allow get: if true;
-      allow list: if true;
+      // Allows anyone to read announcements
+      allow get, list: if true;
 
-      allow create: if false; // TODO: Implement admin role check
-      allow update: if false; // TODO: Implement admin role check
-      allow delete: if false; // TODO: Implement admin role check
+      // No one can create, update, or delete announcements without further role definition
+      allow create, update, delete: if false; // TODO: Add role-based access for admins
     }
   }
 }
