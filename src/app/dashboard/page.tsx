@@ -108,17 +108,18 @@ export default function DashboardPage() {
         weeklyAvgFeeling: 0,
         streak: 0,
         weeklyChartData: [
-            { day: "شنبه", hours: 0 }, { day: "۱شنبه", hours: 0 }, { day: "۲شنبه", hours: 0 },
-            { day: "۳شنبه", hours: 0 }, { day: "۴شنبه", hours: 0 }, { day: "۵شنبه", hours: 0 }, { day: "جمعه", hours: 0 },
+            { day: "شنبه", hours: 0 }, { day: "یکشنبه", hours: 0 }, { day: "دوشنبه", hours: 0 },
+            { day: "سه‌شنبه", hours: 0 }, { day: "چهارشنبه", hours: 0 }, { day: "پنج‌شنبه", hours: 0 }, { day: "جمعه", hours: 0 },
         ],
       };
     }
     
     const totalStudy = dailyReports.reduce((acc, r) => acc + r.studyHours, 0);
     const totalFeeling = dailyReports.reduce((acc, r) => acc + r.feeling, 0);
-
-    const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
+    
+    const dayNames = ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه"];
     const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
+
 
     let consecutiveDays = 0;
     if(dailyReports.length > 0) {
@@ -143,20 +144,22 @@ export default function DashboardPage() {
 
     dailyReports.forEach(report => {
         const date = new Date(report.date.seconds * 1000);
-        const dayIndex = date.getDay(); // 0 (Sun) to 6 (Sat) -> (fa-IR: 6, 0, 1, 2, 3, 4, 5)
-        const faDayIndex = (dayIndex + 1) % 7; // Shanbe:0, Yekshanbe:1 ...
-        const dayName = dayNames[faDayIndex];
+        const dayIndex = date.getDay(); // 0 (Sun) to 6 (Sat)
+        const dayName = dayNames[dayIndex];
         const chartEntry = chartData.find(d => d.day === dayName);
         if(chartEntry) {
             chartEntry.hours += report.studyHours;
         }
     });
 
+    const persianOrder = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
+    const sortedChartData = persianOrder.map(dayName => chartData.find(d => d.day === dayName) || { day: dayName, hours: 0 });
+
     return {
       weeklyAvgStudy: (totalStudy / dailyReports.length).toFixed(1),
       weeklyAvgFeeling: (totalFeeling / dailyReports.length).toFixed(1),
       streak: consecutiveDays,
-      weeklyChartData: chartData
+      weeklyChartData: sortedChartData
     };
   }, [dailyReports]);
 
