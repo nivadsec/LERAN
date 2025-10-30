@@ -94,33 +94,33 @@ export default function DailyMonitoringPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead className="text-right">توضیحات</TableHead>
-                      <TableHead className="text-center">رضایت (۰-۵)</TableHead>
-                      <TableHead className="text-center">تمرکز (۰-۱۰)</TableHead>
-                      <TableHead className="text-center">نوع</TableHead>
-                      <TableHead className="text-center">باکس زمانی</TableHead>
-                      <TableHead className="text-center">پایان</TableHead>
-                      <TableHead className="text-center">شروع</TableHead>
                       <TableHead className="text-right">فعالیت</TableHead>
+                      <TableHead className="text-center">شروع</TableHead>
+                      <TableHead className="text-center">پایان</TableHead>
+                      <TableHead className="text-center">باکس زمانی</TableHead>
+                      <TableHead className="text-center">نوع</TableHead>
+                      <TableHead className="text-center">تمرکز (۰-۱۰)</TableHead>
+                      <TableHead className="text-center">رضایت (۰-۵)</TableHead>
+                      <TableHead className="text-right">توضیحات</TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {fields.map((field, index) => (
                       <TableRow key={field.id}>
+                        <TableCell><Input {...form.register(`activities.${index}.activity`)} /></TableCell>
+                        <TableCell><Input {...form.register(`activities.${index}.startTime`)} className="text-center" dir="ltr" /></TableCell>
+                        <TableCell><Input {...form.register(`activities.${index}.endTime`)} className="text-center" dir="ltr" /></TableCell>
+                        <TableCell><Input type="number" {...form.register(`activities.${index}.timeBoxing`)} className="text-center" /></TableCell>
+                        <TableCell><Input {...form.register(`activities.${index}.activityType`)} className="text-center" /></TableCell>
+                        <TableCell><Input type="number" {...form.register(`activities.${index}.focus`)} className="text-center" /></TableCell>
+                        <TableCell><Input type="number" {...form.register(`activities.${index}.satisfaction`)} className="text-center" /></TableCell>
+                        <TableCell><Input {...form.register(`activities.${index}.notes`)} /></TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
-                        <TableCell><Input {...form.register(`activities.${index}.notes`)} /></TableCell>
-                        <TableCell><Input type="number" {...form.register(`activities.${index}.satisfaction`)} className="text-center" /></TableCell>
-                        <TableCell><Input type="number" {...form.register(`activities.${index}.focus`)} className="text-center" /></TableCell>
-                        <TableCell><Input {...form.register(`activities.${index}.activityType`)} className="text-center" /></TableCell>
-                        <TableCell><Input type="number" {...form.register(`activities.${index}.timeBoxing`)} className="text-center" /></TableCell>
-                        <TableCell><Input {...form.register(`activities.${index}.endTime`)} className="text-center" dir="ltr" /></TableCell>
-                        <TableCell><Input {...form.register(`activities.${index}.startTime`)} className="text-center" dir="ltr" /></TableCell>
-                        <TableCell><Input {...form.register(`activities.${index}.activity`)} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
