@@ -22,8 +22,8 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, PlusCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Student {
@@ -50,15 +50,29 @@ const studentSchema = z.object({
 export default function AdminUsersPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const firestore = useFirestore();
-  
-  const studentsQuery = useMemoFirebase(() => 
-    query(collection(firestore, 'users'), where('isAdmin', '!=', true)),
-    [firestore]
-  );
-  
-  const { data: allStudents, isLoading } = useCollection<Student>(studentsQuery);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (!firestore) return;
+      setIsLoading(true);
+      try {
+        const studentsQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
+        const querySnapshot = await getDocs(studentsQuery);
+        const studentsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+        setAllStudents(studentsData);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+        // Handle error (e.g., show a toast message)
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStudents();
+  }, [firestore]);
 
   const filteredStudents = allStudents?.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -295,3 +309,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    

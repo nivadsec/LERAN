@@ -108,6 +108,7 @@ export default function AdminDashboardPage() {
 
 
   const fetchAllStudentsData = async () => {
+    if (!firestore) return;
     setIsDataLoading(true);
     try {
         const usersQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
@@ -147,6 +148,7 @@ export default function AdminDashboardPage() {
 
 
   const handleExportData = async () => {
+    if (!firestore) return;
     toast({ title: 'در حال آماده‌سازی فایل...', description: 'این فرآیند ممکن است چند لحظه طول بکشد.' });
     try {
       const usersCollectionRef = collection(firestore, 'users');
@@ -417,3 +419,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
