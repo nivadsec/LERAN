@@ -22,9 +22,11 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, PlusCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface Student {
   id: string;
@@ -40,8 +42,8 @@ const studentSchema = z.object({
   firstName: z.string().min(1, 'نام الزامی است.'),
   lastName: z.string().min(1, 'نام خانوادگی الزامی است.'),
   email: z.string().email('ایمیل نامعتبر است.'),
-  grade: z.string(),
-  major: z.string(),
+  grade: z.string().min(1, 'پایه تحصیلی الزامی است.'),
+  major: z.string().min(1, 'رشته تحصیلی الزامی است.'),
   password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد.'),
   panelStatus: z.boolean(),
   features: z.record(z.boolean()),
@@ -52,8 +54,25 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddUserOpen, setAddUserOpen] = useState(false);
+  const [adminCredentials, setAdminCredentials] = useState<{email: string, pass: string} | null>(null);
+
 
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // A simple (and not very secure) way to keep admin credentials in memory
+    // In a real-world app, you'd use a more secure session management or refresh token mechanism
+    if (auth.currentUser && auth.currentUser.email) {
+      const pass = sessionStorage.getItem('adminPass');
+      if (pass) {
+        setAdminCredentials({ email: auth.currentUser.email, pass });
+      }
+    }
+  }, [auth.currentUser]);
+
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -66,13 +85,17 @@ export default function AdminUsersPage() {
         setAllStudents(studentsData);
       } catch (error) {
         console.error("Error fetching students:", error);
-        // Handle error (e.g., show a toast message)
+        toast({
+            variant: "destructive",
+            title: "خطا در دریافت لیست دانش‌آموزان",
+            description: "لطفاً از اتصال به اینترنت و قوانین دسترسی خود مطمئن شوید.",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     fetchStudents();
-  }, [firestore]);
+  }, [firestore, toast]);
 
   const filteredStudents = allStudents?.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -125,9 +148,76 @@ export default function AdminUsersPage() {
     form.setValue('password', newPassword);
   };
   
-  const onSubmit = (values: z.infer<typeof studentSchema>) => {
-    console.log(values);
-    // TODO: Implement user creation logic here
+  const onSubmit = async (values: z.infer<typeof studentSchema>) => {
+    if (!auth) return;
+    
+    try {
+        // Create the new student user
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const newUser = userCredential.user;
+
+        // Prepare student data for Firestore
+        const studentData = {
+            id: newUser.uid,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            grade: values.grade,
+            major: values.major,
+            panelStatus: values.panelStatus,
+            features: values.features,
+            signupDate: new Date().toISOString(),
+            isAdmin: false,
+        };
+
+        // Save the student's data in Firestore
+        await setDoc(doc(firestore, "users", newUser.uid), studentData);
+
+        toast({
+            title: "دانش‌آموز با موفقیت ایجاد شد!",
+            description: `حساب کاربری برای ${values.firstName} ${values.lastName} ایجاد شد.`,
+        });
+
+        // Re-login the admin
+        if (adminCredentials) {
+            await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.pass);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "خطا در ورود مجدد",
+                description: "لطفاً برای ادامه، صفحه را رفرش کنید یا مجدداً وارد شوید.",
+            });
+        }
+        
+        // Add new student to the local state to update UI
+        setAllStudents(prev => [...prev, {
+            id: newUser.uid,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+        }]);
+
+        form.reset();
+        setAddUserOpen(false);
+
+    } catch (error: any) {
+        console.error("Error creating user:", error);
+        let errorMessage = "مشکلی در هنگام ایجاد کاربر رخ داد.";
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = "این ایمیل قبلاً در سیستم ثبت شده است.";
+        }
+        toast({
+            variant: "destructive",
+            title: "خطا در ایجاد دانش‌آموز",
+            description: errorMessage,
+        });
+        // Re-login the admin even if creation fails to prevent being logged out
+        if (adminCredentials) {
+            await signInWithEmailAndPassword(auth, adminCredentials.email, adminCredentials.pass).catch(reloginError => {
+                console.error('Admin re-login failed:', reloginError)
+            });
+        }
+    }
   };
 
   return (
@@ -145,7 +235,7 @@ export default function AdminUsersPage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                 <Dialog>
+                 <Dialog open={isAddUserOpen} onOpenChange={setAddUserOpen}>
                     <DialogTrigger asChild>
                         <Button className="w-full md:w-auto">
                             <PlusCircle className="ml-2 h-4 w-4" />
@@ -246,10 +336,10 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                           <DialogFooter className="gap-2 sm:justify-start flex-col-reverse sm:flex-row pt-4">
-                             <Button type="submit">ایجاد دانش‌آموز</Button>
-                             <DialogTrigger asChild>
-                               <Button type="button" variant="outline">انصراف</Button>
-                             </DialogTrigger>
+                             <Button type="submit" disabled={form.formState.isSubmitting}>
+                               {form.formState.isSubmitting ? 'در حال ایجاد...' : 'ایجاد دانش‌آموز'}
+                             </Button>
+                             <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)}>انصراف</Button>
                           </DialogFooter>
                         </form>
                       </Form>
@@ -309,5 +399,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    

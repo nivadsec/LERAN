@@ -45,6 +45,11 @@ export default function AdminLoginPage() {
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists() && userDoc.data()?.isAdmin) {
+        // A simple way to keep password in session storage for re-login after creating a user.
+        // This is not recommended for production apps.
+        // A more secure approach would be using a backend to manage sessions.
+        sessionStorage.setItem('adminPass', values.password);
+
         toast({
           title: "ورود موفق",
           description: "شما با موفقیت به عنوان مدیر وارد شدید.",
