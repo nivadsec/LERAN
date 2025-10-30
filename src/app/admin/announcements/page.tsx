@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Megaphone, PlusCircle, Trash2, FileEdit } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, deleteDoc, doc, serverTimestamp, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { AnnouncementForm, type AnnouncementSchema } from './announcement-form';
@@ -33,42 +33,63 @@ export default function AdminAnnouncementsPage() {
   const announcementsRef = useMemoFirebase(() => collection(firestore, 'announcements'), [firestore]);
   const { data: announcements, isLoading } = useCollection<Announcement>(announcementsRef);
 
-  const handleCreate = async (data: AnnouncementSchema) => {
-    try {
-      await addDoc(announcementsRef, {
+  const handleCreate = (data: AnnouncementSchema) => {
+    const payload = {
         ...data,
         createdAt: serverTimestamp(),
+    };
+
+    addDoc(announcementsRef, payload)
+      .then(() => {
+        toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت ایجاد شد.' });
+        setCreateDialogOpen(false);
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          path: announcementsRef.path,
+          operation: 'create',
+          requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', contextualError);
       });
-      toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت ایجاد شد.' });
-      setCreateDialogOpen(false);
-    } catch (error) {
-      console.error("Error creating announcement: ", error);
-      toast({ variant: 'destructive', title: 'خطا', description: 'در ایجاد اطلاعیه مشکلی پیش آمد.' });
-    }
   };
 
-  const handleEdit = async (data: AnnouncementSchema) => {
+  const handleEdit = (data: AnnouncementSchema) => {
     if (!selectedAnnouncement) return;
-    try {
-      const docRef = doc(firestore, 'announcements', selectedAnnouncement.id);
-      await updateDoc(docRef, data);
-      toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت ویرایش شد.' });
-      setEditDialogOpen(false);
-      setSelectedAnnouncement(null);
-    } catch (error) {
-      console.error("Error updating announcement: ", error);
-      toast({ variant: 'destructive', title: 'خطا', description: 'در ویرایش اطلاعیه مشکلی پیش آمد.' });
-    }
+
+    const docRef = doc(firestore, 'announcements', selectedAnnouncement.id);
+    const payload = { ...data };
+
+    updateDoc(docRef, payload)
+      .then(() => {
+        toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت ویرایش شد.' });
+        setEditDialogOpen(false);
+        setSelectedAnnouncement(null);
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      });
   };
 
-  const handleDelete = async (announcementId: string) => {
-    try {
-      await deleteDoc(doc(firestore, 'announcements', announcementId));
-      toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت حذف شد.' });
-    } catch (error) {
-      console.error("Error deleting announcement: ", error);
-      toast({ variant: 'destructive', title: 'خطا', description: 'در حذف اطلاعیه مشکلی پیش آمد.' });
-    }
+  const handleDelete = (announcementId: string) => {
+    const docRef = doc(firestore, 'announcements', announcementId);
+    
+    deleteDoc(docRef)
+        .then(() => {
+            toast({ title: 'موفقیت', description: 'اطلاعیه با موفقیت حذف شد.' });
+        })
+        .catch((error) => {
+            const contextualError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
   };
   
   const formatDate = (timestamp: Announcement['createdAt']) => {
