@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -63,6 +63,27 @@ export default function AdminUsersPage() {
   const { toast } = useToast();
   const { user: adminUser } = useUser();
 
+  const fetchStudents = useCallback(async () => {
+    if (!firestore) return;
+    setIsLoading(true);
+    try {
+      const studentsQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
+      const querySnapshot = await getDocs(studentsQuery);
+      const studentsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+      setAllStudents(studentsData);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      toast({
+          variant: "destructive",
+          title: "خطا در دریافت لیست دانش‌آموزان",
+          description: "لطفاً از اتصال به اینترنت و قوانین دسترسی خود مطمئن شوید.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [firestore, toast]);
+
+
   useEffect(() => {
     // A simple (and not very secure) way to keep admin credentials in memory
     // In a real-world app, you'd use a more secure session management or refresh token mechanism
@@ -76,27 +97,8 @@ export default function AdminUsersPage() {
 
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      if (!firestore) return;
-      setIsLoading(true);
-      try {
-        const studentsQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
-        const querySnapshot = await getDocs(studentsQuery);
-        const studentsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-        setAllStudents(studentsData);
-      } catch (error) {
-        console.error("Error fetching students:", error);
-        toast({
-            variant: "destructive",
-            title: "خطا در دریافت لیست دانش‌آموزان",
-            description: "لطفاً از اتصال به اینترنت و قوانین دسترسی خود مطمئن شوید.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchStudents();
-  }, [firestore, toast]);
+  }, [fetchStudents]);
 
   const filteredStudents = allStudents?.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -181,14 +183,6 @@ export default function AdminUsersPage() {
         // Save the student's data in Firestore
         await setDoc(doc(firestore, "users", newUser.uid), studentData);
 
-        // Add new student to the local state to update UI immediately
-        setAllStudents(prev => [...prev, {
-            id: newUser.uid,
-            firstName: values.firstName,
-            lastName: values.lastName,
-            email: values.email,
-        }]);
-
         toast({
             title: "دانش‌آموز با موفقیت ایجاد شد!",
             description: `حساب کاربری برای ${values.firstName} ${values.lastName} ایجاد شد.`,
@@ -196,6 +190,8 @@ export default function AdminUsersPage() {
 
         form.reset();
         setAddUserOpen(false);
+        // Re-fetch students to update the list
+        await fetchStudents();
 
     } catch (error: any) {
         console.error("Error creating user:", error);
