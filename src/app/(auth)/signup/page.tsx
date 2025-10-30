@@ -49,29 +49,17 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      const userData: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        grade: string;
-        major: string;
-        signupDate: string;
-        id: string;
-        isAdmin?: boolean;
-      } = {
+      // This is student signup, so isAdmin is not set here.
+      // Admin role should be assigned via a secure backend process (e.g., Cloud Function).
+      const userData = {
+        id: user.uid,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         grade: values.grade,
         major: values.major,
         signupDate: new Date().toISOString(),
-        id: user.uid,
       };
-
-      // Check if the user is an admin
-      if (values.email === 'admin@italk.com') {
-        userData.isAdmin = true;
-      }
 
       // Store additional user data in Firestore
       await setDoc(doc(firestore, "users", user.uid), userData);
@@ -81,11 +69,8 @@ export default function SignupPage() {
         description: "حساب کاربری شما با موفقیت ایجاد شد.",
       });
 
-      if (userData.isAdmin) {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
+      // After signup, redirect to the student dashboard
+      router.push("/dashboard");
       
     } catch (error: any) {
       console.error("Signup Error: ", error);
