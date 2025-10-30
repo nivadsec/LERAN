@@ -49,8 +49,6 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // This is student signup, so isAdmin is not set here.
-      // Admin role should be assigned via a secure backend process (e.g., Cloud Function).
       const userData = {
         id: user.uid,
         firstName: values.firstName,
@@ -59,6 +57,7 @@ export default function SignupPage() {
         grade: values.grade,
         major: values.major,
         signupDate: new Date().toISOString(),
+        isAdmin: false, // Default to false for all new signups
       };
 
       // Store additional user data in Firestore

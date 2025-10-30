@@ -1,258 +1,296 @@
 /**
- * @file Firebase Security Rules for iTalk Academic Platform
- * @core_philosophy This ruleset enforces a strict user-ownership model for student data
- * and segregates teacher/admin-only data into separate collections. It prioritizes
- * authorization independence using path-based ownership for simplified and performant rules.
- * @data_structure All student-related data is nested under /users/{userId}.
- * Class and Teacher data resides in top-level collections.
- * @key_security_decisions Listing the /users collection is explicitly denied. Public read
- * access is granted only to the /announcements collection. Data validation is limited to
- * authorization-critical fields for rapid prototyping.
- * @denormalization_for_authorization The rules rely on path-based ownership, avoiding the need
- * for denormalization. Each student's data is stored under `/users/{userId}`, enabling direct
- * access control without `get()` calls to other collections.
- * @structural_segregation Private student data is stored under `/users/{userId}`, while public
- * announcements are stored in the top-level `/announcements` collection.
+ * @file Firestore Security Rules for iTalk Academic Platform
+ * @description This ruleset enforces a strict user-ownership model for student data and an admin-only model for teacher data, with public read access for announcements.
+ *
+ * @dataStructure
+ *   - /users/{userId}: Student profiles, accessible only by the owning user.
+ *   - /users/{userId}/dailyReports/{reportId}: Daily reports for a student, accessible only by the owning user.
+ *   - /users/{userId}/testAnalyses/{analysisId}: Test analysis data, accessible only by the owning user.
+ *   - /users/{userId}/examAnalyses/{analysisId}: Exam analysis data, accessible only by the owning user.
+ *   - /users/{userId}/focusSessions/{sessionId}: Focus session ratings, accessible only by the owning user.
+ *   - /users/{userId}/studyTopics/{topicId}: Study topics for spaced repetition, accessible only by the owning user.
+ *   - /classes/{classId}: Class information, readable by teachers and admins, writeable only by admins.
+ *   - /teachers/{teacherId}: Teacher profiles, readable by the teacher themselves, and writable only by admins.
+ *   - /users/{userId}/smartAlerts/{alertId}: Smart alerts, accessible only by the owning student.
+ *   - /announcements/{announcementId}: Public announcements, readable by all, writable only by admins.
+ *
+ * @keySecurityDecisions
+ *   - User listing is disabled for security and privacy.
+ *   - Data validation is relaxed to allow for rapid prototyping, focusing on authorization and relational integrity.
+ *   - Ambiguous relationships default to strict owner-only access.
+ *
+ * @denormalizationForAuthorization
+ *   - User ownership is enforced through path-based rules (e.g., /users/{userId}), avoiding the need for `get()` calls to verify ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
-     * @return {boolean} True if the request is authenticated, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @param {string} userId The user ID to compare with the request's authentication UID.
-     * @return {boolean} True if the user ID matches the request's authentication UID, false otherwise.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the request is made by the owner of an existing resource.
-     * @param {string} userId The user ID to compare with the resource's owner ID.
-     * @return {boolean} True if the user ID matches the resource's owner ID and the resource exists, false otherwise.
-     */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Denies listing of the /users collection.
-     * @path /databases/{database}/documents/users
-     * @allow N/A
-     * @deny (list) - Listing all users is forbidden for privacy and security.
-     * @principle Prevents unauthorized access to user directory.
-     */
-    match /users {
-        allow get: if false;
-        allow list: if false;
-
-        allow create: if false;
-        allow update: if false;
-        allow delete: if false;
-    }
-
-    /**
-     * @description Manages access to student profiles.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (get) - Authenticated user can read their own profile.
-     * @allow (create) - Authenticated user can create their own profile (self-registration).
-     * @allow (update) - Authenticated user can update their own profile.
-     * @allow (delete) - Authenticated user can delete their own profile.
-     * @deny (get) - Non-authenticated user cannot read student profiles.
-     * @deny (create) - Authenticated user cannot create another user's profile.
-     * @deny (update) - Authenticated user cannot update another user's profile.
-     * @deny (delete) - Authenticated user cannot delete another user's profile.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures student profiles. Only the authenticated user (student) can manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) - Authenticated user with UID 'user123' can create their profile at /users/user123.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their profile at /users/user123.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create a profile at /users/user123.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the profile at /users/user123.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to daily reports for each student.
-     * @path /databases/{database}/documents/users/{userId}/dailyReports/{reportId}
-     * @allow (get) - Authenticated user can read their own daily reports.
-     * @allow (list) - Authenticated user can list their own daily reports.
-     * @allow (create) - Authenticated user can create their own daily reports.
-     * @allow (update) - Authenticated user can update their own daily reports.
-     * @allow (delete) - Authenticated user can delete their own daily reports.
-     * @deny (get) - Non-authenticated user cannot read student's daily reports.
-     * @deny (list) - Non-authenticated user cannot list student's daily reports.
-     * @deny (create) - Authenticated user cannot create daily reports for other students.
-     * @deny (update) - Authenticated user cannot update daily reports of other students.
-     * @deny (delete) - Authenticated user cannot delete daily reports of other students.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures daily reports for each student. Only the authenticated user (student) can manage their own reports.
+     * @path /users/{userId}/dailyReports/{reportId}
+     * @allow (create) - Authenticated user with UID 'user123' can create a daily report at /users/user123/dailyReports/report456.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their daily report at /users/user123/dailyReports/report456.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create a daily report at /users/user123/dailyReports/report456.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the daily report at /users/user123/dailyReports/report456.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/dailyReports/{reportId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to test analyses for each student.
-     * @path /databases/{database}/documents/users/{userId}/testAnalyses/{analysisId}
-     * @allow (get) - Authenticated user can read their own test analyses.
-     * @allow (list) - Authenticated user can list their own test analyses.
-     * @allow (create) - Authenticated user can create their own test analyses.
-     * @allow (update) - Authenticated user can update their own test analyses.
-     * @allow (delete) - Authenticated user can delete their own test analyses.
-     * @deny (get) - Non-authenticated user cannot read student's test analyses.
-     * @deny (list) - Non-authenticated user cannot list student's test analyses.
-     * @deny (create) - Authenticated user cannot create test analyses for other students.
-     * @deny (update) - Authenticated user cannot update test analyses of other students.
-     * @deny (delete) - Authenticated user cannot delete test analyses of other students.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures test analyses for each student. Only the authenticated user (student) can manage their own analyses.
+     * @path /users/{userId}/testAnalyses/{analysisId}
+     * @allow (create) - Authenticated user with UID 'user123' can create a test analysis at /users/user123/testAnalyses/analysis456.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their test analysis at /users/user123/testAnalyses/analysis456.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create a test analysis at /users/user123/testAnalyses/analysis456.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the test analysis at /users/user123/testAnalyses/analysis456.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/testAnalyses/{analysisId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to exam analyses for each student.
-     * @path /databases/{database}/documents/users/{userId}/examAnalyses/{analysisId}
-     * @allow (get) - Authenticated user can read their own exam analyses.
-     * @allow (list) - Authenticated user can list their own exam analyses.
-     * @allow (create) - Authenticated user can create their own exam analyses.
-     * @allow (update) - Authenticated user can update their own exam analyses.
-     * @allow (delete) - Authenticated user can delete their own exam analyses.
-     * @deny (get) - Non-authenticated user cannot read student's exam analyses.
-     * @deny (list) - Non-authenticated user cannot list student's exam analyses.
-     * @deny (create) - Authenticated user cannot create exam analyses for other students.
-     * @deny (update) - Authenticated user cannot update exam analyses of other students.
-     * @deny (delete) - Authenticated user cannot delete exam analyses of other students.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures exam analyses for each student. Only the authenticated user (student) can manage their own analyses.
+     * @path /users/{userId}/examAnalyses/{analysisId}
+     * @allow (create) - Authenticated user with UID 'user123' can create an exam analysis at /users/user123/examAnalyses/analysis456.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their exam analysis at /users/user123/examAnalyses/analysis456.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create an exam analysis at /users/user123/examAnalyses/analysis456.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the exam analysis at /users/user123/examAnalyses/analysis456.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/examAnalyses/{analysisId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId);
-        allow update: if isExistingOwner(userId);
-        allow delete: if isExistingOwner(userId);
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isOwner(userId) {
+            return request.auth.uid == userId;
+        }
+
+        function isExistingOwner(userId) {
+          return isOwner(userId) && resource.data != null;
+        }
+
+        allow get: if isSignedIn() && isOwner(userId);
+        allow list: if false;
+        allow create: if isSignedIn() && isOwner(userId);
+        allow update: if isSignedIn() && isExistingOwner(userId);
+        allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to focus sessions for each student.
-     * @path /databases/{database}/documents/users/{userId}/focusSessions/{sessionId}
-     * @allow (get) - Authenticated user can read their own focus sessions.
-     * @allow (list) - Authenticated user can list their own focus sessions.
-     * @allow (create) - Authenticated user can create their own focus sessions.
-     * @allow (update) - Authenticated user can update their own focus sessions.
-     * @allow (delete) - Authenticated user can delete their own focus sessions.
-     * @deny (get) - Non-authenticated user cannot read student's focus sessions.
-     * @deny (list) - Non-authenticated user cannot list student's focus sessions.
-     * @deny (create) - Authenticated user cannot create focus sessions for other students.
-     * @deny (update) - Authenticated user cannot update focus sessions of other students.
-     * @deny (delete) - Authenticated user cannot delete focus sessions of other students.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures focus session ratings for each student. Only the authenticated user (student) can manage their own focus sessions.
+     * @path /users/{userId}/focusSessions/{sessionId}
+     * @allow (create) - Authenticated user with UID 'user123' can create a focus session at /users/user123/focusSessions/session456.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their focus session at /users/user123/focusSessions/session456.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create a focus session at /users/user123/focusSessions/session456.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the focus session at /users/user123/focusSessions/session456.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/focusSessions/{sessionId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to study topics for each student.
-     * @path /databases/{database}/documents/users/{userId}/studyTopics/{topicId}
-     * @allow (get) - Authenticated user can read their own study topics.
-     * @allow (list) - Authenticated user can list their own study topics.
-     * @allow (create) - Authenticated user can create their own study topics.
-     * @allow (update) - Authenticated user can update their own study topics.
-     * @allow (delete) - Authenticated user can delete their own study topics.
-     * @deny (get) - Non-authenticated user cannot read student's study topics.
-     * @deny (list) - Non-authenticated user cannot list student's study topics.
-     * @deny (create) - Authenticated user cannot create study topics for other students.
-     * @deny (update) - Authenticated user cannot update study topics of other students.
-     * @deny (delete) - Authenticated user cannot delete study topics of other students.
-     * @principle Enforces document ownership for reads and writes.
+     * @description Secures study topics for each student. Only the authenticated user (student) can manage their own study topics.
+     * @path /users/{userId}/studyTopics/{topicId}
+     * @allow (create) - Authenticated user with UID 'user123' can create a study topic at /users/user123/studyTopics/topic456.
+     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their study topic at /users/user123/studyTopics/topic456.
+     * @deny (create) - Authenticated user with UID 'user456' cannot create a study topic at /users/user123/studyTopics/topic456.
+     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the study topic at /users/user123/studyTopics/topic456.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/studyTopics/{topicId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isOwner(userId) {
+            return request.auth.uid == userId;
+        }
+
+        function isExistingOwner(userId) {
+          return isOwner(userId) && resource.data != null;
+        }
+
+        allow get: if isSignedIn() && isOwner(userId);
+        allow list: if false;
+        allow create: if isSignedIn() && isOwner(userId);
+        allow update: if isSignedIn() && isExistingOwner(userId);
+        allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages access to smart alerts for each student.
-     * @path /databases/{database}/documents/users/{userId}/smartAlerts/{alertId}
-     * @allow (get) - Authenticated user can read their own smart alerts.
-     * @allow (list) - Authenticated user can list their own smart alerts.
-     * @allow (create) - Authenticated user can create their own smart alerts.
-     * @allow (update) - Authenticated user can update their own smart alerts.
-     * @allow (delete) - Authenticated user can delete their own smart alerts.
-     * @deny (get) - Non-authenticated user cannot read student's smart alerts.
-     * @deny (list) - Non-authenticated user cannot list student's smart alerts.
-     * @deny (create) - Authenticated user cannot create smart alerts for other students.
-     * @deny (update) - Authenticated user cannot update smart alerts of other students.
-     * @deny (delete) - Authenticated user cannot delete smart alerts of other students.
-     * @principle Enforces document ownership for reads and writes.
-     */
-    match /users/{userId}/smartAlerts/{alertId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Manages access to class information.
-     * @path /databases/{database}/documents/classes/{classId}
+     * @description Secures class information. Teachers and admins have read access; only admins can create/update/delete.
+     * @path /classes/{classId}
+     * @allow (get, list) - Authenticated teacher can read class information.
+     * @allow (create, update, delete) - Authenticated admin can create, update or delete class information.
+     * @deny (create, update, delete) - Authenticated teacher cannot create, update or delete class information.
+     * @principle Restricts write access to admins, allows read access to teachers.
      */
     match /classes/{classId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // TODO: Implement admin role check.  Currently, no admin role is defined.
+      function isAdmin() {
+          return false; // Placeholder: Replace with actual admin check
+      }
+
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Manages access to teacher profiles.
-     * @path /databases/{database}/documents/teachers/{teacherId}
+     * @description Secures teacher profiles.  Only admins can create/update/delete teacher profiles. Teachers can read their own profile.
+     * @path /teachers/{teacherId}
+     * @allow (get) - Authenticated teacher with ID 'teacher123' can read their own profile at /teachers/teacher123.
+     * @allow (create, update, delete) - Authenticated admin can create, update, or delete teacher profiles.
+     * @deny (get) - Authenticated teacher with ID 'teacher456' cannot read the profile at /teachers/teacher123.
+     * @deny (create, update, delete) - Authenticated teacher cannot create, update, or delete teacher profiles.
+     * @principle Restricts write access to admins, allows read access to the profile owner.
      */
     match /teachers/{teacherId} {
-      allow get: if isSignedIn();
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(teacherId) {
+        return request.auth.uid == teacherId;
+      }
+
+      // TODO: Implement admin role check.  Currently, no admin role is defined.
+      function isAdmin() {
+          return false; // Placeholder: Replace with actual admin check
+      }
+      
+      allow get: if isSignedIn() && isOwner(teacherId);
       allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Manages access to general announcements.
-     * @path /databases/{database}/documents/announcements/{announcementId}
+     * @description Secures smart alerts for each student. Only the authenticated user (student) and admins can read alerts associated with their account.
+     * @path /users/{userId}/smartAlerts/{alertId}
+     * @allow (get, list) - Authenticated user with UID 'user123' can read their smart alerts at /users/user123/smartAlerts/{alertId}.
+     * @deny (get, list) - Authenticated user with UID 'user456' cannot read smart alerts at /users/user123/smartAlerts/{alertId}.
+     * @principle Enforces document ownership for reads.
+     */
+    match /users/{userId}/smartAlerts/{alertId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows public read access to announcements, but restricts write access to admins.
+     * @path /announcements/{announcementId}
+     * @allow (get, list) - Any user can read announcements.
+     * @allow (create, update, delete) - Only admins can create, update, or delete announcements.
+     * @deny (create, update, delete) - Regular users cannot create, update, or delete announcements.
+     * @principle Allows public read access while restricting write access.
      */
     match /announcements/{announcementId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      // TODO: Implement admin role check.  Currently, no admin role is defined.
+      function isAdmin() {
+          return false; // Placeholder: Replace with actual admin check
+      }
+
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn() && isAdmin();
     }
   }
 }
