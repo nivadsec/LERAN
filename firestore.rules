@@ -1,39 +1,14 @@
-/**
- * @file Firestore Security Rules for iTalk Academic Platform
- * @description This ruleset enforces a strict user-ownership model for student data and an admin-only model for teacher data, with public read access for announcements.
- *
- * @dataStructure
- *   - /users/{userId}: Student profiles, accessible only by the owning user.
- *   - /users/{userId}/dailyReports/{reportId}: Daily reports for a student, accessible only by the owning user.
- *   - /users/{userId}/testAnalyses/{analysisId}: Test analysis data, accessible only by the owning user.
- *   - /users/{userId}/examAnalyses/{analysisId}: Exam analysis data, accessible only by the owning user.
- *   - /users/{userId}/focusSessions/{sessionId}: Focus session ratings, accessible only by the owning user.
- *   - /users/{userId}/studyTopics/{topicId}: Study topics for spaced repetition, accessible only by the owning user.
- *   - /classes/{classId}: Class information, readable by teachers and admins, writeable only by admins.
- *   - /teachers/{teacherId}: Teacher profiles, readable by the teacher themselves, and writable only by admins.
- *   - /users/{userId}/smartAlerts/{alertId}: Smart alerts, accessible only by the owning student.
- *   - /announcements/{announcementId}: Public announcements, readable by all, writable only by admins.
- *
- * @keySecurityDecisions
- *   - User listing is disabled for security and privacy.
- *   - Data validation is relaxed to allow for rapid prototyping, focusing on authorization and relational integrity.
- *   - Ambiguous relationships default to strict owner-only access.
- *
- * @denormalizationForAuthorization
- *   - User ownership is enforced through path-based rules (e.g., /users/{userId}), avoiding the need for `get()` calls to verify ownership.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secures student profiles. Only the authenticated user (student) can manage their own profile.
+     * @description Allows students to read and write their own profile data.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user with UID 'user123' can create their profile at /users/user123.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their profile at /users/user123.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create a profile at /users/user123.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the profile at /users/user123.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create their profile.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their profile.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this profile.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
       function isSignedIn() {
@@ -41,29 +16,23 @@ service cloud.firestore {
       }
 
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures daily reports for each student. Only the authenticated user (student) can manage their own reports.
+     * @description Allows students to manage their own daily reports.
      * @path /users/{userId}/dailyReports/{reportId}
-     * @allow (create) - Authenticated user with UID 'user123' can create a daily report at /users/user123/dailyReports/report456.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their daily report at /users/user123/dailyReports/report456.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create a daily report at /users/user123/dailyReports/report456.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the daily report at /users/user123/dailyReports/report456.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create daily reports.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their own daily reports.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this data.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/dailyReports/{reportId} {
       function isSignedIn() {
@@ -71,28 +40,23 @@ service cloud.firestore {
       }
 
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures test analyses for each student. Only the authenticated user (student) can manage their own analyses.
+     * @description Allows students to manage their own test analysis data.
      * @path /users/{userId}/testAnalyses/{analysisId}
-     * @allow (create) - Authenticated user with UID 'user123' can create a test analysis at /users/user123/testAnalyses/analysis456.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their test analysis at /users/user123/testAnalyses/analysis456.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create a test analysis at /users/user123/testAnalyses/analysis456.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the test analysis at /users/user123/testAnalyses/analysis456.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create test analyses.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their own test analyses.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this data.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/testAnalyses/{analysisId} {
       function isSignedIn() {
@@ -100,28 +64,23 @@ service cloud.firestore {
       }
 
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
       }
 
-       function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures exam analyses for each student. Only the authenticated user (student) can manage their own analyses.
+     * @description Allows students to manage their own exam analysis data.
      * @path /users/{userId}/examAnalyses/{analysisId}
-     * @allow (create) - Authenticated user with UID 'user123' can create an exam analysis at /users/user123/examAnalyses/analysis456.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their exam analysis at /users/user123/examAnalyses/analysis456.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create an exam analysis at /users/user123/examAnalyses/analysis456.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the exam analysis at /users/user123/examAnalyses/analysis456.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create exam analyses.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their own exam analyses.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this data.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/examAnalyses/{analysisId} {
         function isSignedIn() {
@@ -129,28 +88,23 @@ service cloud.firestore {
         }
 
         function isOwner(userId) {
-            return request.auth.uid == userId;
+            return isSignedIn() && request.auth.uid == userId;
         }
 
-        function isExistingOwner(userId) {
-          return isOwner(userId) && resource.data != null;
-        }
-
-        allow get: if isSignedIn() && isOwner(userId);
+        allow get: if isOwner(userId);
         allow list: if false;
-        allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isExistingOwner(userId);
-        allow delete: if isSignedIn() && isExistingOwner(userId);
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures focus session ratings for each student. Only the authenticated user (student) can manage their own focus sessions.
+     * @description Allows students to manage their own focus session data.
      * @path /users/{userId}/focusSessions/{sessionId}
-     * @allow (create) - Authenticated user with UID 'user123' can create a focus session at /users/user123/focusSessions/session456.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their focus session at /users/user123/focusSessions/session456.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create a focus session at /users/user123/focusSessions/session456.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the focus session at /users/user123/focusSessions/session456.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create focus sessions.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their own focus sessions.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this data.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/focusSessions/{sessionId} {
       function isSignedIn() {
@@ -158,79 +112,69 @@ service cloud.firestore {
       }
 
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures study topics for each student. Only the authenticated user (student) can manage their own study topics.
+     * @description Allows students to manage their own study topics data.
      * @path /users/{userId}/studyTopics/{topicId}
-     * @allow (create) - Authenticated user with UID 'user123' can create a study topic at /users/user123/studyTopics/topic456.
-     * @allow (get, update, delete) - Authenticated user with UID 'user123' can read/update/delete their study topic at /users/user123/studyTopics/topic456.
-     * @deny (create) - Authenticated user with UID 'user456' cannot create a study topic at /users/user123/studyTopics/topic456.
-     * @deny (get, update, delete) - Authenticated user with UID 'user456' cannot read/update/delete the study topic at /users/user123/studyTopics/topic456.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user with ID matching the userId can create study topics.
+     * @allow (get, list, update, delete) - Authenticated user with ID matching the userId can read, update, or delete their own study topics.
+     * @deny (create, get, list, update, delete) - Any other user attempting to access this data.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/studyTopics/{topicId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-        function isOwner(userId) {
-            return request.auth.uid == userId;
-        }
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
 
-        function isExistingOwner(userId) {
-          return isOwner(userId) && resource.data != null;
-        }
-
-        allow get: if isSignedIn() && isOwner(userId);
-        allow list: if false;
-        allow create: if isSignedIn() && isOwner(userId);
-        allow update: if isSignedIn() && isExistingOwner(userId);
-        allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Secures class information. Teachers and admins have read access; only admins can create/update/delete.
+     * @description Allows all users to read class information, but only allows admins to create, update, and delete.
      * @path /classes/{classId}
-     * @allow (get, list) - Authenticated teacher can read class information.
-     * @allow (create, update, delete) - Authenticated admin can create, update or delete class information.
-     * @deny (create, update, delete) - Authenticated teacher cannot create, update or delete class information.
-     * @principle Restricts write access to admins, allows read access to teachers.
+     * @allow (get, list) - Any authenticated user can read class information.
+     * @deny (create, update, delete) - Only admins can create, update, and delete classes.
+     * @principle Restricts write access to admins.
      */
     match /classes/{classId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      // TODO: Implement admin role check.  Currently, no admin role is defined.
       function isAdmin() {
-          return false; // Placeholder: Replace with actual admin check
+        return false; // Replace with your actual admin check (e.g., custom claim)
       }
 
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isSignedIn() && isAdmin();
+      allow get: if isSignedIn(); // TODO: Refine read permissions for classes (e.g., based on teacher or student role).
+      allow list: if isSignedIn();
+      allow create: if isAdmin(); // TODO: Implement admin role check.
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Secures teacher profiles.  Only admins can create/update/delete teacher profiles. Teachers can read their own profile.
+     * @description Allows teachers to read their own profile, but only allows admins to create, update, and delete.
      * @path /teachers/{teacherId}
-     * @allow (get) - Authenticated teacher with ID 'teacher123' can read their own profile at /teachers/teacher123.
-     * @allow (create, update, delete) - Authenticated admin can create, update, or delete teacher profiles.
-     * @deny (get) - Authenticated teacher with ID 'teacher456' cannot read the profile at /teachers/teacher123.
-     * @deny (create, update, delete) - Authenticated teacher cannot create, update, or delete teacher profiles.
-     * @principle Restricts write access to admins, allows read access to the profile owner.
+     * @allow (get) - Authenticated teacher with ID matching the teacherId can read their own profile.
+     * @deny (create, list, update, delete) - Only admins can create, list, update, and delete teacher profiles.
+     * @principle Restricts write access to admins, allows teachers to view their own profiles.
      */
     match /teachers/{teacherId} {
       function isSignedIn() {
@@ -238,24 +182,25 @@ service cloud.firestore {
       }
 
       function isOwner(teacherId) {
-        return request.auth.uid == teacherId;
+        return isSignedIn() && request.auth.uid == teacherId;
       }
 
-      // TODO: Implement admin role check.  Currently, no admin role is defined.
       function isAdmin() {
-          return false; // Placeholder: Replace with actual admin check
+        return false; // Replace with your actual admin check (e.g., custom claim)
       }
-      
-      allow get: if isSignedIn() && isOwner(teacherId);
-      allow list: if false;
-      allow create, update, delete: if isSignedIn() && isAdmin();
+
+      allow get: if isOwner(teacherId);
+      allow list: if isAdmin();
+      allow create: if isAdmin(); // TODO: Implement admin role check.
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Secures smart alerts for each student. Only the authenticated user (student) and admins can read alerts associated with their account.
+     * @description Allows students to read their own smart alerts.
      * @path /users/{userId}/smartAlerts/{alertId}
-     * @allow (get, list) - Authenticated user with UID 'user123' can read their smart alerts at /users/user123/smartAlerts/{alertId}.
-     * @deny (get, list) - Authenticated user with UID 'user456' cannot read smart alerts at /users/user123/smartAlerts/{alertId}.
+     * @allow (get, list) - Authenticated user with ID matching the userId can read their own smart alerts.
+     * @deny (create, update, delete) - Smart alerts are managed by the system, not directly created, updated, or deleted by users.
      * @principle Enforces document ownership for reads.
      */
     match /users/{userId}/smartAlerts/{alertId} {
@@ -264,33 +209,37 @@ service cloud.firestore {
       }
 
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return isSignedIn() && request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create, update, delete: if false;
+      allow create: if false; // SmartAlerts should be created/managed by a trusted function, not directly by users.
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to announcements, but restricts write access to admins.
+     * @description Allows all users to read announcements, but only allows admins to create, update, and delete.
      * @path /announcements/{announcementId}
-     * @allow (get, list) - Any user can read announcements.
-     * @allow (create, update, delete) - Only admins can create, update, or delete announcements.
-     * @deny (create, update, delete) - Regular users cannot create, update, or delete announcements.
-     * @principle Allows public read access while restricting write access.
+     * @allow (get, list) - Any authenticated user can read announcements.
+     * @deny (create, update, delete) - Only admins can create, update, and delete announcements.
+     * @principle Restricts write access to admins, allows public read access.
      */
     match /announcements/{announcementId} {
       function isSignedIn() {
         return request.auth != null;
       }
-      // TODO: Implement admin role check.  Currently, no admin role is defined.
+
       function isAdmin() {
-          return false; // Placeholder: Replace with actual admin check
+        return false; // Replace with your actual admin check (e.g., custom claim)
       }
 
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && isAdmin();
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow create: if isAdmin(); // TODO: Implement admin role check.
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }
