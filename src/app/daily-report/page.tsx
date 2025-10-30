@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Calendar, CheckCircle, Upload } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -56,28 +56,30 @@ export default function DailyReportPage() {
       return;
     }
 
-    try {
-      const dailyReportRef = collection(firestore, 'users', user.uid, 'dailyReports');
-      await addDoc(dailyReportRef, {
+    const dailyReportRef = collection(firestore, 'users', user.uid, 'dailyReports');
+    const payload = {
         ...values,
         date: serverTimestamp(),
         studentId: user.uid,
-        // Attachment logic needs to be implemented separately (e.g., upload to Firebase Storage)
-      });
-      toast({
-        title: 'ثبت موفق',
-        description: 'گزارش روزانه شما با موفقیت ثبت شد.',
-        action: <CheckCircle className="text-green-500" />,
-      });
-      form.reset();
-    } catch (error: any) {
-      console.error('Error submitting report: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'خطا در ثبت گزارش',
-        description: 'مشکلی در هنگام ثبت گزارش رخ داد. لطفاً دوباره تلاش کنید.',
-      });
-    }
+    };
+
+    addDoc(dailyReportRef, payload)
+        .then(() => {
+            toast({
+                title: 'ثبت موفق',
+                description: 'گزارش روزانه شما با موفقیت ثبت شد.',
+                action: <CheckCircle className="text-green-500" />,
+            });
+            form.reset();
+        })
+        .catch(error => {
+            const contextualError = new FirestorePermissionError({
+                path: dailyReportRef.path,
+                operation: 'create',
+                requestResourceData: payload,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
   };
   
   const today = format(new Date(), 'EEEE, d MMMM yyyy');
