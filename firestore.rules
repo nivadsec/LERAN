@@ -1,152 +1,236 @@
 /**
- * @file Firebase Security Rules for iTalk Academic Platform
+ * @fileoverview Firestore Security Rules for iTalk Academic Platform.
  *
- * @corePhilosophy This ruleset enforces a strict user-ownership model for student data
- * and a role-based model for administrative data (teachers, classes, announcements).
- * All data is nested under dedicated collections, reflecting the platform's focus
- * on individual student progress and centralized administrative control.
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for student data and restricts access to classes, teachers, and announcements based on user roles.
  *
- * @dataStructure
- * - /users/{userId}: Student profiles, owned by the user.
- * - /users/{userId}/dailyReports/{reportId}: Daily reports for each student, owned by the user.
- * - /classes/{classId}: Class information, managed by teachers and admins.
- * - /teachers/{teacherId}: Teacher profiles, managed by admins.
- * - /users/{userId}/smartAlerts/{alertId}: Smart alerts for students, owned by the user.
- * - /announcements/{announcementId}: General announcements, managed by admins, publicly readable.
+ * Data Structure:
+ * - Student profiles are stored in /users/{userId}.
+ * - Daily reports, test analyses, focus sessions, study topics, exam analyses and smart alerts are stored as subcollections under /users/{userId}.
+ * - Class information is stored in /classes/{classId}.
+ * - Teacher profiles are stored in /teachers/{teacherId}.
+ * - Announcements are stored in /announcements/{announcementId}.
  *
- * @keySecurityDecisions
- * - Students can only access their own profiles and associated data (daily reports, smart alerts).
- * - Teachers can read class information.
- * - Admins (not defined, assuming future role) can manage teachers, classes, and announcements.
- * - Public listing of user data is disallowed.
+ * Key Security Decisions:
+ * - Students can only access their own profile and related data.
+ * - Teachers can only access class information. Teacher profiles are not accessible to teachers themselves via the API.
+ * - Listing the /users collection is explicitly denied.
+ * - Announcements are publicly readable but only manageable by admins.
  *
- * @denormalizationForAuthorization N/A - Path-based ownership avoids the need for denormalization.
- *
- * @structuralSegregation Private user data is segregated into user-specific subcollections,
- * eliminating the need for boolean flags to control access.
+ * Denormalization for Authorization: Not applicable, using path-based authorization.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure student profiles. Only the authenticated user (student) can read/write their own profile.
+     * @description Checks if the request is authenticated.
+     * @returns {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the requested user ID matches the authenticated user's ID.
+     * @param {string} userId - The user ID to compare against the authenticated user's ID.
+     * @returns {boolean} True if the user ID matches, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner and the resource exists.
+     * @param {string} userId - The user ID to check for ownership.
+     * @returns {boolean} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Restricts listing of all users.
+     * @path /users
+     * @allow N/A - Listing the entire collection is denied.
+     * @deny Any attempt to list the collection.
+     * @principle Prevents enumeration of all user accounts.
+     */
+    match /users {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages student profiles.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' creates a profile at /users/user123.
-     * @allow (get, update, delete) User with UID 'user123' reads their profile at /users/user123.
-     * @deny (create) User with UID 'user456' attempts to create a profile at /users/user123.
-     * @deny (get, update, delete) User with UID 'user456' attempts to read the profile at /users/user123.
+     * @allow (get) Authenticated user accessing their own profile.
+     * @allow (create) Authenticated user can create their own profile if the userId matches their auth.uid.
+     * @allow (update) Authenticated user updating their own profile.
+     * @allow (delete) Authenticated user deleting their own profile.
+     * @deny (get) Authenticated user accessing another user's profile.
+     * @deny (create) Authenticated user creating a profile with a userId that doesn't match their auth.uid.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secure daily reports for each student. Only the authenticated user (student) can read/write their own reports.
+     * @description Manages daily reports for a student.
      * @path /users/{userId}/dailyReports/{reportId}
-     * @allow (create) User with UID 'user123' creates a report at /users/user123/dailyReports/report456.
-     * @allow (get, update, delete) User with UID 'user123' reads their report at /users/user123/dailyReports/report456.
-     * @deny (create) User with UID 'user456' attempts to create a report at /users/user123/dailyReports/report456.
-     * @deny (get, update, delete) User with UID 'user456' attempts to read the report at /users/user123/dailyReports/report456.
-     * @principle Path-based ownership ensures authorization independence.
+     * @allow (get) Authenticated user accessing their own daily report.
+     * @allow (create) Authenticated user creating a daily report for themselves.
+     * @allow (update) Authenticated user updating their own daily report.
+     * @allow (delete) Authenticated user deleting their own daily report.
+     * @deny (get) Authenticated user accessing another user's daily report.
+     * @deny (create) Authenticated user creating a daily report for another user.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/dailyReports/{reportId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secure class information. Teachers and admins have read access; only admins can create/update/delete.
+     * @description Manages test analyses for a student.
+     * @path /users/{userId}/testAnalyses/{analysisId}
+     * @allow (get) Authenticated user accessing their own test analysis.
+     * @allow (create) Authenticated user creating a test analysis for themselves.
+     * @allow (update) Authenticated user updating their own test analysis.
+     * @allow (delete) Authenticated user deleting their own test analysis.
+     * @deny (get) Authenticated user accessing another user's test analysis.
+     * @deny (create) Authenticated user creating a test analysis for another user.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/testAnalyses/{analysisId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages exam analyses for a student.
+     * @path /users/{userId}/examAnalyses/{analysisId}
+     * @allow (get) Authenticated user accessing their own exam analysis.
+     * @allow (create) Authenticated user creating an exam analysis for themselves.
+     * @allow (update) Authenticated user updating their own exam analysis.
+     * @allow (delete) Authenticated user deleting their own exam analysis.
+     * @deny (get) Authenticated user accessing another user's exam analysis.
+     * @deny (create) Authenticated user creating an exam analysis for another user.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/examAnalyses/{analysisId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId); // schema does not include studentId
+        allow update: if isExistingOwner(userId);  // schema does not include studentId
+        allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages focus sessions for a student.
+     * @path /users/{userId}/focusSessions/{sessionId}
+     * @allow (get) Authenticated user accessing their own focus session.
+     * @allow (create) Authenticated user creating a focus session for themselves.
+     * @allow (update) Authenticated user updating their own focus session.
+     * @allow (delete) Authenticated user deleting their own focus session.
+     * @deny (get) Authenticated user accessing another user's focus session.
+     * @deny (create) Authenticated user creating a focus session for another user.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/focusSessions/{sessionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages study topics for a student.
+     * @path /users/{userId}/studyTopics/{topicId}
+     * @allow (get) Authenticated user accessing their own study topic.
+     * @allow (create) Authenticated user creating a study topic for themselves.
+     * @allow (update) Authenticated user updating their own study topic.
+     * @allow (delete) Authenticated user deleting their own study topic.
+     * @deny (get) Authenticated user accessing another user's study topic.
+     * @deny (create) Authenticated user creating a study topic for another user.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/studyTopics/{topicId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages classes.
      * @path /classes/{classId}
-     * @allow (get, list) Any authenticated user can read class data.
-     * @deny (create, update, delete) Non-admin user attempts to modify class data.
-     * @principle Restricts write access to privileged users (admins).
      */
     match /classes/{classId} {
-      allow get, list: if true;
-      allow create: if false; // TODO: Add admin check once roles are defined.
-      allow update: if false; // TODO: Add admin check once roles are defined.
-      allow delete: if false; // TODO: Add admin check once roles are defined.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Secure teacher profiles. Only admins can create/update/delete teacher profiles. Teachers can read their own profile.
+     * @description Manages teachers.
      * @path /teachers/{teacherId}
-     * @allow (get) Teacher with UID 'teacher123' reads their profile at /teachers/teacher123.
-     * @deny (create, update, delete) Non-admin user attempts to modify teacher data.
-     * @principle Restricts write access to privileged users (admins).
      */
     match /teachers/{teacherId} {
-      function isOwner(teacherId) {
-        return request.auth != null && request.auth.uid == teacherId;
-      }
-
-      allow get: if isOwner(teacherId);
+      allow get: if false;
       allow list: if false;
-      allow create: if false; // TODO: Add admin check once roles are defined.
-      allow update: if false; // TODO: Add admin check once roles are defined.
-      allow delete: if false; // TODO: Add admin check once roles are defined.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Secure smart alerts for each student. Only the authenticated user (student) can read alerts associated with their account.
+     * @description Manages smart alerts for a student.
      * @path /users/{userId}/smartAlerts/{alertId}
-     * @allow (get) User with UID 'user123' reads an alert at /users/user123/smartAlerts/alert456.
-     * @deny (create, update, delete) Non-admin user attempts to modify alert data.
-     * @principle Enforces document ownership for reads.
+     * @allow (get) Authenticated user accessing their own smart alert.
+     * @allow (create) Authenticated user creating a smart alert for themselves.
+     * @allow (update) Authenticated user updating their own smart alert.
+     * @allow (delete) Authenticated user deleting their own smart alert.
+     * @deny (get) Authenticated user accessing another user's smart alert.
+     * @deny (create) Authenticated user creating a smart alert for another user.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/smartAlerts/{alertId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if false; // TODO: Add admin check once roles are defined.
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.studentId == resource.data.studentId;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secure general announcements. Admins can create/update/delete. All users can read.
+     * @description Manages announcements.
      * @path /announcements/{announcementId}
-     * @allow (get, list) Any authenticated user can read announcements.
-     * @deny (create, update, delete) Non-admin user attempts to modify announcement data.
-     * @principle Allows public read access with restricted write access.
      */
     match /announcements/{announcementId} {
-      allow get, list: if true;
-      allow create: if false; // TODO: Add admin check once roles are defined.
-      allow update: if false; // TODO: Add admin check once roles are defined.
-      allow delete: if false; // TODO: Add admin check once roles are defined.
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
