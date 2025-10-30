@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,6 +22,19 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, PlusCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface Student {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  // These fields might not be on every student document, so they are optional
+  avgStudyHours?: number; 
+  avgFeeling?: number;
+}
 
 const studentSchema = z.object({
   firstName: z.string().min(1, 'نام الزامی است.'),
@@ -36,7 +49,21 @@ const studentSchema = z.object({
 
 export default function AdminUsersPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
+  const firestore = useFirestore();
+  
+  const studentsQuery = useMemoFirebase(() => 
+    query(collection(firestore, 'users'), where('isAdmin', '!=', true)),
+    [firestore]
+  );
+  
+  const { data: allStudents, isLoading } = useCollection<Student>(studentsQuery);
+
+  const filteredStudents = allStudents?.filter(student =>
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const featureList = [
     { id: 'smart-bot', label: 'ربات هوشمند' },
     { id: 'daily-monitoring', label: 'پایش هوشمند روزانه' },
@@ -86,6 +113,7 @@ export default function AdminUsersPage() {
   
   const onSubmit = (values: z.infer<typeof studentSchema>) => {
     console.log(values);
+    // TODO: Implement user creation logic here
   };
 
   return (
@@ -96,7 +124,12 @@ export default function AdminUsersPage() {
              <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                 <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="جستجوی دانش‌آموز..." className="pl-10 text-right w-full" />
+                    <Input 
+                      placeholder="جستجوی دانش‌آموز..." 
+                      className="pl-10 text-right w-full"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
                  <Dialog>
                     <DialogTrigger asChild>
@@ -227,11 +260,33 @@ export default function AdminUsersPage() {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">
-                    نتیجه‌ای یافت نشد.
-                    </TableCell>
-                </TableRow>
+                 {isLoading ? (
+                    [...Array(3)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredStudents && filteredStudents.length > 0 ? (
+                    filteredStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell>
+                          <span className="text-green-500">●</span> فعال
+                        </TableCell>
+                        <TableCell>{student.avgFeeling?.toFixed(1) || 'N/A'}</TableCell>
+                        <TableCell>{student.avgStudyHours?.toFixed(1) || 'N/A'}</TableCell>
+                        <TableCell>{student.firstName} {student.lastName}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center h-24">
+                        {searchTerm ? 'دانش‌آموزی با این نام یافت نشد.' : 'هنوز دانش‌آموزی ثبت‌نام نکرده است.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
             </Table>
           </div>
