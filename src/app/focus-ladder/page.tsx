@@ -76,7 +76,7 @@ export default function FocusLadderPage() {
   const getSliderColor = (value: number) => {
     if (value <= 4) return 'bg-red-500';
     if (value <= 7) return 'bg-yellow-500';
-    return 'bg-teal-500';
+    return 'bg-green-500';
   };
 
   return (
