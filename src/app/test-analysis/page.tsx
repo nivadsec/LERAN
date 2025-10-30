@@ -45,7 +45,9 @@ export default function TestAnalysisPage() {
     },
   });
 
-  const { fields, append, remove, control } = useFieldArray({
+  const { control } = form;
+
+  const { fields, append, remove } = useFieldArray({
     control,
     name: 'tests',
   });
