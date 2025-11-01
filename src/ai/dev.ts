@@ -4,3 +4,4 @@ config();
 import '@/ai/flows/generate-academic-plan.ts';
 import '@/ai/flows/ai-self-assessment.ts';
 import '@/ai/flows/extract-subjects-from-text.ts';
+import '@/ai/flows/lernova-advisor.ts';
