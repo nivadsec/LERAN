@@ -141,16 +141,10 @@ function HeroSection() {
 
 function Footer() {
   return (
-    <footer className="relative flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 z-10">
-      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gray-800 text-white font-bold text-lg">
-        N
-      </div>
-      <p className="flex-1 text-center text-xs text-muted-foreground">
+    <footer className="relative flex justify-center py-6 w-full shrink-0 items-center px-4 md:px-6 z-10">
+      <p className="text-xs text-muted-foreground">
         © 1404 آی‌تاک. تمام حقوق محفوظ است. | طراحی و توسعه توسط حسین طاهری
       </p>
-      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-yellow-500 text-black font-bold text-lg">
-        V
-      </div>
     </footer>
   );
 }
