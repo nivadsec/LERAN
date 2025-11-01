@@ -3,27 +3,26 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for student data,
- * ensuring that students can only access their own information. Announcements
- * are publicly readable, while administrative data (teachers, classes)
- * have restricted access.
+ * ensuring that students can only access their own information. Admins have
+ * broader read access for oversight. Announcements are publicly readable.
  *
  * Data Structure:
  * - /users/{userId}: Student profiles, owned by the user.
- * - /users/{userId}/dailyReports/{reportId}: Daily reports for each student.
- * - /users/{userId}/testAnalyses/{analysisId}: Test analysis data for each student.
- * - /users/{userId}/examAnalyses/{analysisId}: Exam analysis data for each student.
- * - /users/{userId}/focusSessions/{sessionId}: Focus session ratings for each student.
- * - /users/{userId}/studyTopics/{topicId}: Study topics for each student.
- * - /users/{userId}/smartAlerts/{alertId}: Smart alerts for each student.
+ * - /users/{userId}/dailyReports/{reportId}: Daily reports, readable by admin.
+ * - /users/{userId}/testAnalyses/{analysisId}: Test analysis, readable by admin.
+ * - /users/{userId}/examAnalyses/{analysisId}: Exam analysis, readable by admin.
+ * - /users/{userId}/focusSessions/{sessionId}: Focus sessions, readable by admin.
+ * - /users/{userId}/studyTopics/{topicId}: Study topics, readable by admin.
+ * - /users/{userId}/smartAlerts/{alertId}: Smart alerts, readable by admin.
  * - /classes/{classId}: Class information, restricted access.
  * - /teachers/{teacherId}: Teacher profiles, restricted access.
  * - /announcements/{announcementId}: General announcements, publicly readable.
  *
  * Key Security Decisions:
  * - Students have full CRUD access only to their own data under their /users/{userId} path.
- * - Admins can list all user profiles.
+ * - Admins can list all user profiles and read all sub-collection data for monitoring.
  * - Announcements are publicly readable, but only admins can manage them.
- * - User listing is implicitly denied for non-admins.
+ * - Write access is strictly limited to prevent unauthorized data manipulation.
  *
  */
 rules_version = '2';
@@ -39,11 +38,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-    // Helper function to check if the user is the existing owner
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
     
     // Helper function to check if the user has an 'isAdmin' flag in their user document.
     function isAdmin() {
@@ -55,48 +49,53 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
     }
 
     /**
-     * @description Allows students to manage their own daily reports.
+     * @description Allows students to manage their own reports; admins can read them.
      * @path /users/{userId}/dailyReports/{reportId}
      */
     match /users/{userId}/dailyReports/{reportId} {
-      allow read, list, write: if isOwner(userId);
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
     }
 
      /**
-      * @description Allows students to manage their own test analyses.
+      * @description Allows students to manage their own analyses; admins can read them.
       * @path /users/{userId}/testAnalyses/{analysisId}
       */
     match /users/{userId}/testAnalyses/{analysisId} {
-      allow read, list, write: if isOwner(userId);
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
     }
 
      /**
-      * @description Allows students to manage their own exam analyses.
+      * @description Allows students to manage their own analyses; admins can read them.
       * @path /users/{userId}/examAnalyses/{analysisId}
       */
     match /users/{userId}/examAnalyses/{analysisId} {
-       allow read, list, write: if isOwner(userId);
+       allow read, list: if isOwner(userId) || isAdmin();
+       allow write: if isOwner(userId);
     }
 
     /**
-     * @description Allows students to manage their own focus sessions.
+     * @description Allows students to manage their own sessions; admins can read them.
      * @path /users/{userId}/focusSessions/{sessionId}
      */
     match /users/{userId}/focusSessions/{sessionId} {
-      allow read, list, write: if isOwner(userId);
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
     }
 
      /**
-      * @description Allows students to manage their own study topics.
+      * @description Allows students to manage their own topics; admins can read them.
       * @path /users/{userId}/studyTopics/{topicId}
       */
     match /users/{userId}/studyTopics/{topicId} {
-      allow read, list, write: if isOwner(userId);
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
     }
 
     /**
@@ -104,8 +103,8 @@ service cloud.firestore {
      * @path /classes/{classId}
      */
     match /classes/{classId} {
-      allow read, list: if true;
-      allow write: if false; // TODO: Add role-based access
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
@@ -113,17 +112,17 @@ service cloud.firestore {
      * @path /teachers/{teacherId}
      */
     match /teachers/{teacherId} {
-      allow read, list: if true;
-      allow write: if false; // TODO: Add role-based access
+      allow read, list: if isAdmin();
+      allow write: if isAdmin(); 
     }
 
      /**
-      * @description Allows students to read their own smart alerts.
+      * @description Allows students and admins to read smart alerts.
       * @path /users/{userId}/smartAlerts/{alertId}
       */
     match /users/{userId}/smartAlerts/{alertId} {
-      allow read, list: if isOwner(userId);
-      allow write: if false; // Only backend/admins can create alerts
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin(); // Only backend/admins can create alerts
     }
 
     /**
