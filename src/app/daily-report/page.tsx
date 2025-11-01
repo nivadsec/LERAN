@@ -1,77 +1,85 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
-import { Calendar, CheckCircle, Upload, Clock, Bed, Smile, BookOpen, History, Activity } from 'lucide-react';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
-import { format } from 'date-fns-jalali';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 
-const formSchema = z.object({
-  activities: z.string().min(10, { message: 'لطفاً فعالیت‌های خود را با حداقل ۱۰ کاراکتر شرح دهید.' }),
-  feeling: z.number().min(1).max(10),
-  studyHours: z.coerce.number().min(0, { message: 'ساعت مطالعه نمی‌تواند منفی باشد.' }).max(24, { message: 'ساعت مطالعه نمی‌تواند بیش از ۲۴ باشد.' }),
-  sleepHours: z.coerce.number().min(0, { message: 'ساعت خواب نمی‌تواند منفی باشد.' }).max(24, { message: 'ساعت خواب نمی‌تواند بیش از ۲۴ باشد.' }),
-  attachment: z.any().optional(),
+const studyItemSchema = z.object({
+  lesson: z.string(),
+  topic: z.string(),
+  studyTime: z.coerce.number().min(0).optional(),
+  testCount: z.coerce.number().min(0).optional(),
+  testCorrect: z.coerce.number().min(0).optional(),
+  testWrong: z.coerce.number().min(0).optional(),
+  testTime: z.coerce.number().min(0).optional(),
+  testPercentage: z.coerce.number().min(0).optional(),
 });
 
-interface DailyReport {
-    id: string;
-    activities: string;
-    feeling: number;
-    studyHours: number;
-    sleepHours: number;
-    date: Timestamp;
-}
+const formSchema = z.object({
+  reportDate: z.string().min(1, 'تاریخ الزامی است.'),
+  wakeupTime: z.string().optional(),
+  studyStartTime: z.string().optional(),
+  mentalState: z.number().min(1).max(10),
+  studyItems: z.array(studyItemSchema),
+  classHours: z.coerce.number().min(0).optional(),
+  sleepHours: z.coerce.number().min(0).optional(),
+  wastedHours: z.coerce.number().min(0).optional(),
+  mobileHours: z.coerce.number().min(0).optional(),
+});
+
+type DailyReportFormValues = z.infer<typeof formSchema>;
 
 export default function DailyReportPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const dailyReportsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'users', user.uid, 'dailyReports'), orderBy('date', 'desc'));
-  }, [user, firestore]);
-  
-  const { data: pastReports, isLoading: areReportsLoading } = useCollection<DailyReport>(dailyReportsQuery);
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<DailyReportFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      activities: '',
-      feeling: 5,
-      studyHours: 0,
-      sleepHours: 0,
+      reportDate: new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+      mentalState: 5,
+      studyItems: [],
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "studyItems",
+  });
+  
+  const watchedItems = useWatch({
+      control: form.control,
+      name: "studyItems"
+  })
+
+  // Calculate totals
+  const totalStudyTime = watchedItems.reduce((acc, item) => acc + (item.studyTime || 0), 0);
+  const totalTestCount = watchedItems.reduce((acc, item) => acc + (item.testCount || 0), 0);
+  const totalTestCorrect = watchedItems.reduce((acc, item) => acc + (item.testCorrect || 0), 0);
+  const totalTestWrong = watchedItems.reduce((acc, item) => acc + (item.testWrong || 0), 0);
+  const totalTestTime = watchedItems.reduce((acc, item) => acc + (item.testTime || 0), 0);
+  const overallTestPercentage = totalTestCount > 0 ? Math.round(((totalTestCorrect - totalTestWrong / 3) / totalTestCount) * 100) : 0;
+
+
+  const onSubmit = async (values: DailyReportFormValues) => {
     if (isUserLoading) {
-        toast({
-            variant: 'destructive',
-            title: 'کمی صبر کنید',
-            description: 'در حال بارگذاری اطلاعات کاربر. لطفاً چند لحظه بعد دوباره تلاش کنید.',
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'کمی صبر کنید',
+        description: 'در حال بارگذاری اطلاعات کاربر. لطفاً چند لحظه بعد دوباره تلاش کنید.',
+      });
+      return;
     }
 
     if (!user) {
@@ -82,40 +90,41 @@ export default function DailyReportPage() {
       });
       return;
     }
-
+    
     const dailyReportRef = collection(firestore, 'users', user.uid, 'dailyReports');
-    const payload: any = {
+    const payload = {
         ...values,
-        date: serverTimestamp(),
         studentId: user.uid,
+        createdAt: serverTimestamp(),
+        totals: {
+            totalStudyTime,
+            totalTestCount,
+            totalTestCorrect,
+            totalTestWrong,
+            totalTestTime,
+            overallTestPercentage
+        }
     };
     
-    if (!values.attachment || values.attachment.length === 0) {
-        delete payload.attachment;
-    } else {
-        // In a real app, you'd upload the file to Firebase Storage first
-        // and then save the URL in Firestore.
-        payload.attachment = 'file_placeholder';
-    }
-
-
     addDoc(dailyReportRef, payload)
         .then(() => {
             toast({
                 title: 'ثبت موفق',
                 description: 'گزارش روزانه شما با موفقیت ثبت شد.',
-                action: <CheckCircle className="text-green-500" />,
             });
             form.reset({
-                activities: '',
-                feeling: 5,
-                studyHours: 0,
+                reportDate: new Date().toLocaleDateString('fa-IR'),
+                mentalState: 5,
+                studyItems: [],
+                wakeupTime: '',
+                studyStartTime: '',
+                classHours: 0,
                 sleepHours: 0,
-                attachment: undefined,
+                wastedHours: 0,
+                mobileHours: 0
             });
         })
         .catch(error => {
-            console.error("Error creating daily report: ", error);
             const contextualError = new FirestorePermissionError({
                 path: dailyReportRef.path,
                 operation: 'create',
@@ -124,206 +133,138 @@ export default function DailyReportPage() {
             errorEmitter.emit('permission-error', contextualError);
         });
   };
-  
-  const today = format(new Date(), 'EEEE, d MMMM yyyy');
-  
-  const formatDate = (timestamp: Timestamp | null | undefined) => {
-    if (!timestamp) return 'تاریخ نامشخص';
-    const date = new Date(timestamp.seconds * 1000);
-    return format(date, 'EEEE, d MMMM yyyy');
-  }
 
   return (
-    <div className="space-y-6">
-        <Card>
-        <CardHeader className="text-right">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-5 w-5" />
-                    <span>{today}</span>
-                </div>
-                <div>
-                    <CardTitle>گزارش امروز</CardTitle>
-                    <CardDescription>عملکرد و وضعیت خود را برای امروز ثبت کنید.</CardDescription>
-                </div>
+    <Card>
+      <CardHeader className="text-right">
+        <CardTitle>ثبت گزارش روزانه</CardTitle>
+        <CardDescription>عملکرد امروز خود را با دقت در فرم زیر ثبت کنید.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Top Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <FormField control={form.control} name="reportDate" render={({ field }) => (
+                <FormItem><FormLabel>تاریخ</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="wakeupTime" render={({ field }) => (
+                <FormItem><FormLabel>ساعت بیداری</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={form.control} name="studyStartTime" render={({ field }) => (
+                <FormItem><FormLabel>ساعت شروع</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+              )} />
+               <FormField control={form.control} name="mentalState" render={({ field: { value, onChange } }) => (
+                <FormItem>
+                  <FormLabel>وضعیت روانی: {value}</FormLabel>
+                  <FormControl>
+                    <Slider dir="ltr" value={[value]} onValueChange={(v) => onChange(v[0])} max={10} min={1} step={1} />
+                  </FormControl>
+                </FormItem>
+              )} />
             </div>
-        </CardHeader>
-        <CardContent>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 text-right">
-                <FormField
-                control={form.control}
-                name="activities"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>فعالیت‌های انجام‌شده</FormLabel>
-                    <FormControl>
-                        <Textarea
-                        placeholder="امروز چه درس‌هایی خواندید و چه تمرین‌هایی حل کردید؟"
-                        className="min-h-[120px]"
-                        {...field}
-                        />
-                    </FormControl>
-                    <FormDescription>
-                        خلاصه ای از فعالیت های درسی، مطالعه، تمرین، پروژه و ...
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
 
-                <FormField
-                control={form.control}
-                name="feeling"
-                render={({ field: { value, onChange } }) => (
-                    <FormItem>
-                    <FormLabel>ارزیابی شخصی (از ۱ تا ۱۰): {value}</FormLabel>
-                    <FormControl>
-                        <div className="flex items-center gap-4" dir="ltr">
-                            <Slider
-                                defaultValue={[5]}
-                                value={[value || 5]}
-                                max={10}
-                                min={1}
-                                step={1}
-                                onValueChange={(values) => onChange(values[0])}
-                            />
-                        </div>
-                    </FormControl>
-                    <FormDescription>
-                        سطح انرژی، تمرکز و انگیزه خود را ارزیابی کنید.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+            {/* Main Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right border-l">درس</TableHead>
+                    <TableHead className="text-right border-l">مبحث</TableHead>
+                    <TableHead className="text-center border-l w-24">زمان (دقیقه)</TableHead>
+                    <TableHead colSpan={5} className="text-center">تست</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead className="border-l"></TableHead>
+                    <TableHead className="border-l"></TableHead>
+                    <TableHead className="border-l"></TableHead>
+                    <TableHead className="text-center border-l w-20">کل</TableHead>
+                    <TableHead className="text-center border-l w-20">درست</TableHead>
+                    <TableHead className="text-center border-l w-20">غلط</TableHead>
+                    <TableHead className="text-center border-l w-24">زمان (دقیقه)</TableHead>
+                    <TableHead className="text-center w-20">درصد</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fields.map((field, index) => {
+                     const watchedTest = form.watch(`studyItems.${index}`);
+                     const percentage = (watchedTest.testCount || 0) > 0 
+                        ? Math.round((( (watchedTest.testCorrect || 0) - (watchedTest.testWrong || 0) / 3) / (watchedTest.testCount || 1)) * 100)
+                        : 0;
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField
-                    control={form.control}
-                    name="sleepHours"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>ساعت خواب</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="مثلا: ۸" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                        مجموع ساعت خواب شبانه روز گذشته
-                        </FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="studyHours"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>ساعت مطالعه</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="مثلا: ۶" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                        مجموع ساعت مطالعه امروز
-                        </FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                </div>
-                
-                <FormField
-                control={form.control}
-                name="attachment"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>فایل ضمیمه (اختیاری)</FormLabel>
-                    <FormControl>
-                        <div className="relative flex items-center justify-center w-full">
-                            <label htmlFor="attachment-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">برای آپلود کلیک کنید</span> یا فایل را بکشید و رها کنید</p>
-                                    <p className="text-xs text-muted-foreground">PDF, PNG, JPG (حداکثر ۵ مگابایت)</p>
-                                </div>
-                                <Input id="attachment-file" type="file" className="hidden" onChange={(e) => field.onChange(e.target.files)} />
-                            </label>
-                        </div> 
-                    </FormControl>
-                    <FormDescription>
-                        می‌توانید تصویر تکلیف، گزارش یا فایل PDF را ضمیمه کنید.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                    return (
+                        <TableRow key={field.id}>
+                            <TableCell className="border-l"><Input placeholder="نام درس" {...form.register(`studyItems.${index}.lesson`)} /></TableCell>
+                            <TableCell className="border-l"><Input placeholder="مبحث خوانده شده" {...form.register(`studyItems.${index}.topic`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.studyTime`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCount`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCorrect`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testWrong`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
+                            <TableCell>
+                                <Input 
+                                    type="number"
+                                    value={percentage}
+                                    {...form.register(`studyItems.${index}.testPercentage`)}
+                                    className="text-center" 
+                                    readOnly
+                                 />
+                            </TableCell>
+                            <TableCell>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell colSpan={2} className="text-right border-l">مجموع</TableCell>
+                    <TableCell className="text-center border-l">{totalStudyTime}</TableCell>
+                    <TableCell className="text-center border-l">{totalTestCount}</TableCell>
+                    <TableCell className="text-center border-l">{totalTestCorrect}</TableCell>
+                    <TableCell className="text-center border-l">{totalTestWrong}</TableCell>
+                    <TableCell className="text-center border-l">{totalTestTime}</TableCell>
+                    <TableCell className="text-center">{overallTestPercentage}%</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+             <Button type="button" variant="outline" size="sm" onClick={() => append({ lesson: '', topic: '', studyTime: 0, testCount: 0, testCorrect: 0, testWrong: 0, testTime: 0, testPercentage: 0 })}>
+                <PlusCircle className="ml-2 h-4 w-4" />
+                افزودن آیتم
+            </Button>
 
+            {/* Bottom Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
+                <FormField control={form.control} name="classHours" render={({ field }) => (
+                    <FormItem><FormLabel>میزان کلاس</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="sleepHours" render={({ field }) => (
+                    <FormItem><FormLabel>میزان خواب</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="wastedHours" render={({ field }) => (
+                    <FormItem><FormLabel>میزان فاجعه!</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="mobileHours" render={({ field }) => (
+                    <FormItem><FormLabel>میزان موبایل</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="studyTime" render={() => (
+                    <FormItem><FormLabel>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
+                )} />
+            </div>
 
-                <div className="flex justify-start">
-                <Button type="submit" size="lg" disabled={form.formState.isSubmitting || isUserLoading}>
-                    {isUserLoading ? 'در حال بارگذاری...' : form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش'}
-                </Button>
-                </div>
-            </form>
-            </Form>
-        </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader className="text-right">
-                <CardTitle className="flex items-center justify-end gap-2">
-                    تاریخچه گزارش‌ها
-                    <History className="h-5 w-5 text-primary"/>
-                </CardTitle>
-                <CardDescription>گزارش‌های روزانه ثبت شده قبلی شما</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {areReportsLoading ? (
-                    <>
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                    </>
-                ) : pastReports && pastReports.length > 0 ? (
-                    pastReports.map(report => (
-                        <Card key={report.id} className="bg-muted/50">
-                            <CardHeader>
-                                <CardTitle className="text-base text-right">{formatDate(report.date)}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <p className="text-sm text-right text-muted-foreground flex items-start gap-2">
-                                    <Activity className="h-4 w-4 mt-1 shrink-0" />
-                                    <span>{report.activities}</span>
-                                </p>
-                                <Separator />
-                                <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 text-sm">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="font-semibold">{report.feeling}/10</span>
-                                        <Smile className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                     <div className="flex items-center gap-1.5">
-                                        <span className="font-semibold">{report.sleepHours}</span>
-                                        <Bed className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="font-semibold">{report.studyHours} ساعت</span>
-                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
-                ) : (
-                    <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-8 text-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                            <BookOpen className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <p className="font-semibold">هیچ گزارشی یافت نشد</p>
-                        <p className="text-sm text-muted-foreground">هنوز گزارشی ثبت نکرده‌اید. اولین گزارش خود را امروز ثبت کنید!</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    </div>
+            <div className="flex justify-start pt-4">
+              <Button type="submit" size="lg" disabled={form.formState.isSubmitting || isUserLoading}>
+                {isUserLoading ? 'در حال بارگذاری...' : form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
+}

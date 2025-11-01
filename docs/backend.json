@@ -36,55 +36,52 @@
       ]
     },
     "DailyReport": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "DailyReport",
+      "description": "Represents a student's detailed daily performance report.",
       "type": "object",
-      "description": "Represents a student's daily report, including activities, self-assessment, and attachments.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the DailyReport entity."
+        "id": { "type": "string", "description": "Unique identifier for the report." },
+        "studentId": { "type": "string", "description": "Reference to the student." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of report creation." },
+        "reportDate": { "type": "string", "format": "date", "description": "The date the report is for." },
+        "wakeupTime": { "type": "string", "description": "Wake-up time, e.g., '07:00'." },
+        "studyStartTime": { "type": "string", "description": "Study start time, e.g., '08:30'." },
+        "mentalState": { "type": "number", "description": "Self-assessed mental state from 1 to 10." },
+        "studyItems": {
+          "type": "array",
+          "description": "A list of study and test activities for the day.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lesson": { "type": "string", "description": "Name of the lesson/subject." },
+              "topic": { "type": "string", "description": "Specific topic studied." },
+              "studyTime": { "type": "number", "description": "Time spent studying in minutes." },
+              "testCount": { "type": "number", "description": "Total number of test questions." },
+              "testCorrect": { "type": "number", "description": "Number of correct answers." },
+              "testWrong": { "type": "number", "description": "Number of wrong answers." },
+              "testTime": { "type": "number", "description": "Time spent on the test in minutes." },
+              "testPercentage": { "type": "number", "description": "Calculated test percentage." }
+            },
+            "required": ["lesson", "topic"]
+          }
         },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to Student. (Relationship: Student 1:N DailyReport)"
-        },
-        "date": {
-          "type": "string",
-          "description": "The date of the report.",
-          "format": "date-time"
-        },
-        "activities": {
-          "type": "string",
-          "description": "Description of activities completed (lesson, study, exercise, project)."
-        },
-        "feeling": {
-          "type": "string",
-          "description": "Student's feeling and self-assessment (energy level, focus, motivation)."
-        },
-        "studyHours": {
-          "type": "number",
-          "description": "Number of study hours."
-        },
-        "sleepHours": {
-          "type": "number",
-          "description": "Number of sleep hours."
-        },
-        "attachment": {
-          "type": "string",
-          "description": "URL or path to the attached file (PDF, image, report).",
-          "format": "uri"
+        "classHours": { "type": "number", "description": "Total hours spent in class." },
+        "sleepHours": { "type": "number", "description": "Total hours of sleep." },
+        "wastedHours": { "type": "number", "description": "Total wasted/distraction hours." },
+        "mobileHours": { "type": "number", "description": "Total hours of mobile phone usage." },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "totalStudyTime": { "type": "number" },
+            "totalTestCount": { "type": "number" },
+            "totalTestCorrect": { "type": "number" },
+            "totalTestWrong": { "type": "number" },
+            "totalTestTime": { "type": "number" },
+            "overallTestPercentage": { "type": "number" }
+          }
         }
       },
-      "required": [
-        "id",
-        "studentId",
-        "date",
-        "activities",
-        "feeling",
-        "studyHours",
-        "sleepHours"
-      ]
+      "required": ["id", "studentId", "reportDate", "studyItems"]
     },
     "TestAnalysis": {
       "title": "TestAnalysis",
@@ -293,8 +290,7 @@
           "description": "The name of the class (e.g., 'Math 101', 'Group A')."
         },
         "teacherId": {
-          "type": "string",
-          "description": "Reference to Teacher. (Relationship: Teacher 1:N Class)"
+          "type": "string",          "description": "Reference to Teacher. (Relationship: Teacher 1:N Class)"
         }
       },
       "required": [
