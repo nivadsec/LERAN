@@ -4,18 +4,10 @@
  * @fileOverview Defines an AI flow for a support chatbot for the Lernova platform.
  *
  * - supportBot - The main function to get help.
- * - SupportBotInput - The input type for the function (user's question).
- * - SupportBotOutput - The output type for the function (bot's answer).
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const SupportBotInputSchema = z.string().describe("The user's question about the Lernova panel or website.");
-export const SupportBotOutputSchema = z.string().describe("The support bot's response.");
-
-export type SupportBotInput = z.infer<typeof SupportBotInputSchema>;
-export type SupportBotOutput = z.infer<typeof SupportBotOutputSchema>;
+import { SupportBotInputSchema, SupportBotOutputSchema, type SupportBotInput, type SupportBotOutput } from './support-bot.schema';
 
 const supportBotPrompt = ai.definePrompt({
   name: 'supportBotPrompt',
