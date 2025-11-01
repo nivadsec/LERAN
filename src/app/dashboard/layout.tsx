@@ -249,40 +249,6 @@ export default function DashboardLayout({
 function StudentNav({ features }: { features?: UserProfile['features'] }) {
     const pathname = usePathname();
 
-    const menuConfig = [
-        { id: 'dashboard', href: '/dashboard', label: 'داشبورد', icon: Home },
-        {
-            id: 'reports', label: 'گزارش‌ها', icon: ClipboardList, subItems: [
-                { id: 'daily-report', href: '/daily-report', label: 'گزارش روزانه', icon: ClipboardEdit },
-                { id: 'daily-monitoring', href: '/daily-monitoring', label: 'پایش روزانه', icon: ShieldCheck },
-                { id: 'weekly-report', href: '/weekly-report', label: 'گزارش هفتگی', icon: ClipboardPlus },
-            ]
-        },
-        {
-            id: 'analysis', label: 'تحلیل و برنامه‌ریزی', icon: Sparkles, subItems: [
-                { id: 'test-analysis', href: '/test-analysis', label: 'تحلیل آزمون', icon: ClipboardCheckIcon },
-                { id: 'comprehensive-test-analysis', href: '/comprehensive-test-analysis', label: 'تحلیل آزمون جامع', icon: GraduationCap },
-                { id: 'topic-investment', href: '/topic-investment', label: 'سرمایه زمانی', icon: Crosshair },
-                { id: 'focus-ladder', href: '/focus-ladder', label: 'نردبان تمرکز', icon: TrendingUp },
-                { id: 'self-assessment', href: '/self-assessment', label: 'خودارزیابی هوشمند', icon: Bot },
-                { id: 'sleep-system-design', href: '/sleep-system-design', label: 'طراحی سیستم خواب', icon: Bed },
-            ]
-        },
-        {
-            id: 'content', label: 'محتوا و ارتباطات', icon: BookOpen, subItems: [
-                { id: 'qna', href: '/qna', label: 'پرسش و پاسخ با مشاور', icon: HelpCircle },
-                { id: 'lernova-advisor', href: '/qna', label: 'مشاور لرنوا (AI)', icon: Bot },
-                { id: 'consulting-content', href: '/consulting-content', label: 'مطالب مشاوره‌ای', icon: Library },
-                { id: 'recommendations', href: '/recommendations', label: 'توصیه‌ها', icon: ThumbsUp },
-                { id: 'surveys', href: '/surveys', label: 'پرسشنامه‌ها', icon: FileText },
-            ]
-        },
-        { id: 'review-calendar', href: '/review-calendar', label: 'تقویم مرور', icon: CalendarClock },
-        { id: 'online-class', href: '/online-class', label: 'کلاس آنلاین', icon: Video },
-        { id: 'online-tests', href: '/online-tests', label: 'آزمون آنلاین', icon: PenSquare },
-        { id: 'class-schedule', href: '/class-schedule', label: 'برنامه کلاسی', icon: CalendarIcon },
-    ];
-
     if (!features) {
         return (
             <>
@@ -353,7 +319,7 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                 </SidebarMenuSub>
             )}
             
-            {features['panel-support-bot'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="پشتیبان فنی" isActive={pathname.startsWith('/support')}><Link href="/support"><span>پشتیبان فنی</span><Wrench /></Link></SidebarMenuButton></SidebarMenuItem>}
+            {features['panel-support-bot'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="پشتیبان فنی" disabled><Link href="/support"><span>پشتیبان فنی (بزودی)</span><Wrench /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['review-calendar'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}><Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-class'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}><Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-tests'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}><Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link></SidebarMenuButton></SidebarMenuItem>}

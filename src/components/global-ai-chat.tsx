@@ -176,7 +176,7 @@ export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
              <SheetTitle className="text-right">
                 <TabsList className="grid w-full grid-cols-2">
                     {hasLernovaAdvisor && <TabsTrigger value="advisor">مشاور لرنوا</TabsTrigger>}
-                    {hasSupportBot && <TabsTrigger value="support">پشتیبان فنی</TabsTrigger>}
+                    {hasSupportBot && <TabsTrigger value="support" disabled>پشتیبان فنی (بزودی)</TabsTrigger>}
                 </TabsList>
              </SheetTitle>
           </SheetHeader>
@@ -197,15 +197,11 @@ export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
 
           {hasSupportBot && (
             <TabsContent value="support" className="flex-1 mt-0">
-                <ChatPane
-                aiFlow={supportBot as (input: string) => Promise<string>}
-                initialMessage={{
-                    title: 'سلام! چطور می‌تونم در استفاده از پنل کمکتون کنم؟',
-                    description: 'هر سوال یا مشکلی در مورد نحوه کار با سایت یا پنل لرنوا دارید، از من بپرسید.',
-                    Icon: Wrench
-                }}
-                placeholder="سوال خود را از پشتیبان فنی بپرسید..."
-                />
+                <div className="flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground">
+                    <Wrench className="w-12 h-12 mb-4" />
+                    <h3 className="text-lg font-semibold">پشتیبان فنی (بزودی)</h3>
+                    <p className="max-w-sm mt-2">این بخش در حال آماده‌سازی است و به‌زودی برای پاسخ به سوالات شما در مورد کار با پنل فعال خواهد شد.</p>
+                </div>
             </TabsContent>
           )}
 
