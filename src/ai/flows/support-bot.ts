@@ -20,8 +20,7 @@ export type SupportBotOutput = z.infer<typeof SupportBotOutputSchema>;
 export async function supportBot(
   input: SupportBotInput
 ): Promise<SupportBotOutput> {
-  const { output } = await supportBotPrompt(input);
-  return output!;
+  return supportBotFlow(input);
 }
 
 const supportBotPrompt = ai.definePrompt({
