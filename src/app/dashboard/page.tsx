@@ -277,7 +277,7 @@ export default function DashboardPage() {
                 {!hasData ? (
                    <EmptyStateChart icon={BookOpen} title="نمودار تقسیم‌بندی دروس" description="درصد مطالعه هر درس پس از ثبت فعالیت‌ها در گزارش روزانه نمایش داده می‌شود."/>
                 ) : !subjectsPieData || !hasPieData ? (
-                   <EmptyStateChart icon={BookOpen} title="در حال تحلیل دروس..." description="هوش مصنوعی در حال تحلیل گزارش‌های شما برای استخراج دروس است."/>
+                   <EmptyStateChart icon={BookOpen} title="در حال تحلیل دروس..." description="لرنوا در حال تحلیل گزارش‌های شما برای استخراج دروس است."/>
                 ) : (
                     <ChartContainer config={{}} className="h-[250px] w-full">
                         <RechartsPieChart>
