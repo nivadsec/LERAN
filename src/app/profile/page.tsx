@@ -26,6 +26,19 @@ const profileSchema = z.object({
   lastName: z.string().min(2, { message: 'نام خانوادگی باید حداقل ۲ کاراکتر باشد.' }),
 });
 
+const getMajorDisplayName = (majorKey?: string) => {
+    switch (majorKey) {
+        case 'math':
+            return 'ریاضی و فیزیک';
+        case 'science':
+            return 'علوم تجربی';
+        case 'humanities':
+            return 'ادبیات و علوم انسانی';
+        default:
+            return majorKey || '';
+    }
+};
+
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -163,7 +176,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="grid gap-2">
                         <FormLabel>رشته</FormLabel>
-                        <Input defaultValue={userProfile.major} disabled />
+                        <Input defaultValue={getMajorDisplayName(userProfile.major)} disabled />
                     </div>
                 </div>
                 <div className="flex justify-start">
