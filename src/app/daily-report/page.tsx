@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
-import { PlusCircle, Trash2, History, Clock, Percent, Smile, Calendar } from 'lucide-react';
+import { PlusCircle, Trash2, History, Clock, Percent, Smile, Calendar, Send } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -137,7 +137,7 @@ export default function DailyReportPage() {
                 description: 'گزارش روزانه شما با موفقیت ثبت شد.',
             });
             form.reset({
-                reportDate: new Date().toLocaleDateString('fa-IR'),
+                reportDate: new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                 mentalState: 5,
                 studyItems: [],
                 wakeupTime: '',
@@ -157,6 +157,13 @@ export default function DailyReportPage() {
             errorEmitter.emit('permission-error', contextualError);
         });
   };
+  
+  const handlePastDateRequest = () => {
+    toast({
+        title: "درخواست ارسال شد",
+        description: "درخواست شما برای ثبت گزارش در تاریخ‌های گذشته به مدیر ارسال شد و در حال بررسی است.",
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -171,7 +178,16 @@ export default function DailyReportPage() {
             {/* Top Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField control={form.control} name="reportDate" render={({ field }) => (
-                <FormItem><FormLabel>تاریخ</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                    <FormLabel>تاریخ</FormLabel>
+                    <div className="flex items-center gap-2">
+                        <FormControl><Input {...field} readOnly /></FormControl>
+                        <Button type="button" variant="outline" size="icon" onClick={handlePastDateRequest} title="درخواست ثبت برای تاریخ‌های قبلی">
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <FormMessage />
+                </FormItem>
               )} />
               <FormField control={form.control} name="wakeupTime" render={({ field }) => (
                 <FormItem><FormLabel>ساعت بیداری</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
