@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
-import { PlusCircle, Trash2, History, Clock, Percent, Smile, Calendar, Send } from 'lucide-react';
+import { PlusCircle, Trash2, History, Clock, Percent, Smile, Calendar, Send, BookOpen, Target, Brain, Bed, Smartphone, Bomb } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -179,7 +179,7 @@ export default function DailyReportPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField control={form.control} name="reportDate" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>تاریخ</FormLabel>
+                    <FormLabel className="flex items-center justify-end gap-2"><Calendar className="h-4 w-4"/>تاریخ</FormLabel>
                     <div className="flex items-center gap-2">
                         <FormControl><Input {...field} readOnly /></FormControl>
                         <Button type="button" variant="outline" size="icon" onClick={handlePastDateRequest} title="درخواست ثبت برای تاریخ‌های قبلی">
@@ -190,14 +190,14 @@ export default function DailyReportPage() {
                 </FormItem>
               )} />
               <FormField control={form.control} name="wakeupTime" render={({ field }) => (
-                <FormItem><FormLabel>ساعت بیداری</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت بیداری</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
               )} />
               <FormField control={form.control} name="studyStartTime" render={({ field }) => (
-                <FormItem><FormLabel>ساعت شروع</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت شروع</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
               )} />
                <FormField control={form.control} name="mentalState" render={({ field: { value, onChange } }) => (
                 <FormItem>
-                  <FormLabel>وضعیت روانی: {value}</FormLabel>
+                  <FormLabel className="flex items-center justify-end gap-2"><Smile className="h-4 w-4"/>وضعیت روانی: {value}</FormLabel>
                   <FormControl>
                     <Slider dir="ltr" value={[value]} onValueChange={(v) => onChange(v[0])} max={10} min={1} step={1} />
                   </FormControl>
@@ -206,26 +206,19 @@ export default function DailyReportPage() {
             </div>
 
             {/* Main Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right border-l">درس</TableHead>
-                    <TableHead className="text-right border-l">مبحث</TableHead>
-                    <TableHead className="text-center border-l w-24">زمان (دقیقه)</TableHead>
-                    <TableHead colSpan={5} className="text-center">تست</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-right border-l w-[150px] sm:w-auto">درس</TableHead>
+                    <TableHead className="text-right border-l w-[200px] sm:w-auto">مبحث</TableHead>
+                    <TableHead className="text-center border-l w-[120px]">زمان مطالعه</TableHead>
+                    <TableHead className="text-center border-l w-[100px]">تست کل</TableHead>
+                    <TableHead className="text-center border-l w-[100px]">تست درست</TableHead>
+                    <TableHead className="text-center border-l w-[100px]">تست غلط</TableHead>
+                    <TableHead className="text-center border-l w-[120px]">زمان تست</TableHead>
+                    <TableHead className="text-center w-[100px]">درصد</TableHead>
                     <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                  <TableRow>
-                    <TableHead className="border-l"></TableHead>
-                    <TableHead className="border-l"></TableHead>
-                    <TableHead className="border-l"></TableHead>
-                    <TableHead className="text-center border-l w-20">کل</TableHead>
-                    <TableHead className="text-center border-l w-20">درست</TableHead>
-                    <TableHead className="text-center border-l w-20">غلط</TableHead>
-                    <TableHead className="text-center border-l w-24">زمان (دقیقه)</TableHead>
-                    <TableHead className="text-center w-20">درصد</TableHead>
-                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -239,11 +232,11 @@ export default function DailyReportPage() {
                         <TableRow key={field.id}>
                             <TableCell className="border-l"><Input placeholder="نام درس" {...form.register(`studyItems.${index}.lesson`)} /></TableCell>
                             <TableCell className="border-l"><Input placeholder="مبحث خوانده شده" {...form.register(`studyItems.${index}.topic`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.studyTime`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" placeholder="دقیقه" {...form.register(`studyItems.${index}.studyTime`)} /></TableCell>
                             <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCount`)} /></TableCell>
                             <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCorrect`)} /></TableCell>
                             <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testWrong`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center" placeholder="دقیقه" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
                             <TableCell>
                                 <Input 
                                     type="number"
@@ -282,18 +275,18 @@ export default function DailyReportPage() {
             {/* Bottom Bar */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="classHours" render={({ field }) => (
-                    <FormItem><FormLabel>میزان کلاس</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><BookOpen className="h-4 w-4"/>میزان کلاس</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="sleepHours" render={({ field }) => (
-                    <FormItem><FormLabel>میزان خواب</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bed className="h-4 w-4"/>میزان خواب</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="wastedHours" render={({ field }) => (
-                    <FormItem><FormLabel>میزان فاجعه!</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bomb className="h-4 w-4"/>میزان فاجعه!</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="mobileHours" render={({ field }) => (
-                    <FormItem><FormLabel>میزان موبایل</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Smartphone className="h-4 w-4"/>میزان موبایل</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
-                <FormItem><FormLabel>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
+                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Brain className="h-4 w-4"/>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
             </div>
 
             <div className="flex justify-start pt-4">
@@ -375,5 +368,7 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
 
     
