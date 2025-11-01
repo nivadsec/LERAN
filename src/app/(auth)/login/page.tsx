@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,12 +40,26 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Check user role
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت وارد شدید.",
       });
-      router.push("/daily-report");
+
+      if (userDoc.exists() && userDoc.data()?.isAdmin) {
+        // A simple way to keep password in session storage for re-login after creating a user.
+        sessionStorage.setItem('adminPass', values.password);
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+
     } catch (error: any) {
       console.error("Login Error: ", error);
       toast({

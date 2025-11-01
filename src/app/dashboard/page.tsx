@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const { data: dailyReports, isLoading: isReportsLoading } = useCollection<DailyReport>(dailyReportsQuery);
 
   const announcementsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     return query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'), limit(1));
   }, [firestore]);
 
@@ -70,14 +71,10 @@ export default function DashboardPage() {
   const isLoading = isUserLoading || isProfileLoading || isReportsLoading || isAnnouncementsLoading;
 
    useEffect(() => {
-    if (!isUserLoading && !isProfileLoading) {
-      if (!user) {
-        router.replace('/login');
-      } else if (userProfile?.isAdmin) {
-        router.replace('/admin/dashboard');
-      }
+    if (!isLoading && user && userProfile?.isAdmin) {
+      router.replace('/admin/dashboard');
     }
-  }, [user, userProfile, isUserLoading, isProfileLoading, router]);
+  }, [user, userProfile, isLoading, router]);
 
   useEffect(() => {
     if (dailyReports && dailyReports.length > 0) {
