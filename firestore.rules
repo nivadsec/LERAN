@@ -52,6 +52,15 @@ service cloud.firestore {
       allow read, list: if isOwner(userId) || isAdmin();
       allow write: if isOwner(userId);
     }
+    
+    /**
+     * @description Allows students to manage their own weekly reports; admins can read them.
+     * @path /users/{userId}/weeklyReports/{reportId}
+     */
+    match /users/{userId}/weeklyReports/{reportId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
 
      /**
       * @description Allows students to manage their own analyses; admins can read them.
