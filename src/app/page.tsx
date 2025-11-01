@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { getApps, initializeApp, getApp } from 'firebase/app';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { getSdks } from '@/firebase/sdks';
 import { firebaseConfig } from '@/firebase/config';
 
 interface Article {
