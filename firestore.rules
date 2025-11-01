@@ -21,20 +21,10 @@
  *
  * Key Security Decisions:
  * - Students have full CRUD access only to their own data under their /users/{userId} path.
- * - Teachers and Classes are secured with placeholder rules until roles are defined.
- * - Announcements are publicly readable.
- * - User listing is implicitly denied (no top-level `list` rule for `/users`).
+ * - Admins can list all user profiles.
+ * - Announcements are publicly readable, but only admins can manage them.
+ * - User listing is implicitly denied for non-admins.
  *
- * Denormalization for Authorization:
- * The current data model leverages path-based ownership, where the `userId` is part of the document path.
- * This allows direct enforcement of ownership without requiring extra `get()` calls. For example,
- * a rule on `/users/{userId}/dailyReports/{reportId}` can directly check `isOwner(userId)` without
- * fetching the user's profile.
- *
- * Structural Segregation:
- * Private student data (daily reports, test analyses, focus sessions) is stored in user-specific
- * subcollections under `/users/{userId}`. This ensures that listing operations on these subcollections
- * are always restricted to the owner.
  */
 rules_version = '2';
 service cloud.firestore {

@@ -69,7 +69,7 @@ export default function SignupPage() {
       });
 
       // After signup, redirect to the student dashboard
-      router.push("/dashboard");
+      router.push("/daily-report");
       
     } catch (error: any) {
       console.error("Signup Error: ", error);
