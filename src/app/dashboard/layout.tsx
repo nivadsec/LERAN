@@ -207,12 +207,14 @@ export default function DashboardLayout({
                             <User className="mr-2 h-4 w-4" />
                         </Link>
                     </DropdownMenuItem>
+                    {userProfile?.isAdmin && (
                      <DropdownMenuItem asChild>
-                         <Link href={userProfile?.isAdmin ? "/admin/settings" : "/settings"} className="justify-end">
+                         <Link href="/admin/settings" className="justify-end">
                             <span>تنظیمات</span>
                             <Settings className="mr-2 h-4 w-4" />
                         </Link>
                     </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="justify-end text-red-500 focus:text-red-500">
                         <span>خروج</span>
