@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,11 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig } from 'lucide-react';
+import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig, History } from 'lucide-react';
 import { format, addDays } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const subjectDetailSchema = z.object({
@@ -33,6 +36,13 @@ const formSchema = z.object({
 });
 
 type WeeklyReportFormValues = z.infer<typeof formSchema>;
+
+interface WeeklyReport extends WeeklyReportFormValues {
+    id: string;
+    createdAt: Timestamp;
+    startDate: string;
+    endDate: string;
+}
 
 const initialSubjects = [
     { name: 'ریاضی', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
@@ -68,10 +78,18 @@ export default function WeeklyReportPage() {
     name: 'subjects',
   });
   
-  const totalTargetTime = form.watch('subjects').reduce((acc, sub) => acc + sub.targetTime, 0);
-  const totalActualTime = form.watch('subjects').reduce((acc, sub) => acc + sub.actualTime, 0);
-  const totalTargetTests = form.watch('subjects').reduce((acc, sub) => acc + sub.targetTests, 0);
-  const totalActualTests = form.watch('subjects').reduce((acc, sub) => acc + sub.actualTests, 0);
+  const watchedSubjects = form.watch('subjects');
+  const totalTargetTime = watchedSubjects.reduce((acc, sub) => acc + (sub.targetTime || 0), 0);
+  const totalActualTime = watchedSubjects.reduce((acc, sub) => acc + (sub.actualTime || 0), 0);
+  const totalTargetTests = watchedSubjects.reduce((acc, sub) => acc + (sub.targetTests || 0), 0);
+  const totalActualTests = watchedSubjects.reduce((acc, sub) => acc + (sub.actualTests || 0), 0);
+
+  const weeklyReportsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'users', user.uid, 'weeklyReports'), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: pastReports, isLoading: areReportsLoading } = useCollection<WeeklyReport>(weeklyReportsQuery);
 
 
   const onSubmit = (data: WeeklyReportFormValues) => {
@@ -111,7 +129,7 @@ export default function WeeklyReportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
         <CardHeader className="text-right p-0">
             <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -276,6 +294,71 @@ export default function WeeklyReportPage() {
             </form>
         </Form>
         </CardContent>
+
+        <Separator />
+
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-right flex items-center justify-end gap-2">
+                تاریخچه گزارش‌های هفتگی
+                <History className="h-6 w-6 text-primary" />
+            </h2>
+            {areReportsLoading ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[...Array(3)].map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader><Skeleton className="h-6 w-1/2 ml-auto" /></CardHeader>
+                            <CardContent className="space-y-3">
+                                <Skeleton className="h-5 w-3/4 ml-auto" />
+                                <Skeleton className="h-5 w-1/2 ml-auto" />
+                                <Skeleton className="h-10 w-24" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : pastReports && pastReports.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {pastReports.map(report => {
+                        const reportTotalTime = report.subjects.reduce((acc, s) => acc + s.actualTime, 0);
+                        const reportTotalTests = report.subjects.reduce((acc, s) => acc + s.actualTests, 0);
+
+                        return (
+                            <Card key={report.id}>
+                                <CardHeader>
+                                    <CardTitle className="text-right flex justify-between items-center">
+                                        <span>گزارش هفته {report.weekNumber}</span>
+                                        <span className="text-sm font-normal text-muted-foreground flex items-center gap-1 font-code">
+                                            <CalendarDays className="h-4 w-4" />
+                                            {format(new Date(report.startDate), 'MM/dd')}
+                                        </span>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4 text-right">
+                                    <div className="flex justify-around items-center text-center">
+                                        <div className="space-y-1">
+                                            <p className="text-sm text-muted-foreground">کل مطالعه</p>
+                                            <p className="font-bold">{reportTotalTime} ساعت</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm text-muted-foreground">کل تست</p>
+                                            <p className="font-bold">{reportTotalTests} عدد</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="outline" className="w-full">مشاهده جزئیات</Button>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+            ) : (
+                <Card className="flex flex-col items-center justify-center gap-4 border-2 border-dashed p-12 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                        <History className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <p className="font-semibold">هنوز گزارش هفتگی ثبت نکرده‌اید</p>
+                    <p className="text-sm text-muted-foreground">برای شروع، اولین گزارش هفتگی خود را در فرم بالا ثبت کنید.</p>
+                </Card>
+            )}
+        </div>
     </div>
   );
 }
