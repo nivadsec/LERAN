@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig, History, PlusCircle, Trash2 } from 'lucide-react';
-import { format, addDays } from 'date-fns-jalali';
+import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig, History, PlusCircle, Trash2, Send } from 'lucide-react';
+import { format, addDays, getDay } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
@@ -45,13 +45,6 @@ interface WeeklyReport extends WeeklyReportFormValues {
     endDate: string;
 }
 
-const initialSubjects = [
-    { name: 'ریاضی', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-    { name: 'فیزیک', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-    { name: 'شیمی', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-    { name: 'زیست', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-]
-
 export default function WeeklyReportPage() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -61,6 +54,12 @@ export default function WeeklyReportPage() {
   const today = new Date();
   const startOfWeek = today; // Placeholder
   const endOfWeek = addDays(startOfWeek, 6);
+  
+  // In JS Date, Thursday is 4, Friday is 5.
+  const isSubmissionAllowed = useMemo(() => {
+    const dayOfWeek = getDay(today);
+    return dayOfWeek === 4 || dayOfWeek === 5;
+  }, [today]);
 
   const form = useForm<WeeklyReportFormValues>({
     resolver: zodResolver(formSchema),
@@ -115,6 +114,42 @@ export default function WeeklyReportPage() {
         if (num === undefined || isNaN(num)) return '۰';
         return new Intl.NumberFormat('fa-IR').format(num);
     }
+    
+  const handlePastDateRequest = () => {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "برای ارسال درخواست باید وارد شده باشید.",
+        });
+        return;
+    }
+    const requestsRef = collection(firestore, 'dateChangeRequests');
+    const payload = {
+        studentId: user.uid,
+        studentName: user.displayName || user.email,
+        requestType: 'WeeklyReport',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+    };
+    addDoc(requestsRef, payload)
+        .then(() => {
+            toast({
+                title: "درخواست ارسال شد",
+                description: "درخواست شما برای ثبت گزارش هفتگی به مدیر ارسال شد و در حال بررسی است.",
+            });
+        })
+        .catch(error => {
+            console.error("Error sending request:", error);
+            const contextualError = new FirestorePermissionError({
+                path: requestsRef.path,
+                operation: 'create',
+                requestResourceData: payload,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
+  }
+
 
   const onSubmit = (data: WeeklyReportFormValues) => {
     if (!user || !firestore) {
@@ -161,12 +196,12 @@ export default function WeeklyReportPage() {
   return (
     <div className="space-y-8">
         <CardHeader className="text-right p-0">
-            <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col-reverse md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <CalendarDays className="h-4 w-4" />
                     <span>{format(startOfWeek, 'yyyy/MM/dd')} - {format(endOfWeek, 'yyyy/MM/dd')}</span>
                 </div>
-                 <div>
+                 <div className="text-right">
                     <CardTitle className="text-2xl font-bold">فرم پیگیری هفتگی</CardTitle>
                     <CardDescription className="mt-1">آینه‌ی رشد و پیشرفت شما در این هفته</CardDescription>
                 </div>
@@ -224,17 +259,17 @@ export default function WeeklyReportPage() {
                         </TableBody>
                     </Table>
                     </div>
-                     <div className="flex items-center gap-2 mt-4">
+                     <div className="flex justify-end items-center gap-2 mt-4">
+                         <Input
+                            placeholder="نام درس جدید"
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            className="max-w-xs text-right"
+                        />
                         <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
                             <PlusCircle className="ml-2 h-4 w-4" />
                             افزودن
                         </Button>
-                        <Input
-                            placeholder="نام درس جدید را وارد کنید"
-                            value={newSubjectName}
-                            onChange={(e) => setNewSubjectName(e.target.value)}
-                            className="max-w-xs"
-                        />
                     </div>
                 </CardContent>
             </Card>
@@ -337,9 +372,19 @@ export default function WeeklyReportPage() {
             </Card>
 
             <div className="flex justify-start pt-4">
-                <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
-                </Button>
+                {isSubmissionAllowed ? (
+                    <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
+                    </Button>
+                ) : (
+                    <div className="space-y-2 text-right">
+                        <Button type="button" size="lg" onClick={handlePastDateRequest}>
+                             <Send className="ml-2 h-4 w-4" />
+                            درخواست ثبت گزارش
+                        </Button>
+                        <p className="text-xs text-muted-foreground">ثبت گزارش هفتگی فقط در روزهای پنجشنبه و جمعه مجاز است.</p>
+                    </div>
+                )}
             </div>
             </form>
         </Form>
@@ -411,5 +456,4 @@ export default function WeeklyReportPage() {
         </div>
     </div>
   );
-
-    
+}

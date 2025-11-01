@@ -457,7 +457,7 @@
             "id": { "type": "string", "description": "Unique ID for the request." },
             "studentId": { "type": "string", "description": "The ID of the student making the request." },
             "studentName": { "type": "string", "description": "The name of the student for easy identification." },
-            "requestType": { "type": "string", "description": "The type of request, e.g., 'PastDailyReport'." },
+            "requestType": { "type": "string", "description": "The type of request, e.g., 'PastDailyReport', 'WeeklyReport'." },
             "status": { "type": "string", "enum": ["pending", "approved", "denied"], "description": "The current status of the request." },
             "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the request was created." }
         },
