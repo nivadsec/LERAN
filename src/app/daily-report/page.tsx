@@ -66,11 +66,23 @@ export default function DailyReportPage() {
     }
 
     const dailyReportRef = collection(firestore, 'users', user.uid, 'dailyReports');
-    const payload = {
+    const payload: any = {
         ...values,
         date: serverTimestamp(),
         studentId: user.uid,
     };
+
+    // Firestore does not accept `undefined` values.
+    // If no attachment is provided, the field should not be included.
+    if (!payload.attachment) {
+        delete payload.attachment;
+    } else {
+        // In a real app, you'd upload the file to Firebase Storage first
+        // and then save the URL in Firestore.
+        // For now, we'll just save a placeholder.
+        payload.attachment = 'file_placeholder';
+    }
+
 
     addDoc(dailyReportRef, payload)
         .then(() => {
