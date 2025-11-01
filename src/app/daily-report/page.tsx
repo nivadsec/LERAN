@@ -50,6 +50,12 @@ export default function DailyReportPage() {
       reportDate: new Date().toLocaleDateString('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }),
       mentalState: 5,
       studyItems: [],
+      wakeupTime: '',
+      studyStartTime: '',
+      classHours: 0,
+      sleepHours: 0,
+      wastedHours: 0,
+      mobileHours: 0
     },
   });
 
