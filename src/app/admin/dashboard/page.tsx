@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { extractSubjectsFromText } from '@/ai/flows/extract-subjects-from-text';
 
 interface UserProfile {
   id: string;
@@ -25,16 +24,23 @@ interface UserProfile {
 
 interface DailyReport {
   id: string;
-  studyHours: number;
-  feeling: number;
-  activities: string;
-  date: Timestamp;
+  mentalState: number;
+  reportDate: string;
+  createdAt: Timestamp;
+  totals: {
+      totalStudyTime: number;
+      totalTestCount: number;
+      totalTestCorrect: number;
+      totalTestWrong: number;
+      totalTestTime: number;
+      overallTestPercentage: number;
+  }
 }
 
 interface StudentData extends UserProfile {
     dailyReports: DailyReport[];
     avgStudyHours: number;
-    avgFeeling: number;
+    avgMentalState: number;
 }
 
 interface SubjectData {
@@ -80,20 +86,20 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if(allStudentsData.length > 0) {
-      const allActivities = allStudentsData.flatMap(s => s.dailyReports).map(r => r.activities).join('\n');
-      if (allActivities.trim() === '') {
-        setPieData([{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
-        return;
-      }
-      extractSubjectsFromText(allActivities).then(result => {
-          const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
-          const data = result.subjects.map((s, i) => ({
-              name: s.subject,
-              value: s.duration,
-              fill: colors[i % colors.length]
-          }));
-          setPieData(data.length > 0 ? data : [{ name: 'سایر', value: 1, fill: 'hsl(var(--muted))' }]);
-      });
+        // This is a placeholder for subject extraction.
+        // In a real scenario, you'd process report details.
+        const subjects = [
+            { name: 'ریاضی', value: 400 },
+            { name: 'فیزیک', value: 300 },
+            { name: 'شیمی', value: 300 },
+            { name: 'زیست', value: 200 },
+        ];
+        const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+        const data = subjects.map((s, i) => ({
+            ...s,
+            fill: colors[i % colors.length]
+        }));
+        setPieData(data);
     }
   }, [allStudentsData]);
 
@@ -123,14 +129,14 @@ export default function AdminDashboardPage() {
             const reportsSnapshot = await getDocs(reportsRef);
             const dailyReports = reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyReport));
             
-            const totalStudy = dailyReports.reduce((acc, r) => acc + r.studyHours, 0);
-            const totalFeeling = dailyReports.reduce((acc, r) => acc + r.feeling, 0);
+            const totalStudyMinutes = dailyReports.reduce((acc, r) => acc + (r.totals?.totalStudyTime || 0), 0);
+            const totalMentalState = dailyReports.reduce((acc, r) => acc + (r.mentalState || 0), 0);
 
             students.push({
                 ...userData,
                 dailyReports,
-                avgStudyHours: dailyReports.length > 0 ? totalStudy / dailyReports.length : 0,
-                avgFeeling: dailyReports.length > 0 ? totalFeeling / dailyReports.length : 0,
+                avgStudyHours: dailyReports.length > 0 ? totalStudyMinutes / 60 / dailyReports.length : 0,
+                avgMentalState: dailyReports.length > 0 ? totalMentalState / dailyReports.length : 0,
             });
         }
         setAllStudentsData(students);
@@ -194,26 +200,26 @@ export default function AdminDashboardPage() {
     }
 
     const totalReports = allStudentsData.flatMap(s => s.dailyReports);
-    const totalStudy = totalReports.reduce((acc, r) => acc + r.studyHours, 0);
-    const totalFeeling = totalReports.reduce((acc, r) => acc + r.feeling, 0);
+    const totalStudyMinutes = totalReports.reduce((acc, r) => acc + (r.totals?.totalStudyTime || 0), 0);
+    const totalFeeling = totalReports.reduce((acc, r) => acc + r.mentalState, 0);
     
     const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
     const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
     totalReports.forEach(report => {
-        if(report.date) {
-            const date = new Date(report.date.seconds * 1000);
+        if(report.createdAt) {
+            const date = new Date(report.createdAt.seconds * 1000);
             const faDayIndex = (date.getDay() + 1) % 7;
             const dayName = dayNames[faDayIndex];
             const chartEntry = chartData.find(d => d.day === dayName);
-            if (chartEntry) {
-                chartEntry.hours += report.studyHours;
+            if (chartEntry && report.totals?.totalStudyTime) {
+                chartEntry.hours += report.totals.totalStudyTime / 60;
             }
         }
     });
 
     return {
         totalStudents: allStudentsData.length,
-        avgStudy: totalReports.length > 0 ? (totalStudy / totalReports.length).toFixed(1) : 0,
+        avgStudy: totalReports.length > 0 ? (totalStudyMinutes / 60 / totalReports.length).toFixed(1) : 0,
         avgFeeling: totalReports.length > 0 ? (totalFeeling / totalReports.length).toFixed(1) : 0,
         weeklyChartData: chartData
     };
@@ -385,23 +391,22 @@ export default function AdminDashboardPage() {
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead className="text-right">وضعیت</TableHead>
-                    <TableHead className="text-right">میانگین روانی</TableHead>
-                    <TableHead className="text-right">میانگین مطالعه (ساعت)</TableHead>
                     <TableHead className="text-right">نام دانش آموز</TableHead>
+                    <TableHead className="text-right">میانگین مطالعه (ساعت)</TableHead>
+                    <TableHead className="text-right">میانگین روانی</TableHead>
+                    <TableHead className="text-right">وضعیت</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredStudents.length > 0 ? (
                         filteredStudents.map(student => (
-                            <TableRow key={student.id}>
+                            <TableRow key={student.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/admin/users/${student.id}`)}>
+                                <TableCell>{student.firstName} {student.lastName}</TableCell>
+                                <TableCell>{student.avgStudyHours.toFixed(1)}</TableCell>
+                                <TableCell>{student.avgMentalState.toFixed(1)} / 10</TableCell>
                                 <TableCell>
-                                    {/* Placeholder for status */}
                                     <span className="text-green-500">●</span> خوب
                                 </TableCell>
-                                <TableCell>{student.avgFeeling.toFixed(1)} / 10</TableCell>
-                                <TableCell>{student.avgStudyHours.toFixed(1)}</TableCell>
-                                <TableCell>{student.firstName} {student.lastName}</TableCell>
                             </TableRow>
                         ))
                     ) : (
@@ -419,5 +424,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
