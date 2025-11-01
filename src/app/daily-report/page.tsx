@@ -104,20 +104,11 @@ export default function DailyReportPage() {
   }
 
   const onSubmit = (values: DailyReportFormValues) => {
-    if (isUserLoading) {
-      toast({
-        variant: 'destructive',
-        title: 'کمی صبر کنید',
-        description: 'در حال بارگذاری اطلاعات کاربر. لطفاً چند لحظه بعد دوباره تلاش کنید.',
-      });
-      return;
-    }
-
-    if (!user) {
+    if (isUserLoading || !user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'خطا',
-        description: 'برای ثبت گزارش باید وارد شده باشید.',
+        description: 'لطفاً برای ثبت گزارش ابتدا وارد شوید و لحظه‌ای بعد دوباره تلاش کنید.',
       });
       return;
     }
@@ -166,10 +157,38 @@ export default function DailyReportPage() {
   };
   
   const handlePastDateRequest = () => {
-    toast({
-        title: "درخواست ارسال شد",
-        description: "درخواست شما برای ثبت گزارش در تاریخ‌های گذشته به مدیر ارسال شد و در حال بررسی است.",
-    });
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "برای ارسال درخواست باید وارد شده باشید.",
+        });
+        return;
+    }
+    const requestsRef = collection(firestore, 'dateChangeRequests');
+    const payload = {
+        studentId: user.uid,
+        studentName: user.displayName || user.email,
+        requestType: 'PastDailyReport',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+    };
+    addDoc(requestsRef, payload)
+        .then(() => {
+            toast({
+                title: "درخواست ارسال شد",
+                description: "درخواست شما برای ثبت گزارش در تاریخ‌های گذشته به مدیر ارسال شد و در حال بررسی است.",
+            });
+        })
+        .catch(error => {
+            console.error("Error sending request:", error);
+            const contextualError = new FirestorePermissionError({
+                path: requestsRef.path,
+                operation: 'create',
+                requestResourceData: payload,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
   }
 
   return (

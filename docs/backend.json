@@ -411,6 +411,21 @@
         "createdAt",
         "targetAudience"
       ]
+    },
+    "DateChangeRequest": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "DateChangeRequest",
+        "type": "object",
+        "description": "Represents a student's request to edit a past date entry.",
+        "properties": {
+            "id": { "type": "string", "description": "Unique ID for the request." },
+            "studentId": { "type": "string", "description": "The ID of the student making the request." },
+            "studentName": { "type": "string", "description": "The name of the student for easy identification." },
+            "requestType": { "type": "string", "description": "The type of request, e.g., 'PastDailyReport'." },
+            "status": { "type": "string", "enum": ["pending", "approved", "denied"], "description": "The current status of the request." },
+            "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the request was created." }
+        },
+        "required": ["id", "studentId", "requestType", "status", "createdAt"]
     }
   },
   "auth": {
@@ -601,6 +616,22 @@
             {
               "name": "announcementId",
               "description": "The unique identifier for the announcement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/dateChangeRequests/{requestId}",
+        "definition": {
+          "entityName": "DateChangeRequest",
+          "schema": {
+            "$ref": "#/backend/entities/DateChangeRequest"
+          },
+          "description": "Top-level collection for students to request permissions, e.g., to edit a past report. Students can create, admins can read and update status.",
+          "params": [
+            {
+              "name": "requestId",
+              "description": "The unique identifier for the request."
             }
           ]
         }

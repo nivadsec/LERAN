@@ -17,12 +17,7 @@
  * - /classes/{classId}: Class information, restricted access.
  * - /teachers/{teacherId}: Teacher profiles, restricted access.
  * - /announcements/{announcementId}: General announcements, publicly readable.
- *
- * Key Security Decisions:
- * - Students have full CRUD access only to their own data under their /users/{userId} path.
- * - Admins can list all user profiles and read all sub-collection data for monitoring.
- * - Announcements are publicly readable, but only admins can manage them.
- * - Write access is strictly limited to prevent unauthorized data manipulation.
+ * - /dateChangeRequests/{requestId}: Student requests for admin approval.
  *
  */
 rules_version = '2';
@@ -132,6 +127,16 @@ service cloud.firestore {
     match /announcements/{announcementId} {
       allow read, list: if true;
       allow create, update, delete: if isAdmin();
+    }
+    
+    /**
+     * @description Manages student requests. Students create, admins manage.
+     * @path /dateChangeRequests/{requestId}
+     */
+    match /dateChangeRequests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow read: if isSignedIn() && (isOwner(resource.data.studentId) || isAdmin());
+      allow list, update: if isAdmin();
     }
   }
 }
