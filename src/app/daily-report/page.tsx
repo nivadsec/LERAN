@@ -103,7 +103,7 @@ export default function DailyReportPage() {
     return new Intl.NumberFormat('fa-IR').format(num);
   }
 
-  const onSubmit = async (values: DailyReportFormValues) => {
+  const onSubmit = (values: DailyReportFormValues) => {
     if (isUserLoading) {
       toast({
         variant: 'destructive',
@@ -382,9 +382,5 @@ export default function DailyReportPage() {
     </div>
   );
 }
-
-    
-
-    
 
     
