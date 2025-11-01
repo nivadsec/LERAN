@@ -4,19 +4,15 @@
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for student data,
  * ensuring that students can only access their own information. Admins have
- * broader read access for oversight. Announcements are publicly readable.
+ * broader read access for oversight. Announcements and Articles are publicly readable.
  *
  * Data Structure:
  * - /users/{userId}: Student profiles, owned by the user.
- * - /users/{userId}/dailyReports/{reportId}: Daily reports, readable by admin.
- * - /users/{userId}/testAnalyses/{analysisId}: Test analysis, readable by admin.
- * - /users/{userId}/examAnalyses/{analysisId}: Exam analysis, readable by admin.
- * - /users/{userId}/focusSessions/{sessionId}: Focus sessions, readable by admin.
- * - /users/{userId}/studyTopics/{topicId}: Study topics, readable by admin.
- * - /users/{userId}/smartAlerts/{alertId}: Smart alerts, readable by admin.
+ * - /users/{userId}/...: Various subcollections for student data, readable by admin.
  * - /classes/{classId}: Class information, restricted access.
  * - /teachers/{teacherId}: Teacher profiles, restricted access.
  * - /announcements/{announcementId}: General announcements, publicly readable.
+ * - /articles/{articleId}: Blog articles, publicly readable.
  * - /dateChangeRequests/{requestId}: Student requests for admin approval.
  *
  */
@@ -128,6 +124,15 @@ service cloud.firestore {
       allow read, list: if true;
       allow create, update, delete: if isAdmin();
     }
+
+    /**
+     * @description Allows anyone to read articles; only admins can manage them.
+     * @path /articles/{articleId}
+     */
+    match /articles/{articleId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
     
     /**
      * @description Manages student requests. Students create, admins manage.
@@ -140,3 +145,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

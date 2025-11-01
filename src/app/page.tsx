@@ -1,10 +1,40 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Menu } from 'lucide-react';
+import { ArrowLeft, Menu, Newspaper } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
-export default function Home() {
+interface Article {
+    id: string;
+    slug: string;
+    title: string;
+    content: string;
+    imageUrl: string;
+    author: string;
+    createdAt: any;
+}
+
+
+async function getLatestArticles(): Promise<Article[]> {
+    try {
+        const { firestore } = initializeFirebase();
+        const articlesRef = collection(firestore, 'articles');
+        const q = query(articlesRef, orderBy('createdAt', 'desc'), limit(3));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Article));
+    } catch (error) {
+        console.error("Error fetching articles: ", error);
+        return [];
+    }
+}
+
+export default async function Home() {
+  const articles = await getLatestArticles();
+
   return (
     <div className="flex flex-col min-h-dvh bg-background">
       <div
@@ -18,6 +48,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 relative">
         <HeroSection />
+        {articles.length > 0 && <ArticlesSection articles={articles} />}
       </main>
       <Footer />
     </div>
@@ -139,6 +170,54 @@ function HeroSection() {
   );
 }
 
+function ArticlesSection({ articles }: { articles: Article[] }) {
+    return (
+        <section className="w-full py-12 md:py-24 lg:py-32">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="space-y-2">
+                         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl font-headline flex items-center gap-3">
+                            <Newspaper className="h-8 w-8 text-primary" />
+                            آخرین مقالات
+                        </h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            مطالب آموزشی و مشاوره‌ای برای کمک به موفقیت تحصیلی شما.
+                        </p>
+                    </div>
+                </div>
+                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                    {articles.map((article) => (
+                        <Card key={article.id} className="overflow-hidden group">
+                            <Link href={`/articles/${article.slug}`} className="block">
+                                <Image
+                                    src={article.imageUrl || "https://picsum.photos/seed/1/600/400"}
+                                    width={600}
+                                    height={400}
+                                    alt={article.title}
+                                    className="aspect-video w-full object-cover transition-transform group-hover:scale-105"
+                                />
+                                <CardHeader>
+                                    <CardTitle className="text-lg font-bold">{article.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground line-clamp-3">
+                                        {article.content.substring(0, 150)}...
+                                    </p>
+                                </CardContent>
+                            </Link>
+                        </Card>
+                    ))}
+                </div>
+                <div className="flex justify-center">
+                    <Button variant="outline" asChild>
+                        <Link href="/articles">مشاهده همه مقالات</Link>
+                    </Button>
+                </div>
+            </div>
+        </section>
+    )
+}
+
 function Footer() {
   return (
     <footer className="relative flex justify-center py-6 w-full shrink-0 items-center px-4 md:px-6 z-10">
@@ -148,3 +227,5 @@ function Footer() {
     </footer>
   );
 }
+
+    

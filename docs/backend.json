@@ -426,6 +426,22 @@
             "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the request was created." }
         },
         "required": ["id", "studentId", "requestType", "status", "createdAt"]
+    },
+    "Article": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Article",
+        "type": "object",
+        "description": "Represents a blog article.",
+        "properties": {
+            "id": { "type": "string" },
+            "slug": { "type": "string", "description": "URL-friendly version of the title." },
+            "title": { "type": "string" },
+            "content": { "type": "string", "description": "The full content of the article in Markdown format." },
+            "author": { "type": "string" },
+            "imageUrl": { "type": "string", "format": "uri" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "slug", "title", "content", "author", "createdAt"]
     }
   },
   "auth": {
@@ -635,8 +651,23 @@
             }
           ]
         }
+      },
+      {
+        "path": "/articles/{articleId}",
+        "definition": {
+          "entityName": "Article",
+          "schema": {
+            "$ref": "#/backend/entities/Article"
+          },
+          "description": "Collection to store articles for the public blog. Admins can write, all users can read.",
+          "params": [
+            { "name": "articleId", "description": "The unique identifier for the article." }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to support the iTalk Academic platform, emphasizing self-assessment and personalized learning. The structure prioritizes authorization independence, clarity, and scalability. User-owned data is organized under user-specific paths, while collaborative data, if needed in future, would utilize membership maps.  Authorization Independence is achieved via path-based ownership. Since each student's data is stored under `/users/{userId}`, access control can be implemented without needing to `get()` data from other collections or documents.  The structure also supports secure `list` operations by segregating data with different access needs into separate collections, ensuring that rules are not filters."
   }
 }
+
+    
