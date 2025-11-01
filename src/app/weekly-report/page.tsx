@@ -58,8 +58,8 @@ export default function WeeklyReportPage() {
 
   const canSubmit = useMemo(() => {
     const dayOfWeek = getDay(today);
-    // Thursday (4) or Friday (5)
-    return dayOfWeek === 4 || dayOfWeek === 5;
+    // In date-fns-jalali: Saturday: 0, ..., Thursday: 5, Friday: 6
+    return dayOfWeek === 5 || dayOfWeek === 6;
   }, [today]);
 
   const form = useForm<WeeklyReportFormValues>({
@@ -211,22 +211,17 @@ export default function WeeklyReportPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
                     <TableHead className="text-right">درس</TableHead>
                     <TableHead className="text-right">ساعت مطالعه هدف</TableHead>
                     <TableHead className="text-right">ساعت مطالعه واقعی</TableHead>
                     <TableHead className="text-right">تعداد تست هدف</TableHead>
                     <TableHead className="text-right">تعداد تست واقعی</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {fields.map((field, index) => (
                     <TableRow key={field.id}>
-                      <TableCell>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
                       <TableCell>
                         <Input dir="rtl" className="text-right" {...form.register(`subjects.${index}.name` as const)} readOnly/>
                       </TableCell>
@@ -242,14 +237,20 @@ export default function WeeklyReportPage() {
                       <TableCell>
                         <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTests` as const)} />
                       </TableCell>
+                      <TableCell>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                    <TableRow className="bg-muted/50 font-bold">
-                      <TableCell colSpan={2} className="text-right">مجموع</TableCell>
+                      <TableCell className="text-right">مجموع</TableCell>
                       <TableCell></TableCell>
                       <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
                       <TableCell></TableCell>
                       <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
+                      <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
