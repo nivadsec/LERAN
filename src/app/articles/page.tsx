@@ -8,6 +8,7 @@ import { Newspaper } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns-jalali';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface Article {
   id: string;
@@ -18,6 +19,9 @@ interface Article {
   author: string;
   createdAt: Timestamp;
 }
+
+const heroStudentImage = PlaceHolderImages.find(p => p.id === 'hero-student');
+const defaultImageUrl = heroStudentImage ? heroStudentImage.imageUrl : 'https://picsum.photos/seed/1/600/400';
 
 export default function ArticlesListPage() {
   const firestore = useFirestore();
@@ -66,7 +70,7 @@ export default function ArticlesListPage() {
                 <Link href={`/articles/${article.slug}`} className="block">
                   <div className="aspect-video w-full overflow-hidden">
                     <Image
-                      src={article.imageUrl}
+                      src={article.imageUrl || defaultImageUrl}
                       width={600}
                       height={400}
                       alt={article.title}
@@ -99,5 +103,3 @@ export default function ArticlesListPage() {
     </div>
   );
 }
-
-    

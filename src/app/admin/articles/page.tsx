@@ -17,6 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export interface Article {
   id: string;
@@ -41,6 +42,10 @@ const articleSchema = z.object({
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
 
+const heroStudentImage = PlaceHolderImages.find(p => p.id === 'hero-student');
+const defaultImageUrl = heroStudentImage ? heroStudentImage.imageUrl : 'https://picsum.photos/seed/1/1200/800';
+
+
 function ArticleForm({ onSubmit, defaultValues, isSubmitting }: { onSubmit: (data: ArticleFormValues) => void; defaultValues?: Partial<Article>; isSubmitting: boolean }) {
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema),
@@ -48,7 +53,7 @@ function ArticleForm({ onSubmit, defaultValues, isSubmitting }: { onSubmit: (dat
       title: defaultValues?.title || '',
       slug: defaultValues?.slug || '',
       author: defaultValues?.author || '',
-      imageUrl: defaultValues?.imageUrl || '',
+      imageUrl: defaultValues?.imageUrl || defaultImageUrl,
       content: defaultValues?.content || '',
     },
   });
@@ -166,7 +171,7 @@ export default function AdminArticlesPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {articles.map((article) => (
                 <Card key={article.id} className="overflow-hidden">
-                  <Image src={article.imageUrl} alt={article.title} width={400} height={250} className="w-full h-32 object-cover" />
+                  <Image src={article.imageUrl || defaultImageUrl} alt={article.title} width={400} height={250} className="w-full h-32 object-cover" />
                   <div className="p-4">
                     <h3 className="font-bold text-right">{article.title}</h3>
                     <p className="text-sm text-muted-foreground text-right mt-1">{article.author}</p>
@@ -217,5 +222,3 @@ export default function AdminArticlesPage() {
     </div>
   );
 }
-
-    

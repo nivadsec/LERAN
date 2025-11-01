@@ -9,6 +9,7 @@ import { getApps, initializeApp, getApp } from 'firebase/app';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { getSdks } from '@/firebase/sdks';
 import { firebaseConfig } from '@/firebase/config';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface Article {
     id: string;
@@ -20,6 +21,8 @@ interface Article {
     createdAt: any;
 }
 
+const heroStudentImage = PlaceHolderImages.find(p => p.id === 'hero-student');
+const defaultImageUrl = heroStudentImage ? heroStudentImage.imageUrl : 'https://picsum.photos/seed/1/600/400';
 
 async function getLatestArticles(): Promise<Article[]> {
     try {
@@ -193,7 +196,7 @@ function ArticlesSection({ articles }: { articles: Article[] }) {
                         <Card key={article.id} className="overflow-hidden group">
                             <Link href={`/articles/${article.slug}`} className="block">
                                 <Image
-                                    src={article.imageUrl || "https://picsum.photos/seed/1/600/400"}
+                                    src={article.imageUrl || defaultImageUrl}
                                     width={600}
                                     height={400}
                                     alt={article.title}

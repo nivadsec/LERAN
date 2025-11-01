@@ -10,6 +10,7 @@ import { format } from 'date-fns-jalali';
 import { Calendar, User } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface Article {
   id: string;
@@ -20,6 +21,9 @@ interface Article {
   author: string;
   createdAt: { seconds: number; nanoseconds: number };
 }
+
+const heroStudentImage = PlaceHolderImages.find(p => p.id === 'hero-student');
+const defaultImageUrl = heroStudentImage ? heroStudentImage.imageUrl : 'https://picsum.photos/seed/1/1200/800';
 
 export default function ArticlePage() {
   const params = useParams();
@@ -80,7 +84,7 @@ export default function ArticlePage() {
 
             <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                 <Image
-                    src={article.imageUrl}
+                    src={article.imageUrl || defaultImageUrl}
                     alt={article.title}
                     fill
                     className="object-cover"
@@ -128,5 +132,3 @@ function ArticleSkeleton() {
     </div>
   );
 }
-
-    
