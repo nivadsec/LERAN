@@ -11,7 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig } from 'lucide-react';
 import { format, addDays } from 'date-fns-jalali';
-import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
 
 const subjectDetailSchema = z.object({
   name: z.string(),
@@ -41,6 +44,10 @@ const initialSubjects = [
 ]
 
 export default function WeeklyReportPage() {
+  const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const today = new Date();
   const startOfWeek = today; // Placeholder
   const endOfWeek = addDays(startOfWeek, 6);
@@ -68,8 +75,39 @@ export default function WeeklyReportPage() {
 
 
   const onSubmit = (data: WeeklyReportFormValues) => {
-    console.log(data);
-    // Here you would typically send the data to your backend/Firebase
+    if (!user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'خطا',
+        description: 'برای ثبت گزارش باید وارد شده باشید.',
+      });
+      return;
+    }
+    const weeklyReportRef = collection(firestore, 'users', user.uid, 'weeklyReports');
+    const payload = {
+        ...data,
+        studentId: user.uid,
+        startDate: startOfWeek.toISOString(),
+        endDate: endOfWeek.toISOString(),
+        createdAt: serverTimestamp(),
+    };
+
+    addDoc(weeklyReportRef, payload)
+      .then(() => {
+        toast({
+          title: 'گزارش هفتگی ثبت شد',
+          description: 'گزارش شما با موفقیت در سیستم ذخیره شد.',
+        });
+        form.reset();
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          path: weeklyReportRef.path,
+          operation: 'create',
+          requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      });
   };
 
   return (
@@ -231,7 +269,9 @@ export default function WeeklyReportPage() {
             </Card>
 
             <div className="flex justify-start pt-4">
-                <Button type="submit" size="lg">ثبت گزارش هفتگی</Button>
+                <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
+                </Button>
             </div>
             </form>
         </Form>

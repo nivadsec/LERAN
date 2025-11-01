@@ -99,6 +99,37 @@
       },
       "required": ["id", "studentId", "reportDate", "studyItems"]
     },
+    "WeeklyReport": {
+      "title": "WeeklyReport",
+      "description": "Represents a student's weekly self-assessment report, comparing goals to actual performance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the weekly report." },
+        "studentId": { "type": "string", "description": "Reference to the student." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "weekNumber": { "type": "number" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "targetTime": { "type": "number" },
+              "actualTime": { "type": "number" },
+              "targetTests": { "type": "number" },
+              "actualTests": { "type": "number" }
+            },
+            "required": ["name"]
+          }
+        },
+        "whatWentWell": { "type": "string" },
+        "whatCouldBeBetter": { "type": "string" },
+        "goalsForNextWeek": { "type": "string" }
+      },
+      "required": ["id", "studentId", "weekNumber", "subjects"]
+    },
     "TestAnalysis": {
       "title": "TestAnalysis",
       "description": "Represents a detailed analysis of a student's performance on a series of tests for a specific subject.",
@@ -490,6 +521,20 @@
               "name": "reportId",
               "description": "The unique identifier for the daily report."
             }
+          ]
+        }
+      },
+       {
+        "path": "/users/{userId}/weeklyReports/{reportId}",
+        "definition": {
+          "entityName": "WeeklyReport",
+          "schema": {
+            "$ref": "#/backend/entities/WeeklyReport"
+          },
+          "description": "Subcollection for students' weekly self-assessments.",
+          "params": [
+            { "name": "userId", "description": "The student's unique ID." },
+            { "name": "reportId", "description": "The weekly report's unique ID." }
           ]
         }
       },
