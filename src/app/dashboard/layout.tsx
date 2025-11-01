@@ -57,6 +57,7 @@ import {
   PenSquare,
   CalendarClock,
   Bed,
+  Newspaper,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -376,6 +377,12 @@ function AdminNav() {
                 <Users className="mr-2 h-4 w-4" />
               </Link>
             </SidebarMenuSubItem>
+            <SidebarMenuSubItem asChild>
+              <Link href="/admin/requests" className="justify-end">
+                <span>بررسی درخواست‌ها</span>
+                <ClipboardCheckIcon className="mr-2 h-4 w-4" />
+              </Link>
+            </SidebarMenuSubItem>
         </SidebarMenuSubContent>
       </SidebarMenuSub>
 
@@ -426,6 +433,12 @@ function AdminNav() {
               <BookOpen className="mr-2 h-4 w-4" />
             </Link>
           </SidebarMenuSubItem>
+          <SidebarMenuSubItem asChild>
+            <Link href="/admin/articles" className="justify-end">
+                <span>مقالات</span>
+                <Newspaper className="mr-2 h-4 w-4" />
+            </Link>
+           </SidebarMenuSubItem>
           <SidebarMenuSubItem asChild>
             <Link href="/admin/online-tests" className="justify-end">
               <span>آزمون‌های آنلاین</span>
