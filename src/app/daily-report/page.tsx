@@ -97,6 +97,11 @@ export default function DailyReportPage() {
   }, [firestore, user]);
 
   const { data: pastReports, isLoading: areReportsLoading } = useCollection<DailyReport>(dailyReportsQuery);
+  
+  const formatNumber = (num: number | undefined) => {
+    if (num === undefined || isNaN(num)) return '۰';
+    return new Intl.NumberFormat('fa-IR').format(num);
+  }
 
   const onSubmit = async (values: DailyReportFormValues) => {
     if (isUserLoading) {
@@ -207,7 +212,7 @@ export default function DailyReportPage() {
               )} />
                <FormField control={form.control} name="mentalState" render={({ field: { value, onChange } }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center justify-end gap-2"><Smile className="h-4 w-4"/>وضعیت روانی: {value}</FormLabel>
+                  <FormLabel className="flex items-center justify-end gap-2"><Smile className="h-4 w-4"/>وضعیت روانی: <span className="font-code text-base">{formatNumber(value)}</span></FormLabel>
                   <FormControl>
                     <Slider dir="ltr" value={[value]} onValueChange={(v) => onChange(v[0])} max={10} min={1} step={1} />
                   </FormControl>
@@ -242,18 +247,17 @@ export default function DailyReportPage() {
                         <TableRow key={field.id}>
                             <TableCell className="border-l"><Input placeholder="نام درس" {...form.register(`studyItems.${index}.lesson`)} /></TableCell>
                             <TableCell className="border-l"><Input placeholder="مبحث خوانده شده" {...form.register(`studyItems.${index}.topic`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" placeholder="دقیقه" {...form.register(`studyItems.${index}.studyTime`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCount`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testCorrect`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" {...form.register(`studyItems.${index}.testWrong`)} /></TableCell>
-                            <TableCell className="border-l"><Input type="number" className="text-center" placeholder="دقیقه" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center font-code" placeholder="دقیقه" {...form.register(`studyItems.${index}.studyTime`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testCount`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testCorrect`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testWrong`)} /></TableCell>
+                            <TableCell className="border-l"><Input type="number" className="text-center font-code" placeholder="دقیقه" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
                             <TableCell>
+                                <div className="text-center font-code">{formatNumber(percentage)}%</div>
                                 <Input 
-                                    type="number"
+                                    type="hidden"
                                     value={percentage}
                                     {...form.register(`studyItems.${index}.testPercentage`)}
-                                    className="text-center" 
-                                    readOnly
                                  />
                             </TableCell>
                             <TableCell>
@@ -266,12 +270,12 @@ export default function DailyReportPage() {
                 })}
                   <TableRow className="bg-muted/50 font-bold">
                     <TableCell colSpan={2} className="text-right border-l">مجموع</TableCell>
-                    <TableCell className="text-center border-l">{totalStudyTime}</TableCell>
-                    <TableCell className="text-center border-l">{totalTestCount}</TableCell>
-                    <TableCell className="text-center border-l">{totalTestCorrect}</TableCell>
-                    <TableCell className="text-center border-l">{totalTestWrong}</TableCell>
-                    <TableCell className="text-center border-l">{totalTestTime}</TableCell>
-                    <TableCell className="text-center">{overallTestPercentage}%</TableCell>
+                    <TableCell className="text-center border-l font-code">{formatNumber(totalStudyTime)}</TableCell>
+                    <TableCell className="text-center border-l font-code">{formatNumber(totalTestCount)}</TableCell>
+                    <TableCell className="text-center border-l font-code">{formatNumber(totalTestCorrect)}</TableCell>
+                    <TableCell className="text-center border-l font-code">{formatNumber(totalTestWrong)}</TableCell>
+                    <TableCell className="text-center border-l font-code">{formatNumber(totalTestTime)}</TableCell>
+                    <TableCell className="text-center font-code">{formatNumber(overallTestPercentage)}%</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
@@ -285,18 +289,18 @@ export default function DailyReportPage() {
             {/* Bottom Bar */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="classHours" render={({ field }) => (
-                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><BookOpen className="h-4 w-4"/>میزان کلاس</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><BookOpen className="h-4 w-4"/>میزان کلاس</FormLabel><FormControl><Input type="number" className="font-code" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="sleepHours" render={({ field }) => (
-                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bed className="h-4 w-4"/>میزان خواب</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bed className="h-4 w-4"/>میزان خواب</FormLabel><FormControl><Input type="number" className="font-code" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="wastedHours" render={({ field }) => (
-                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bomb className="h-4 w-4"/>میزان فاجعه!</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Bomb className="h-4 w-4"/>میزان فاجعه!</FormLabel><FormControl><Input type="number" className="font-code" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="mobileHours" render={({ field }) => (
-                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Smartphone className="h-4 w-4"/>میزان موبایل</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="flex items-center justify-end gap-2"><Smartphone className="h-4 w-4"/>میزان موبایل</FormLabel><FormControl><Input type="number" className="font-code" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
-                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Brain className="h-4 w-4"/>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
+                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Brain className="h-4 w-4"/>میزان مطالعه</FormLabel><FormControl><Input value={`${formatNumber(Math.floor(totalStudyTime / 60))}h ${formatNumber(totalStudyTime % 60)}m`} className="font-code" readOnly /></FormControl></FormItem>
             </div>
 
             <div className="flex justify-start pt-4">
@@ -336,12 +340,12 @@ export default function DailyReportPage() {
                         <CardHeader>
                             <CardTitle className="text-right flex justify-between items-center">
                                 <span>گزارش</span>
-                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-1">
+                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-1 font-code">
                                     <Calendar className="h-4 w-4" />
                                     {report.reportDate}
                                 </span>
                             </CardTitle>
-                             <CardDescription className="text-right pt-2">
+                             <CardDescription className="text-right pt-2 font-code">
                                 ثبت شده در: {report.createdAt ? format(new Date(report.createdAt.seconds * 1000), 'yyyy/MM/dd HH:mm') : 'نامشخص'}
                             </CardDescription>
                         </CardHeader>
@@ -349,15 +353,15 @@ export default function DailyReportPage() {
                              <div className="flex justify-around items-center text-center">
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">مطالعه</p>
-                                    <p className="font-bold flex items-center gap-1"><Clock className="h-4 w-4"/> {report.totals.totalStudyTime} دقیقه</p>
+                                    <p className="font-bold flex items-center gap-1 font-code"><Clock className="h-4 w-4"/> {formatNumber(report.totals.totalStudyTime)} دقیقه</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">درصد تست</p>
-                                    <p className="font-bold flex items-center gap-1"><Percent className="h-4 w-4"/> {report.totals.overallTestPercentage}%</p>
+                                    <p className="font-bold flex items-center gap-1 font-code"><Percent className="h-4 w-4"/> {formatNumber(report.totals.overallTestPercentage)}%</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">وضعیت</p>
-                                    <p className="font-bold flex items-center gap-1"><Smile className="h-4 w-4"/> {report.mentalState}/10</p>
+                                    <p className="font-bold flex items-center gap-1 font-code"><Smile className="h-4 w-4"/> {formatNumber(report.mentalState)}/۱۰</p>
                                 </div>
                             </div>
                             <Button variant="outline" className="w-full">مشاهده جزئیات</Button>

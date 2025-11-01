@@ -19,7 +19,7 @@ export default {
       fontFamily: {
         body: ['var(--font-vazirmatn)', 'sans-serif'],
         headline: ['var(--font-vazirmatn)', 'sans-serif'],
-        code: ['monospace'],
+        code: ['Vazirmatn FD', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
