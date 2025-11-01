@@ -17,6 +17,8 @@ import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns-jalali';
 import { Separator } from '@/components/ui/separator';
+import { TimePicker } from '@/components/ui/time-picker';
+
 
 const studyItemSchema = z.object({
   lesson: z.string(),
@@ -190,10 +192,18 @@ export default function DailyReportPage() {
                 </FormItem>
               )} />
               <FormField control={form.control} name="wakeupTime" render={({ field }) => (
-                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت بیداری</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+                <FormItem>
+                    <FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت بیداری</FormLabel>
+                    <FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl>
+                    <FormMessage />
+                </FormItem>
               )} />
               <FormField control={form.control} name="studyStartTime" render={({ field }) => (
-                <FormItem><FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت شروع</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl></FormItem>
+                <FormItem>
+                    <FormLabel className="flex items-center justify-end gap-2"><Clock className="h-4 w-4"/>ساعت شروع</FormLabel>
+                    <FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl>
+                    <FormMessage />
+                </FormItem>
               )} />
                <FormField control={form.control} name="mentalState" render={({ field: { value, onChange } }) => (
                 <FormItem>
@@ -368,6 +378,8 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
 
     
 
