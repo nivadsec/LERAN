@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Calendar, CheckCircle, Upload } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 export default function DailyReportPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,6 +47,15 @@ export default function DailyReportPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (isUserLoading) {
+        toast({
+            variant: 'destructive',
+            title: 'کمی صبر کنید',
+            description: 'در حال بارگذاری اطلاعات کاربر. لطفاً چند لحظه بعد دوباره تلاش کنید.',
+        });
+        return;
+    }
+
     if (!user) {
       toast({
         variant: 'destructive',
@@ -70,9 +79,16 @@ export default function DailyReportPage() {
                 description: 'گزارش روزانه شما با موفقیت ثبت شد.',
                 action: <CheckCircle className="text-green-500" />,
             });
-            form.reset();
+            form.reset({
+                activities: '',
+                feeling: 5,
+                studyHours: 0,
+                sleepHours: 0,
+                attachment: undefined,
+            });
         })
         .catch(error => {
+            console.error("Error creating daily report: ", error);
             const contextualError = new FirestorePermissionError({
                 path: dailyReportRef.path,
                 operation: 'create',
@@ -211,8 +227,8 @@ export default function DailyReportPage() {
 
 
             <div className="flex justify-start">
-              <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش'}
+              <Button type="submit" size="lg" disabled={form.formState.isSubmitting || isUserLoading}>
+                {isUserLoading ? 'در حال بارگذاری...' : form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش'}
               </Button>
             </div>
           </form>
