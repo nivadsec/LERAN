@@ -23,7 +23,7 @@ interface Article {
 
 async function getLatestArticles(): Promise<Article[]> {
     try {
-        const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
         const { firestore } = getSdks(app);
         const articlesRef = collection(firestore, 'articles');
         const q = query(articlesRef, orderBy('createdAt', 'desc'), limit(3));
@@ -50,7 +50,8 @@ export default async function Home() {
       ></div>
       <Header />
       <main className="flex-1 relative">
-        <HeroSection articles={articles} />
+        <HeroSection />
+        {articles.length > 0 && <ArticlesSection articles={articles} />}
       </main>
       <Footer />
     </div>
@@ -135,10 +136,10 @@ function Logo() {
     )
 }
 
-function HeroSection({ articles }: { articles: Article[] }) {
+function HeroSection() {
   return (
     <section className="w-full pt-12 md:pt-24 lg:pt-32">
-      <div className="container px-4 md:px-6">
+      <div className="container px-4 md:px-6 space-y-10 xl:space-y-16">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <Badge
             variant="outline"
@@ -167,7 +168,6 @@ function HeroSection({ articles }: { articles: Article[] }) {
             </Button>
           </div>
         </div>
-        {articles.length > 0 && <ArticlesSection articles={articles} />}
       </div>
     </section>
   );
