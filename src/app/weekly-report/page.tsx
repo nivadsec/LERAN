@@ -11,34 +11,37 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarDays, BookCopy, PlusCircle, Trash2, Send } from 'lucide-react';
+import { CalendarDays, BookCopy, PlusCircle, Trash2, Send, BarChartHorizontalBig, Sparkles, PencilRuler } from 'lucide-react';
 import { format, getDay, addDays, startOfWeek as getStartOfWeek } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 const subjectDetailSchema = z.object({
   name: z.string().min(1, "نام درس الزامی است."),
-  studyHours: z.coerce.number().optional(),
-  studyTests: z.coerce.number().optional(),
-  reviewCount: z.coerce.number().optional(),
-  comment: z.string().optional(),
+  targetTime: z.coerce.number().optional(),
+  actualTime: z.coerce.number().optional(),
+  targetTests: z.coerce.number().optional(),
+  actualTests: z.coerce.number().optional(),
 });
 
-const formSchema = z.object({
-  comment: z.string().optional(),
+const weeklyPlanSchema = z.object({
   subjects: z.array(subjectDetailSchema),
+  whatWentWell: z.string().optional(),
+  whatCouldBeBetter: z.string().optional(),
+  goalsForNextWeek: z.string().optional(),
 });
 
-type WeeklyReportFormValues = z.infer<typeof formSchema>;
+type WeeklyReportFormValues = z.infer<typeof weeklyPlanSchema>;
 
 interface WeeklyReportDocument extends WeeklyReportFormValues {
     id: string;
     weekRange: string;
     createdAt: Timestamp;
-    totalHours: number;
-    totalTests: number;
+    totalActualTime: number;
+    totalActualTests: number;
 }
 
 
@@ -60,8 +63,8 @@ export default function WeeklyReportPage() {
   }, [today]);
 
   const form = useForm<WeeklyReportFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { comment: '', subjects: [] },
+    resolver: zodResolver(weeklyPlanSchema),
+    defaultValues: { subjects: [], whatWentWell: '', whatCouldBeBetter: '', goalsForNextWeek: '' },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -70,14 +73,8 @@ export default function WeeklyReportPage() {
   });
 
   const subjects = form.watch('subjects');
-  const totalHours = subjects.reduce(
-    (sum, subj) => sum + Number(subj.studyHours || 0),
-    0
-  );
-  const totalTests = subjects.reduce(
-    (sum, subj) => sum + Number(subj.studyTests || 0),
-    0
-  );
+  const totalActualTime = subjects.reduce((sum, subj) => sum + Number(subj.actualTime || 0), 0);
+  const totalActualTests = subjects.reduce((sum, subj) => sum + Number(subj.actualTests || 0), 0);
 
   const weeklyReportsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -97,10 +94,10 @@ export default function WeeklyReportPage() {
     }
     append({
       name: newSubjectName.trim(),
-      studyHours: 0,
-      studyTests: 0,
-      reviewCount: 0,
-      comment: '',
+      targetTime: 0,
+      actualTime: 0,
+      targetTests: 0,
+      actualTests: 0,
     });
     setNewSubjectName('');
   };
@@ -139,7 +136,7 @@ export default function WeeklyReportPage() {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: z.infer<typeof weeklyPlanSchema>) => {
     if (!user || !firestore) {
         toast({
             variant: "destructive",
@@ -158,8 +155,8 @@ export default function WeeklyReportPage() {
         ...data,
         weekRange: formattedRange,
         createdAt: serverTimestamp(),
-        totalHours: totalHours,
-        totalTests: totalTests,
+        totalActualTime,
+        totalActualTests,
     };
     
     try {
@@ -167,7 +164,7 @@ export default function WeeklyReportPage() {
         toast({
             title: 'گزارش هفتگی با موفقیت ثبت شد ✅',
         });
-        form.reset({ comment: '', subjects: [] });
+        form.reset({ subjects: [], whatWentWell: '', whatCouldBeBetter: '', goalsForNextWeek: '' });
     } catch(error) {
         console.error("Error submitting weekly report:", error);
         const contextualError = new FirestorePermissionError({
@@ -185,76 +182,78 @@ export default function WeeklyReportPage() {
   };
 
   return (
-    <div dir="rtl" className="space-y-8 text-right">
+    <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-end gap-2 text-right">
-            گزارش هفتگی دانش‌آموز
-            <BookCopy className="h-5 w-5 text-primary" />
+          <CardTitle className="flex items-center justify-end gap-2 text-right text-2xl">
+            فرم پیگیری هفتگی
+            <BookCopy className="h-6 w-6 text-primary" />
           </CardTitle>
           <CardDescription className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
              <CalendarDays className="h-4 w-4" />
-             هفته جاری: <span className="font-semibold">{formattedRange}</span>
+             هفته جاری: <span className="font-semibold font-code">{formattedRange}</span>
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <form dir="rtl" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-right">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>جزئیات دروس</CardTitle>
+            <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                عملکرد مطالعه و تست
+                <PencilRuler className="h-5 w-5"/>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">نام درس</TableHead>
-                  <TableHead className="text-center">ساعت مطالعه</TableHead>
-                  <TableHead className="text-center">تعداد تست</TableHead>
-                  <TableHead className="text-center">تعداد مرور</TableHead>
-                  <TableHead className="text-right w-[200px]">توضیحات</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="text-right">تعداد تست واقعی</TableHead>
+                  <TableHead className="text-right">تعداد تست هدف</TableHead>
+                  <TableHead className="text-right">ساعت مطالعه واقعی</TableHead>
+                  <TableHead className="text-right">ساعت مطالعه هدف</TableHead>
+                  <TableHead className="text-right">درس</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {fields.map((field, index) => (
                   <TableRow key={field.id}>
                     <TableCell>
-                      <Input dir="rtl" {...form.register(`subjects.${index}.name` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.studyHours` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.studyTests` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.reviewCount` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Textarea dir="rtl" {...form.register(`subjects.${index}.comment` as const)} />
-                    </TableCell>
-                    <TableCell className="text-left">
                       <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
+                    <TableCell>
+                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTests` as const)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTests` as const)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTime` as const)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTime` as const)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input dir="rtl" className="text-right" {...form.register(`subjects.${index}.name` as const)} readOnly/>
+                    </TableCell>
                   </TableRow>
                 ))}
                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell>مجموع</TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(totalHours)}</TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(totalTests)}</TableCell>
+                    <TableCell colSpan={2}></TableCell>
+                    <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
                     <TableCell></TableCell>
-                    <TableCell></TableCell>
-                    <TableCell></TableCell>
+                    <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
+                    <TableCell className="text-right">مجموع</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
             </div>
 
-            <div className="flex items-center justify-start gap-2 mt-4" dir="rtl">
+            <div className="flex items-center justify-end gap-2 mt-4">
               <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
                 <PlusCircle className="ml-2 h-4 w-4" />
                 افزودن درس
@@ -264,44 +263,98 @@ export default function WeeklyReportPage() {
                 value={newSubjectName}
                 onChange={(e) => setNewSubjectName(e.target.value)}
                 className="max-w-xs"
-                dir="rtl"
               />
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>جمع‌بندی هفته</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              {...form.register('comment')}
-              placeholder="توضیحات کلی، نقاط قوت، ضعف و اهداف هفته آینده..."
-              dir="rtl"
-              className="min-h-[120px]"
-            />
-          </CardContent>
-        </Card>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                        مقایسه پیشرفت
+                        <BarChartHorizontalBig className="h-5 w-5"/>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-right">نتیجه</TableHead>
+                                    <TableHead className="text-right">عملکرد</TableHead>
+                                    <TableHead className="text-right">هدف</TableHead>
+                                    <TableHead className="text-right">موضوع</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell className="font-code">{formatNumber(totalActualTime - (pastReports?.[0]?.totalActualTime || 0))}</TableCell>
+                                    <TableCell className="font-code">{formatNumber(totalActualTime)}</TableCell>
+                                    <TableCell className="font-code">هدف</TableCell>
+                                    <TableCell>ساعت مطالعه</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-code">{formatNumber(totalActualTests - (pastReports?.[0]?.totalActualTests || 0))}</TableCell>
+                                    <TableCell className="font-code">{formatNumber(totalActualTests)}</TableCell>
+                                    <TableCell className="font-code">هدف</TableCell>
+                                    <TableCell>تعداد تست</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                        بازتاب و هدف‌گذاری
+                        <Sparkles className="h-5 w-5"/>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <FormField control={form.control} name="whatWentWell" render={({ field }) => (
+                         <FormItem>
+                             <FormLabel className="text-right">چه چیزهایی خوب پیش رفت؟ (نقاط قوت)</FormLabel>
+                             <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
+                         </FormItem>
+                     )} />
+                     <FormField control={form.control} name="whatCouldBeBetter" render={({ field }) => (
+                         <FormItem>
+                             <FormLabel className="text-right">چه چیزهایی می‌توانست بهتر باشد؟ (نقاط ضعف)</FormLabel>
+                             <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
+                         </FormItem>
+                     )} />
+                     <FormField control={form.control} name="goalsForNextWeek" render={({ field }) => (
+                         <FormItem>
+                             <FormLabel className="text-right">اهداف هفته آینده</FormLabel>
+                             <FormControl><Textarea placeholder="اهداف خود را مشخص کنید..." {...field} /></FormControl>
+                         </FormItem>
+                     )} />
+                </CardContent>
+            </Card>
+        </div>
         
         {canSubmit ? (
              <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
              </Button>
         ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 text-right">
+                <p className="text-sm text-muted-foreground">ثبت گزارش هفتگی فقط در روزهای پنجشنبه و جمعه مجاز است.</p>
                 <Button type="button" size="lg" className="w-full sm:w-auto" onClick={handlePastDateRequest}>
                     <Send className="ml-2 h-4 w-4" />
                     درخواست ثبت گزارش
                 </Button>
-                <p className="text-xs text-muted-foreground">ثبت گزارش هفتگی فقط در روزهای پنجشنبه و جمعه مجاز است.</p>
             </div>
         )}
       </form>
 
+      <Separator />
+
       <Card>
         <CardHeader>
-          <CardTitle>گزارش‌های قبلی</CardTitle>
+          <CardTitle className="text-right">گزارش‌های قبلی</CardTitle>
         </CardHeader>
         <CardContent>
           {areReportsLoading ? (
@@ -315,7 +368,7 @@ export default function WeeklyReportPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">هفته</TableHead>
-                  <TableHead className="text-center">مجموع ساعت</TableHead>
+                  <TableHead className="text-center">مجموع ساعت مطالعه</TableHead>
                   <TableHead className="text-center">مجموع تست</TableHead>
                   <TableHead className="text-right">توضیحات</TableHead>
                 </TableRow>
@@ -323,10 +376,10 @@ export default function WeeklyReportPage() {
               <TableBody>
                 {pastReports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell className="font-code">{report.weekRange}</TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(report.totalHours || 0)}</TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(report.totalTests || 0)}</TableCell>
-                    <TableCell dir="rtl" className="max-w-xs truncate">{report.comment}</TableCell>
+                    <TableCell className="font-code text-right">{report.weekRange}</TableCell>
+                    <TableCell className="text-center font-code">{formatNumber(report.totalActualTime || 0)}</TableCell>
+                    <TableCell className="text-center font-code">{formatNumber(report.totalActualTests || 0)}</TableCell>
+                    <TableCell className="max-w-xs truncate text-right">{report.subjects.map(s => s.comment).join(', ')}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -340,5 +393,3 @@ export default function WeeklyReportPage() {
     </div>
   )
 }
-
-    
