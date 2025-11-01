@@ -61,6 +61,7 @@ export default function ArticlePage() {
   }
   
   const formattedDate = article.createdAt ? format(new Date(article.createdAt.seconds * 1000), 'd MMMM yyyy') : '';
+  const imageUrl = article.imageUrl && article.imageUrl.startsWith('http') && !article.imageUrl.includes('studio.firebase.google.com') ? article.imageUrl : defaultImageUrl;
 
   return (
     <div className="bg-background">
@@ -84,7 +85,7 @@ export default function ArticlePage() {
 
             <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
                 <Image
-                    src={article.imageUrl || defaultImageUrl}
+                    src={imageUrl}
                     alt={article.title}
                     fill
                     className="object-cover"

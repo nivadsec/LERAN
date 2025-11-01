@@ -192,27 +192,30 @@ function ArticlesSection({ articles }: { articles: Article[] }) {
                     </div>
                 </div>
                 <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-                    {articles.map((article) => (
-                        <Card key={article.id} className="overflow-hidden group">
-                            <Link href={`/articles/${article.slug}`} className="block">
-                                <Image
-                                    src={article.imageUrl || defaultImageUrl}
-                                    width={600}
-                                    height={400}
-                                    alt={article.title}
-                                    className="aspect-video w-full object-cover transition-transform group-hover:scale-105"
-                                />
-                                <CardHeader>
-                                    <CardTitle className="text-lg font-bold">{article.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground line-clamp-3">
-                                        {article.content.substring(0, 150)}...
-                                    </p>
-                                </CardContent>
-                            </Link>
-                        </Card>
-                    ))}
+                    {articles.map((article) => {
+                        const imageUrl = article.imageUrl && article.imageUrl.startsWith('http') && !article.imageUrl.includes('studio.firebase.google.com') ? article.imageUrl : defaultImageUrl;
+                        return (
+                            <Card key={article.id} className="overflow-hidden group">
+                                <Link href={`/articles/${article.slug}`} className="block">
+                                    <Image
+                                        src={imageUrl}
+                                        width={600}
+                                        height={400}
+                                        alt={article.title}
+                                        className="aspect-video w-full object-cover transition-transform group-hover:scale-105"
+                                    />
+                                    <CardHeader>
+                                        <CardTitle className="text-lg font-bold">{article.title}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground line-clamp-3">
+                                            {article.content.substring(0, 150)}...
+                                        </p>
+                                    </CardContent>
+                                </Link>
+                            </Card>
+                        )
+                    })}
                 </div>
                 <div className="flex justify-center">
                     <Button variant="outline" asChild>

@@ -65,34 +65,37 @@ export default function ArticlesListPage() {
           </div>
         ) : articles && articles.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
-              <Card key={article.id} className="overflow-hidden group flex flex-col">
-                <Link href={`/articles/${article.slug}`} className="block">
-                  <div className="aspect-video w-full overflow-hidden">
-                    <Image
-                      src={article.imageUrl || defaultImageUrl}
-                      width={600}
-                      height={400}
-                      alt={article.title}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                </Link>
-                <CardHeader>
-                  <Link href={`/articles/${article.slug}`} className="block">
-                    <CardTitle className="text-lg font-bold hover:text-primary transition-colors">{article.title}</CardTitle>
-                  </Link>
-                  <p className="text-xs text-muted-foreground pt-1">
-                    {article.createdAt ? format(new Date(article.createdAt.seconds * 1000), 'd MMMM yyyy') : ''}
-                  </p>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {article.content.substring(0, 150)}...
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {articles.map((article) => {
+                const imageUrl = article.imageUrl && article.imageUrl.startsWith('http') && !article.imageUrl.includes('studio.firebase.google.com') ? article.imageUrl : defaultImageUrl;
+                return (
+                  <Card key={article.id} className="overflow-hidden group flex flex-col">
+                    <Link href={`/articles/${article.slug}`} className="block">
+                      <div className="aspect-video w-full overflow-hidden">
+                        <Image
+                          src={imageUrl}
+                          width={600}
+                          height={400}
+                          alt={article.title}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                    </Link>
+                    <CardHeader>
+                      <Link href={`/articles/${article.slug}`} className="block">
+                        <CardTitle className="text-lg font-bold hover:text-primary transition-colors">{article.title}</CardTitle>
+                      </Link>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        {article.createdAt ? format(new Date(article.createdAt.seconds * 1000), 'd MMMM yyyy') : ''}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {article.content.substring(0, 150)}...
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
+            })}
           </div>
         ) : (
           <div className="text-center py-16">
