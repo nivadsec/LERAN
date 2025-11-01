@@ -17,15 +17,15 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
   const [hour, minute] = value?.split(':') || ['', ''];
 
   const handleHourChange = (newHour: string) => {
-    onChange(`${newHour}:${minute || '00'}`);
+    onChange(`${newHour.padStart(2, '0')}:${minute || '00'}`);
   };
 
   const handleMinuteChange = (newMinute: string) => {
-    onChange(`${hour || '00'}:${newMinute}`);
+    onChange(`${hour || '00'}:${newMinute.padStart(2, '0')}`);
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const hours = Array.from({ length: 24 }, (_, i) => i.toString());
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString());
 
   return (
     <Popover>
@@ -50,7 +50,7 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
             <SelectContent>
               {hours.map((h) => (
                 <SelectItem key={h} value={h}>
-                  {h}
+                  {h.padStart(2, '0')}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -63,7 +63,7 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
             <SelectContent>
               {minutes.map((m) => (
                 <SelectItem key={m} value={m}>
-                  {m}
+                  {m.padStart(2, '0')}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -73,5 +73,3 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
     </Popover>
   );
 }
-
-    
