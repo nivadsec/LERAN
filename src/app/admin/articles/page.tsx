@@ -169,23 +169,26 @@ export default function AdminArticlesPage() {
             </div>
           ) : articles && articles.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {articles.map((article) => (
-                <Card key={article.id} className="overflow-hidden">
-                  <Image src={article.imageUrl || defaultImageUrl} alt={article.title} width={400} height={250} className="w-full h-32 object-cover" />
-                  <div className="p-4">
-                    <h3 className="font-bold text-right">{article.title}</h3>
-                    <p className="text-sm text-muted-foreground text-right mt-1">{article.author}</p>
-                    <div className="flex gap-2 mt-4">
-                      <Button variant="outline" size="sm" onClick={() => openDialog(article)}>
-                        <FileEdit className="ml-1 h-4 w-4" /> ویرایش
-                      </Button>
-                       <Button variant="destructive" size="sm" onClick={() => openDeleteAlert(article.id)}>
-                        <Trash2 className="ml-1 h-4 w-4" /> حذف
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+              {articles.map((article) => {
+                  const imageUrl = article.imageUrl && article.imageUrl.startsWith('http') && !article.imageUrl.includes('studio.firebase.google.com') ? article.imageUrl : defaultImageUrl;
+                  return (
+                    <Card key={article.id} className="overflow-hidden">
+                      <Image src={imageUrl} alt={article.title} width={400} height={250} className="w-full h-32 object-cover" />
+                      <div className="p-4">
+                        <h3 className="font-bold text-right">{article.title}</h3>
+                        <p className="text-sm text-muted-foreground text-right mt-1">{article.author}</p>
+                        <div className="flex gap-2 mt-4">
+                          <Button variant="outline" size="sm" onClick={() => openDialog(article)}>
+                            <FileEdit className="ml-1 h-4 w-4" /> ویرایش
+                          </Button>
+                           <Button variant="destructive" size="sm" onClick={() => openDeleteAlert(article.id)}>
+                            <Trash2 className="ml-1 h-4 w-4" /> حذف
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-8 text-center">
