@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
             students.push({
                 ...userData,
                 dailyReports,
-                avgStudyHours: dailyReports.length > 0 ? totalStudyMinutes / 60 / dailyReports.length : 0,
+                avgStudyHours: dailyReports.length > 0 ? (totalStudyMinutes / 60) / dailyReports.length : 0,
                 avgMentalState: dailyReports.length > 0 ? totalMentalState / dailyReports.length : 0,
             });
         }
@@ -202,9 +202,11 @@ export default function AdminDashboardPage() {
     const totalReports = allStudentsData.flatMap(s => s.dailyReports);
     const totalStudyMinutes = totalReports.reduce((acc, r) => acc + (r.totals?.totalStudyTime || 0), 0);
     const totalFeeling = totalReports.reduce((acc, r) => acc + r.mentalState, 0);
-    
+    const totalReportsCount = totalReports.length;
+
     const dayNames = ["۱شنبه", "۲شنبه", "۳شنبه", "۴شنبه", "۵شنبه", "جمعه", "شنبه"];
     const chartData = dayNames.map(name => ({ day: name, hours: 0 }));
+
     totalReports.forEach(report => {
         if(report.createdAt) {
             const date = new Date(report.createdAt.seconds * 1000);
@@ -217,13 +219,16 @@ export default function AdminDashboardPage() {
         }
     });
 
+    const totalUniqueReportDays = new Set(totalReports.map(r => r.reportDate)).size;
+
     return {
         totalStudents: allStudentsData.length,
-        avgStudy: totalReports.length > 0 ? (totalStudyMinutes / 60 / totalReports.length).toFixed(1) : 0,
-        avgFeeling: totalReports.length > 0 ? (totalFeeling / totalReports.length).toFixed(1) : 0,
+        avgStudy: totalUniqueReportDays > 0 ? (totalStudyMinutes / 60 / totalUniqueReportDays).toFixed(1) : 0,
+        avgFeeling: totalReportsCount > 0 ? (totalFeeling / totalReportsCount).toFixed(1) : 0,
         weeklyChartData: chartData
     };
-  }, [isDataLoading, allStudentsData]);
+}, [isDataLoading, allStudentsData]);
+
 
   const isLoading = isUserLoading || isProfileLoading || isDataLoading;
   
@@ -424,3 +429,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
