@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
+import { getApps, initializeApp, getApp } from 'firebase/app';
 import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { getSdks } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 
 interface Article {
     id: string;
@@ -21,7 +23,8 @@ interface Article {
 
 async function getLatestArticles(): Promise<Article[]> {
     try {
-        const { firestore } = initializeFirebase();
+        const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        const { firestore } = getSdks(app);
         const articlesRef = collection(firestore, 'articles');
         const q = query(articlesRef, orderBy('createdAt', 'desc'), limit(3));
         const querySnapshot = await getDocs(q);
@@ -227,5 +230,3 @@ function Footer() {
     </footer>
   );
 }
-
-    
