@@ -155,6 +155,7 @@ export default function WeeklyReportPage() {
         ...data,
         weekRange: formattedRange,
         createdAt: serverTimestamp(),
+        studentId: user.uid, // Add studentId
         totalActualTime,
         totalActualTests,
     };
@@ -184,7 +185,7 @@ export default function WeeklyReportPage() {
   return (
     <div className="space-y-8">
       <Card>
-        <CardHeader>
+        <CardHeader dir="rtl" className="text-right">
           <CardTitle className="flex items-center justify-end gap-2 text-right text-2xl">
             فرم پیگیری هفتگی
             <BookCopy className="h-6 w-6 text-primary" />
@@ -196,163 +197,167 @@ export default function WeeklyReportPage() {
         </CardHeader>
       </Card>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
-                عملکرد مطالعه و تست
-                <PencilRuler className="h-5 w-5"/>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead className="text-right">تعداد تست واقعی</TableHead>
-                  <TableHead className="text-right">تعداد تست هدف</TableHead>
-                  <TableHead className="text-right">ساعت مطالعه واقعی</TableHead>
-                  <TableHead className="text-right">ساعت مطالعه هدف</TableHead>
-                  <TableHead className="text-right">درس</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.map((field, index) => (
-                  <TableRow key={field.id}>
-                    <TableCell>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTests` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTests` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTime` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTime` as const)} />
-                    </TableCell>
-                    <TableCell>
-                      <Input dir="rtl" className="text-right" {...form.register(`subjects.${index}.name` as const)} readOnly/>
-                    </TableCell>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader dir="rtl">
+              <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                  عملکرد مطالعه و تست
+                  <PencilRuler className="h-5 w-5"/>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-md border" dir="rtl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="text-right">درس</TableHead>
+                    <TableHead className="text-right">ساعت مطالعه هدف</TableHead>
+                    <TableHead className="text-right">ساعت مطالعه واقعی</TableHead>
+                    <TableHead className="text-right">تعداد تست هدف</TableHead>
+                    <TableHead className="text-right">تعداد تست واقعی</TableHead>
                   </TableRow>
-                ))}
-                 <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}></TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
-                    <TableCell></TableCell>
-                    <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
-                    <TableCell className="text-right">مجموع</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-            </div>
+                </TableHeader>
+                <TableBody>
+                  {fields.map((field, index) => (
+                    <TableRow key={field.id}>
+                      <TableCell>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Input dir="rtl" className="text-right" {...form.register(`subjects.${index}.name` as const)} readOnly/>
+                      </TableCell>
+                      <TableCell>
+                        <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTime` as const)} />
+                      </TableCell>
+                      <TableCell>
+                        <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTime` as const)} />
+                      </TableCell>
+                      <TableCell>
+                        <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.targetTests` as const)} />
+                      </TableCell>
+                      <TableCell>
+                        <Input dir="rtl" className="text-center font-code" type="number" {...form.register(`subjects.${index}.actualTests` as const)} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                   <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={2} className="text-right">مجموع</TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              </div>
 
-            <div className="flex items-center justify-end gap-2 mt-4">
-              <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                افزودن درس
-              </Button>
-               <Input
-                placeholder="نام درس جدید"
-                value={newSubjectName}
-                onChange={(e) => setNewSubjectName(e.target.value)}
-                className="max-w-xs"
-              />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
-                        مقایسه پیشرفت
-                        <BarChartHorizontalBig className="h-5 w-5"/>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-right">نتیجه</TableHead>
-                                    <TableHead className="text-right">عملکرد</TableHead>
-                                    <TableHead className="text-right">هدف</TableHead>
-                                    <TableHead className="text-right">موضوع</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell className="font-code">{formatNumber(totalActualTime - (pastReports?.[0]?.totalActualTime || 0))}</TableCell>
-                                    <TableCell className="font-code">{formatNumber(totalActualTime)}</TableCell>
-                                    <TableCell className="font-code">هدف</TableCell>
-                                    <TableCell>ساعت مطالعه</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-code">{formatNumber(totalActualTests - (pastReports?.[0]?.totalActualTests || 0))}</TableCell>
-                                    <TableCell className="font-code">{formatNumber(totalActualTests)}</TableCell>
-                                    <TableCell className="font-code">هدف</TableCell>
-                                    <TableCell>تعداد تست</TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
-                        بازتاب و هدف‌گذاری
-                        <Sparkles className="h-5 w-5"/>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <FormField control={form.control} name="whatWentWell" render={({ field }) => (
-                         <FormItem>
-                             <FormLabel className="text-right">چه چیزهایی خوب پیش رفت؟ (نقاط قوت)</FormLabel>
-                             <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
-                         </FormItem>
-                     )} />
-                     <FormField control={form.control} name="whatCouldBeBetter" render={({ field }) => (
-                         <FormItem>
-                             <FormLabel className="text-right">چه چیزهایی می‌توانست بهتر باشد؟ (نقاط ضعف)</FormLabel>
-                             <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
-                         </FormItem>
-                     )} />
-                     <FormField control={form.control} name="goalsForNextWeek" render={({ field }) => (
-                         <FormItem>
-                             <FormLabel className="text-right">اهداف هفته آینده</FormLabel>
-                             <FormControl><Textarea placeholder="اهداف خود را مشخص کنید..." {...field} /></FormControl>
-                         </FormItem>
-                     )} />
-                </CardContent>
-            </Card>
-        </div>
-        
-        {canSubmit ? (
-             <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
-             </Button>
-        ) : (
-            <div className="space-y-2 text-right">
-                <p className="text-sm text-muted-foreground">ثبت گزارش هفتگی فقط در روزهای پنجشنبه و جمعه مجاز است.</p>
-                <Button type="button" size="lg" className="w-full sm:w-auto" onClick={handlePastDateRequest}>
-                    <Send className="ml-2 h-4 w-4" />
-                    درخواست ثبت گزارش
+              <div className="flex items-center justify-end gap-2 mt-4" dir="rtl">
+                 <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  افزودن درس
                 </Button>
-            </div>
-        )}
-      </form>
+                 <Input
+                  placeholder="نام درس جدید"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="grid md:grid-cols-2 gap-6" dir="rtl">
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                          مقایسه پیشرفت
+                          <BarChartHorizontalBig className="h-5 w-5"/>
+                      </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <div className="overflow-x-auto rounded-md border">
+                          <Table>
+                              <TableHeader>
+                                  <TableRow>
+                                      <TableHead className="text-right">موضوع</TableHead>
+                                      <TableHead className="text-right">هدف</TableHead>
+                                      <TableHead className="text-right">عملکرد</TableHead>
+                                      <TableHead className="text-right">نتیجه</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  <TableRow>
+                                      <TableCell>ساعت مطالعه</TableCell>
+                                      <TableCell className="font-code">هدف</TableCell>
+                                      <TableCell className="font-code">{formatNumber(totalActualTime)}</TableCell>
+                                      <TableCell className="font-code">{formatNumber(totalActualTime - (pastReports?.[0]?.totalActualTime || 0))}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                      <TableCell>تعداد تست</TableCell>
+                                      <TableCell className="font-code">هدف</TableCell>
+                                      <TableCell className="font-code">{formatNumber(totalActualTests)}</TableCell>
+                                      <TableCell className="font-code">{formatNumber(totalActualTests - (pastReports?.[0]?.totalActualTests || 0))}</TableCell>
+                                  </TableRow>
+                              </TableBody>
+                          </Table>
+                      </div>
+                  </CardContent>
+              </Card>
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="text-right text-xl flex justify-end items-center gap-2">
+                          بازتاب و هدف‌گذاری
+                          <Sparkles className="h-5 w-5"/>
+                      </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-right">
+                       <FormField control={form.control} name="whatWentWell" render={({ field }) => (
+                           <FormItem>
+                               <FormLabel>چه چیزهایی خوب پیش رفت؟ (نقاط قوت)</FormLabel>
+                               <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
+                           </FormItem>
+                       )} />
+                       <FormField control={form.control} name="whatCouldBeBetter" render={({ field }) => (
+                           <FormItem>
+                               <FormLabel>چه چیزهایی می‌توانست بهتر باشد؟ (نقاط ضعف)</FormLabel>
+                               <FormControl><Textarea placeholder="تحلیل خود را بنویسید..." {...field} /></FormControl>
+                           </FormItem>
+                       )} />
+                       <FormField control={form.control} name="goalsForNextWeek" render={({ field }) => (
+                           <FormItem>
+                               <FormLabel>اهداف هفته آینده</FormLabel>
+                               <FormControl><Textarea placeholder="اهداف خود را مشخص کنید..." {...field} /></FormControl>
+                           </FormItem>
+                       )} />
+                  </CardContent>
+              </Card>
+          </div>
+          
+          <div dir="rtl" className="flex justify-start">
+            {canSubmit ? (
+               <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'در حال ثبت...' : 'ثبت گزارش هفتگی'}
+               </Button>
+            ) : (
+                <div className="space-y-2 text-right">
+                    <p className="text-sm text-muted-foreground">ثبت گزارش هفتگی فقط در روزهای پنجشنبه و جمعه مجاز است.</p>
+                    <Button type="button" size="lg" className="w-full sm:w-auto" onClick={handlePastDateRequest}>
+                        <Send className="ml-2 h-4 w-4" />
+                        درخواست ثبت گزارش
+                    </Button>
+                </div>
+            )}
+          </div>
+        </form>
+      </Form>
 
       <Separator />
 
-      <Card>
+      <Card dir="rtl">
         <CardHeader>
           <CardTitle className="text-right">گزارش‌های قبلی</CardTitle>
         </CardHeader>
@@ -370,7 +375,6 @@ export default function WeeklyReportPage() {
                   <TableHead className="text-right">هفته</TableHead>
                   <TableHead className="text-center">مجموع ساعت مطالعه</TableHead>
                   <TableHead className="text-center">مجموع تست</TableHead>
-                  <TableHead className="text-right">توضیحات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -379,7 +383,6 @@ export default function WeeklyReportPage() {
                     <TableCell className="font-code text-right">{report.weekRange}</TableCell>
                     <TableCell className="text-center font-code">{formatNumber(report.totalActualTime || 0)}</TableCell>
                     <TableCell className="text-center font-code">{formatNumber(report.totalActualTests || 0)}</TableCell>
-                    <TableCell className="max-w-xs truncate text-right">{report.subjects.map(s => s.comment).join(', ')}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
