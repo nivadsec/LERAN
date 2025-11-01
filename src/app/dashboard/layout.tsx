@@ -70,6 +70,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type featureList } from '@/app/admin/users/page';
+import { GlobalAIChatButton } from '@/components/global-ai-chat';
+
 
 interface UserProfile {
   firstName?: string;
@@ -152,6 +154,9 @@ export default function DashboardLayout({
     }
     return 'U';
   };
+  
+  const hasAiFeatures = userProfile && !userProfile.isAdmin && (userProfile.features?.['lernova-advisor'] || userProfile.features?.['panel-support-bot']);
+
 
   return (
     <SidebarProvider>
@@ -234,6 +239,7 @@ export default function DashboardLayout({
             </SidebarTrigger>
           </header>
           <div className="p-4 md:p-6">{children}</div>
+           {hasAiFeatures && <GlobalAIChatButton features={userProfile?.features} />}
         </main>
       </div>
     </SidebarProvider>
