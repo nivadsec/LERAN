@@ -50,8 +50,7 @@ export default async function Home() {
       ></div>
       <Header />
       <main className="flex-1 relative">
-        <HeroSection />
-        {articles.length > 0 && <ArticlesSection articles={articles} />}
+        <HeroSection articles={articles} />
       </main>
       <Footer />
     </div>
@@ -136,7 +135,7 @@ function Logo() {
     )
 }
 
-function HeroSection() {
+function HeroSection({ articles }: { articles: Article[] }) {
   return (
     <section className="w-full pt-12 md:pt-24 lg:pt-32">
       <div className="container px-4 md:px-6">
@@ -168,6 +167,7 @@ function HeroSection() {
             </Button>
           </div>
         </div>
+        {articles.length > 0 && <ArticlesSection articles={articles} />}
       </div>
     </section>
   );
