@@ -13,15 +13,52 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { Eye, EyeOff } from "lucide-react";
+import { doc, getDoc, collection, query, orderBy, limit } from "firebase/firestore";
+import { Eye, EyeOff, Megaphone } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
 });
+
+interface Announcement {
+    id: string;
+    message: string;
+}
+
+function LatestAnnouncement() {
+    const firestore = useFirestore();
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'), limit(1));
+    }, [firestore]);
+
+    const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full" />;
+    }
+
+    if (!announcements || announcements.length === 0) {
+        return null;
+    }
+
+    const latestAnnouncement = announcements[0];
+
+    return (
+        <Alert className="text-right">
+            <Megaphone className="h-4 w-4" />
+            <AlertTitle className="font-bold">اطلاعیه</AlertTitle>
+            <AlertDescription>
+                {latestAnnouncement.message}
+            </AlertDescription>
+        </Alert>
+    )
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,8 +109,8 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center min-h-screen justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
           <Link href="/" className="inline-flex items-center" prefetch={false}>
             <svg
               width="24"
@@ -101,6 +138,9 @@ export default function LoginPage() {
             <span className="ml-2 text-3xl font-bold font-headline text-primary">آی‌تاک</span>
           </Link>
         </div>
+        
+        <LatestAnnouncement />
+
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>

@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function AdminClassSchedulePage() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>برنامه کلاسی</CardTitle>
-        <CardDescription>در این بخش می‌توانید برنامه کلاسی را مدیریت کنید.</CardDescription>
+      <CardHeader className="text-right">
+        <CardTitle>برنامه کلاسی دانش‌آموزان</CardTitle>
+        <CardDescription>در این بخش می‌توانید برنامه کلاسی هر دانش‌آموز را مشاهده کنید.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p>این صفحه در حال ساخت است.</p>
+        <p>این صفحه در حال ساخت است. در آینده می‌توانید با انتخاب نام دانش‌آموز، برنامه او را مشاهده کنید.</p>
       </CardContent>
     </Card>
   );
