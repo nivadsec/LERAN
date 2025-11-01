@@ -57,7 +57,12 @@ export default function SignupPage() {
         grade: values.grade,
         major: values.major,
         signupDate: new Date().toISOString(),
-        isAdmin: false, // Default to false for all new signups
+        isAdmin: false,
+        features: {
+            'daily-report': true,
+            'weekly-report': true,
+            'panel-support-bot': true,
+        }
       };
 
       // Store additional user data in Firestore
@@ -69,7 +74,7 @@ export default function SignupPage() {
       });
 
       // After signup, redirect to the student dashboard
-      router.push("/daily-report");
+      router.push("/dashboard");
       
     } catch (error: any) {
       console.error("Signup Error: ", error);

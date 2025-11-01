@@ -62,7 +62,7 @@ export const featureList = [
     { id: 'self-assessment', label: 'خودارزیابی هوشمند' },
     { id: 'sleep-system-design', label: 'طراحی سیستم خواب' },
     { id: 'qna', label: 'پرسش و پاسخ با مشاور' },
-    { id: 'lernova-advisor', label: 'مشاور اختصاصی لرنوا (AI)' },
+    { id: 'lernova-advisor', label: 'مشاور اختصاصی لرنوا (AI)', icon: Bot },
     { id: 'panel-support-bot', label: 'پشتیبان فنی پنل (AI)', icon: Wrench },
     { id: 'consulting-content', label: 'مطالب مشاوره‌ای' },
     { id: 'recommendations', label: 'توصیه‌ها' },
@@ -74,7 +74,7 @@ export const featureList = [
 ];
 
 const defaultFeatures = featureList.reduce((acc, feature) => {
-    acc[feature.id] = true;
+    acc[feature.id] = true; // Set all features to true by default for new users
     return acc;
   }, {} as Record<string, boolean>);
 
@@ -268,7 +268,12 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
         major: '',
         password: '',
         panelStatus: true,
-        features: defaultFeatures,
+        features: {
+            ...defaultFeatures,
+            'daily-report': true,
+            'weekly-report': true,
+            'panel-support-bot': true,
+        },
       });
     }
   }, [student, form]);
@@ -437,7 +442,7 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
                   {featureList.map((feature) => (
                     <FormField key={feature.id} control={form.control} name={`features.${feature.id}`} render={({ field }) => (
                       <FormItem className="flex items-center justify-between p-2 rounded-lg border">
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} dir='ltr' /></FormControl>
+                        <FormControl><Switch checked={!!field.value} onCheckedChange={field.onChange} dir='ltr' /></FormControl>
                         <FormLabel className="text-sm font-normal">{feature.label}</FormLabel>
                       </FormItem>
                     )}/>
