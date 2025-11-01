@@ -140,8 +140,6 @@ export default function LoginPage() {
           </Link>
         </div>
         
-        <LatestAnnouncement />
-
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-headline">خوش آمدید</CardTitle>
@@ -229,6 +227,9 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
+
+        <LatestAnnouncement />
+
       </div>
     </div>
   )
