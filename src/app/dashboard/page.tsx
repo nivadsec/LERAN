@@ -208,7 +208,7 @@ export default function DashboardPage() {
             <div>
                 <h1 className="text-2xl font-bold">داشبورد شما</h1>
                 <p className="text-muted-foreground">
-                    سلام {userProfile?.firstName}، به پنل خودارزیابی خوش آمدید!
+                    سلام {userProfile?.firstName}، به لرنوا خوش آمدید!
                 </p>
             </div>
             <Button asChild>
