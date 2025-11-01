@@ -66,7 +66,7 @@ export default function WeeklyReportPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       weekNumber: 1, // This could be calculated dynamically
-      subjects: initialSubjects,
+      subjects: [],
       whatWentWell: '',
       whatCouldBeBetter: '',
       goalsForNextWeek: '',
@@ -142,7 +142,7 @@ export default function WeeklyReportPage() {
         });
         form.reset({
              weekNumber: 1,
-             subjects: initialSubjects,
+             subjects: [],
              whatWentWell: '',
              whatCouldBeBetter: '',
              goalsForNextWeek: '',
@@ -205,7 +205,9 @@ export default function WeeklyReportPage() {
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </TableCell>
-                                <TableCell className="font-medium text-right">{field.name}</TableCell>
+                                <TableCell className="font-medium text-right">
+                                    <Input {...form.register(`subjects.${index}.name`)} className="min-w-[120px] text-right"/>
+                                </TableCell>
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTime`)} className="min-w-[80px] text-center font-code" /></TableCell>
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTime`)} className="min-w-[80px] text-center font-code" /></TableCell>
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTests`)} className="min-w-[80px] text-center font-code" /></TableCell>
@@ -409,4 +411,5 @@ export default function WeeklyReportPage() {
         </div>
     </div>
   );
-}
+
+    
