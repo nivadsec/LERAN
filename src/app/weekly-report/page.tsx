@@ -55,7 +55,6 @@ export default function WeeklyReportPage() {
   const startOfWeek = today; // Placeholder
   const endOfWeek = addDays(startOfWeek, 6);
   
-  // In JS Date, Thursday is 4, Friday is 5.
   const isSubmissionAllowed = useMemo(() => {
     const dayOfWeek = getDay(today);
     return dayOfWeek === 4 || dayOfWeek === 5;
@@ -64,7 +63,7 @@ export default function WeeklyReportPage() {
   const form = useForm<WeeklyReportFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      weekNumber: 1, // This could be calculated dynamically
+      weekNumber: 1, 
       subjects: [],
       whatWentWell: '',
       whatCouldBeBetter: '',
@@ -209,14 +208,13 @@ export default function WeeklyReportPage() {
         </CardHeader>
         <CardContent className="p-0">
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12" dir="rtl">
 
-            {/* Study Time and Tests Section */}
             <Card className="bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle className="flex items-center justify-end gap-2 text-right">
+                        <BookCopy className="h-5 w-5 text-primary" />
                         عملکرد مطالعه و تست
-                       <BookCopy className="h-5 w-5 text-primary" />
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -224,22 +222,17 @@ export default function WeeklyReportPage() {
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[50px]"></TableHead>
                             <TableHead className="text-right">درس</TableHead>
                             <TableHead className="text-center">مطالعه (هدف)</TableHead>
                             <TableHead className="text-center">مطالعه (انجام‌شده)</TableHead>
                             <TableHead className="text-center">تست (هدف)</TableHead>
                             <TableHead className="text-center">تست (انجام‌شده)</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
                         {fields.map((field, index) => (
-                            <TableRow key={field.id}>
-                                <TableCell>
-                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </TableCell>
+                            <TableRow key={field.id} dir="rtl">
                                 <TableCell className="font-medium text-right">
                                     <Input {...form.register(`subjects.${index}.name`)} className="min-w-[120px] text-right"/>
                                 </TableCell>
@@ -247,66 +240,71 @@ export default function WeeklyReportPage() {
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTime`)} className="min-w-[80px] text-center font-code" /></TableCell>
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTests`)} className="min-w-[80px] text-center font-code" /></TableCell>
                                 <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTests`)} className="min-w-[80px] text-center font-code" /></TableCell>
+                                <TableCell>
+                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
                             </TableRow>
                         ))}
-                         <TableRow className="bg-muted/50 font-bold">
-                            <TableCell className="text-right" colSpan={2}>مجموع</TableCell>
+                         <TableRow className="bg-muted/50 font-bold" dir="rtl">
+                            <TableCell className="text-right">مجموع</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalTargetTime)}</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalTargetTests)}</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
+                            <TableCell></TableCell>
                         </TableRow>
                         </TableBody>
                     </Table>
                     </div>
-                     <div className="flex justify-end items-center gap-2 mt-4">
+                     <div className="flex justify-start items-center gap-2 mt-4">
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
+                            <PlusCircle className="ml-2 h-4 w-4" />
+                            افزودن
+                        </Button>
                          <Input
                             placeholder="نام درس جدید"
                             value={newSubjectName}
                             onChange={(e) => setNewSubjectName(e.target.value)}
                             className="max-w-xs text-right"
                         />
-                        <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
-                            <PlusCircle className="ml-2 h-4 w-4" />
-                            افزودن
-                        </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Progress Comparison Section */}
             <Card className="bg-card/80 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle className="flex items-center justify-end gap-2 text-right">
-                        مقایسه پیشرفت
                         <BarChartHorizontalBig className="h-5 w-5 text-primary" />
+                        مقایسه پیشرفت
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-right">این هفته</TableHead>
-                                    <TableHead className="text-right">هفته قبل</TableHead>
+                                <TableRow dir="rtl">
                                     <TableHead className="text-right">شاخص</TableHead>
+                                    <TableHead className="text-right">هفته قبل</TableHead>
+                                    <TableHead className="text-right">این هفته</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                 <TableRow>
-                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTime)} ساعت</TableCell>
-                                    <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
+                                 <TableRow dir="rtl">
                                     <TableCell className="text-right">کل زمان مطالعه</TableCell>
-                                </TableRow>
-                                 <TableRow>
-                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTests)} تست</TableCell>
                                     <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
-                                    <TableCell className="text-right">کل تست‌ها</TableCell>
+                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTime)} ساعت</TableCell>
                                 </TableRow>
-                                 <TableRow>
-                                    <TableCell><Input placeholder="مهم‌ترین دستاورد این هفته..." className="text-right"/></TableCell>
-                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
+                                 <TableRow dir="rtl">
+                                    <TableCell className="text-right">کل تست‌ها</TableCell>
+                                    <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
+                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTests)} تست</TableCell>
+                                </TableRow>
+                                 <TableRow dir="rtl">
                                     <TableCell className="text-right">دستاوردهای کلیدی</TableCell>
+                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
+                                    <TableCell><Input placeholder="مهم‌ترین دستاورد این هفته..." className="text-right"/></TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
@@ -314,12 +312,11 @@ export default function WeeklyReportPage() {
                 </CardContent>
             </Card>
 
-            {/* Reflection and Goals Section */}
              <Card className="bg-card/80 backdrop-blur-sm">
                  <CardHeader>
                     <CardTitle className="flex items-center justify-end gap-2 text-right">
-                        بازتاب و هدف‌گذاری
                         <Sparkles className="h-5 w-5 text-primary" />
+                        بازتاب و هدف‌گذاری
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -329,8 +326,8 @@ export default function WeeklyReportPage() {
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel className="flex items-center justify-end gap-2">
-                                چه چیزهایی این هفته خوب پیش رفت؟
                                 <CheckCircle className="h-4 w-4 text-green-500" />
+                                چه چیزهایی این هفته خوب پیش رفت؟
                             </FormLabel>
                             <FormControl>
                             <Textarea placeholder="نقاط قوت و موفقیت‌های این هفته..." {...field} />
@@ -344,8 +341,8 @@ export default function WeeklyReportPage() {
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel className="flex items-center justify-end gap-2">
-                                چه چیزهایی می‌توانست بهتر باشد؟
                                 <TrendingUp className="h-4 w-4 text-yellow-500" />
+                                چه چیزهایی می‌توانست بهتر باشد؟
                             </FormLabel>
                             <FormControl>
                             <Textarea placeholder="چالش‌ها و نکاتی برای بهبود..." {...field} />
@@ -359,8 +356,8 @@ export default function WeeklyReportPage() {
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel className="flex items-center justify-end gap-2">
-                                سه هدف دقیق برای هفته آینده؟
                                 <Target className="h-4 w-4 text-red-500" />
+                                سه هدف دقیق برای هفته آینده؟
                             </FormLabel>
                             <FormControl>
                             <Textarea placeholder="۱. افزایش ساعت مطالعه فیزیک به ۱۰ ساعت..." {...field} />
@@ -394,8 +391,8 @@ export default function WeeklyReportPage() {
 
         <div className="space-y-4">
             <h2 className="text-2xl font-bold text-right flex items-center justify-end gap-2">
-                تاریخچه گزارش‌های هفتگی
                 <History className="h-6 w-6 text-primary" />
+                تاریخچه گزارش‌های هفتگی
             </h2>
             {areReportsLoading ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
