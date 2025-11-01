@@ -10,10 +10,6 @@
           "type": "string",
           "description": "Unique identifier for the Student entity."
         },
-        "username": {
-          "type": "string",
-          "description": "The student's username for login."
-        },
         "firstName": {
           "type": "string",
           "description": "The first name of the student."
@@ -22,17 +18,37 @@
           "type": "string",
           "description": "The last name of the student."
         },
-        "classId": {
-          "type": "string",
-          "description": "Reference to Class. (Relationship: Class 1:N Student)"
+        "email": {
+            "type": "string",
+            "format": "email"
+        },
+        "grade": {
+            "type": "string"
+        },
+        "major": {
+            "type": "string"
+        },
+        "panelStatus": {
+            "type": "boolean",
+            "description": "Indicates if the student's panel is active."
+        },
+        "features": {
+            "type": "object",
+            "description": "A map of feature flags for the student.",
+            "additionalProperties": {
+                "type": "boolean"
+            }
+        },
+        "isAdmin": {
+            "type": "boolean",
+            "default": false
         }
       },
       "required": [
         "id",
-        "username",
         "firstName",
         "lastName",
-        "classId"
+        "email"
       ]
     },
     "DailyReport": {

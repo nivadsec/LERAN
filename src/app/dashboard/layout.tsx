@@ -391,12 +391,6 @@ function AdminNav() {
                 <Users className="mr-2 h-4 w-4" />
               </Link>
             </SidebarMenuSubItem>
-            <SidebarMenuSubItem asChild>
-              <Link href="/admin/permissions" className="justify-end">
-                <span>دسترسی‌ها</span>
-                <ShieldCheck className="mr-2 h-4 w-4" />
-              </Link>
-            </SidebarMenuSubItem>
         </SidebarMenuSubContent>
       </SidebarMenuSub>
 
