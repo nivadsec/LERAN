@@ -68,12 +68,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { type featureList } from '@/app/admin/users/page';
 
 interface UserProfile {
   firstName?: string;
   lastName?: string;
   email?: string;
   isAdmin?: boolean;
+  features?: Record<typeof featureList[number]['id'], boolean>;
 }
 
 export default function DashboardLayout({
@@ -175,7 +177,7 @@ export default function DashboardLayout({
           <SidebarContent className="flex-1 p-2">
             <ScrollArea className="h-full">
               <SidebarMenu>
-                {userProfile?.isAdmin ? <AdminNav /> : <StudentNav />}
+                {userProfile?.isAdmin ? <AdminNav /> : <StudentNav features={userProfile?.features}/>}
               </SidebarMenu>
             </ScrollArea>
           </SidebarContent>
@@ -235,8 +237,54 @@ export default function DashboardLayout({
   );
 }
 
-function StudentNav() {
+function StudentNav({ features }: { features?: UserProfile['features'] }) {
     const pathname = usePathname();
+
+    const menuConfig = [
+        { id: 'dashboard', href: '/dashboard', label: 'داشبورد', icon: Home },
+        {
+            id: 'reports', label: 'گزارش‌ها', icon: ClipboardList, subItems: [
+                { id: 'daily-report', href: '/daily-report', label: 'گزارش روزانه', icon: ClipboardEdit },
+                { id: 'daily-monitoring', href: '/daily-monitoring', label: 'پایش روزانه', icon: ShieldCheck },
+                { id: 'weekly-report', href: '/weekly-report', label: 'گزارش هفتگی', icon: ClipboardPlus },
+            ]
+        },
+        {
+            id: 'analysis', label: 'تحلیل و برنامه‌ریزی', icon: Sparkles, subItems: [
+                { id: 'test-analysis', href: '/test-analysis', label: 'تحلیل آزمون', icon: ClipboardCheckIcon },
+                { id: 'comprehensive-test-analysis', href: '/comprehensive-test-analysis', label: 'تحلیل آزمون جامع', icon: GraduationCap },
+                { id: 'topic-investment', href: '/topic-investment', label: 'سرمایه زمانی', icon: Crosshair },
+                { id: 'focus-ladder', href: '/focus-ladder', label: 'نردبان تمرکز', icon: TrendingUp },
+                { id: 'self-assessment', href: '/self-assessment', label: 'خودارزیابی هوشمند', icon: Bot },
+                { id: 'sleep-system-design', href: '/sleep-system-design', label: 'طراحی سیستم خواب', icon: Bed },
+            ]
+        },
+        {
+            id: 'content', label: 'محتوا و ارتباطات', icon: BookOpen, subItems: [
+                { id: 'qna', href: '/qna', label: 'پرسش و پاسخ', icon: HelpCircle },
+                { id: 'consulting-content', href: '/consulting-content', label: 'مطالب مشاوره‌ای', icon: Library },
+                { id: 'recommendations', href: '/recommendations', label: 'توصیه‌ها', icon: ThumbsUp },
+                { id: 'surveys', href: '/surveys', label: 'پرسشنامه‌ها', icon: FileText },
+            ]
+        },
+        { id: 'review-calendar', href: '/review-calendar', label: 'تقویم مرور', icon: CalendarClock },
+        { id: 'online-class', href: '/online-class', label: 'کلاس آنلاین', icon: Video },
+        { id: 'online-tests', href: '/online-tests', label: 'آزمون آنلاین', icon: PenSquare },
+        { id: 'class-schedule', href: '/class-schedule', label: 'برنامه کلاسی', icon: CalendarIcon },
+    ];
+
+    if (!features) {
+        return (
+            <>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="داشبورد" isActive={pathname === ('/dashboard')}>
+                        <Link href="/dashboard"><span>داشبورد</span><Home /></Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </>
+        )
+    }
+
     return (
         <>
             <SidebarMenuItem>
@@ -245,122 +293,59 @@ function StudentNav() {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             
-            <SidebarMenuSub>
-              <SidebarMenuSubButton tooltip="گزارش‌ها">
-                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
-                <span>گزارش‌ها</span>
-                <ClipboardList />
-              </SidebarMenuSubButton>
-              <SidebarMenuSubContent>
-                 <SidebarMenuSubItem asChild>
-                    <Link href="/daily-report" className="justify-end">
-                      <span>گزارش روزانه</span><ClipboardEdit className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/daily-monitoring" className="justify-end">
-                      <span>پایش روزانه</span><ShieldCheck className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/weekly-report" className="justify-end">
-                      <span>گزارش هفتگی</span><ClipboardPlus className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-              </SidebarMenuSubContent>
-            </SidebarMenuSub>
+            {(features['daily-report'] || features['daily-monitoring'] || features['weekly-report']) && (
+                 <SidebarMenuSub>
+                    <SidebarMenuSubButton tooltip="گزارش‌ها">
+                        <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                        <span>گزارش‌ها</span>
+                        <ClipboardList />
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubContent>
+                        {features['daily-report'] && <SidebarMenuSubItem asChild><Link href="/daily-report" className="justify-end"><span>گزارش روزانه</span><ClipboardEdit className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['daily-monitoring'] && <SidebarMenuSubItem asChild><Link href="/daily-monitoring" className="justify-end"><span>پایش روزانه</span><ShieldCheck className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['weekly-report'] && <SidebarMenuSubItem asChild><Link href="/weekly-report" className="justify-end"><span>گزارش هفتگی</span><ClipboardPlus className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                    </SidebarMenuSubContent>
+                </SidebarMenuSub>
+            )}
 
-            <SidebarMenuSub>
-              <SidebarMenuSubButton tooltip="تحلیل و برنامه‌ریزی">
-                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
-                <span>تحلیل و برنامه‌ریزی</span>
-                <Sparkles />
-              </SidebarMenuSubButton>
-              <SidebarMenuSubContent>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/test-analysis" className="justify-end">
-                      <span>تحلیل آزمون</span><ClipboardCheckIcon className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/comprehensive-test-analysis" className="justify-end">
-                      <span>تحلیل آزمون جامع</span><GraduationCap className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/topic-investment" className="justify-end">
-                      <span>سرمایه زمانی</span><Crosshair className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/focus-ladder" className="justify-end">
-                      <span>نردبان تمرکز</span><TrendingUp className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                   <SidebarMenuSubItem asChild>
-                    <Link href="/self-assessment" className="justify-end">
-                      <span>خودارزیابی هوشمند</span><Bot className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/sleep-system-design" className="justify-end">
-                      <span>طراحی سیستم خواب</span><Bed className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-              </SidebarMenuSubContent>
-            </SidebarMenuSub>
-            
-             <SidebarMenuSub>
-              <SidebarMenuSubButton tooltip="محتوا و ارتباطات">
-                <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
-                <span>محتوا و ارتباطات</span>
-                <BookOpen />
-              </SidebarMenuSubButton>
-              <SidebarMenuSubContent>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/qna" className="justify-end">
-                      <span>پرسش و پاسخ</span><HelpCircle className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                   <SidebarMenuSubItem asChild>
-                    <Link href="/consulting-content" className="justify-end">
-                      <span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                   <SidebarMenuSubItem asChild>
-                    <Link href="/recommendations" className="justify-end">
-                      <span>توصیه‌ها</span><ThumbsUp className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem asChild>
-                    <Link href="/surveys" className="justify-end">
-                      <span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" />
-                    </Link>
-                  </SidebarMenuSubItem>
-              </SidebarMenuSubContent>
-            </SidebarMenuSub>
+            {(features['test-analysis'] || features['comprehensive-test-analysis'] || features['topic-investment'] || features['focus-ladder'] || features['self-assessment'] || features['sleep-system-design']) && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton tooltip="تحلیل و برنامه‌ریزی">
+                        <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                        <span>تحلیل و برنامه‌ریزی</span>
+                        <Sparkles />
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubContent>
+                        {features['test-analysis'] && <SidebarMenuSubItem asChild><Link href="/test-analysis" className="justify-end"><span>تحلیل آزمون</span><ClipboardCheckIcon className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['comprehensive-test-analysis'] && <SidebarMenuSubItem asChild><Link href="/comprehensive-test-analysis" className="justify-end"><span>تحلیل آزمون جامع</span><GraduationCap className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['topic-investment'] && <SidebarMenuSubItem asChild><Link href="/topic-investment" className="justify-end"><span>سرمایه زمانی</span><Crosshair className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['focus-ladder'] && <SidebarMenuSubItem asChild><Link href="/focus-ladder" className="justify-end"><span>نردبان تمرکز</span><TrendingUp className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['self-assessment'] && <SidebarMenuSubItem asChild><Link href="/self-assessment" className="justify-end"><span>خودارزیابی هوشمند</span><Bot className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['sleep-system-design'] && <SidebarMenuSubItem asChild><Link href="/sleep-system-design" className="justify-end"><span>طراحی سیستم خواب</span><Bed className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                    </SidebarMenuSubContent>
+                </SidebarMenuSub>
+            )}
 
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}>
-                    <Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {(features['qna'] || features['consulting-content'] || features['recommendations'] || features['surveys']) && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubButton tooltip="محتوا و ارتباطات">
+                        <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
+                        <span>محتوا و ارتباطات</span>
+                        <BookOpen />
+                    </SidebarMenuSubButton>
+                    <SidebarMenuSubContent>
+                        {features['qna'] && <SidebarMenuSubItem asChild><Link href="/qna" className="justify-end"><span>پرسش و پاسخ</span><HelpCircle className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['consulting-content'] && <SidebarMenuSubItem asChild><Link href="/consulting-content" className="justify-end"><span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['recommendations'] && <SidebarMenuSubItem asChild><Link href="/recommendations" className="justify-end"><span>توصیه‌ها</span><ThumbsUp className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['surveys'] && <SidebarMenuSubItem asChild><Link href="/surveys" className="justify-end"><span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                    </SidebarMenuSubContent>
+                </SidebarMenuSub>
+            )}
             
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}>
-                    <Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}>
-                    <Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="برنامه کلاسی" isActive={pathname.startsWith('/class-schedule')}>
-                    <Link href="/class-schedule"><span>برنامه کلاسی</span><CalendarIcon /></Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {features['review-calendar'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}><Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link></SidebarMenuButton></SidebarMenuItem>}
+            {features['online-class'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}><Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link></SidebarMenuButton></SidebarMenuItem>}
+            {features['online-tests'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}><Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link></SidebarMenuButton></SidebarMenuItem>}
+            {features['class-schedule'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="برنامه کلاسی" isActive={pathname.startsWith('/class-schedule')}><Link href="/class-schedule"><span>برنامه کلاسی</span><CalendarIcon /></Link></SidebarMenuButton></SidebarMenuItem>}
         </>
     )
 }
