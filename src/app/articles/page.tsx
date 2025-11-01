@@ -39,7 +39,7 @@ export default function ArticlesListPage() {
           <div className="space-y-2">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl font-headline flex items-center gap-3">
               <Newspaper className="h-10 w-10 text-primary" />
-              مقالات آی‌تاک
+              مقالات لرنوا
             </h1>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
               مجموعه‌ای از مطالب آموزشی و مشاوره‌ای برای کمک به موفقیت تحصیلی شما.

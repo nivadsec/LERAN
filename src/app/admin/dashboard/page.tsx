@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'italk_backup.json';
+      link.download = 'lernova_backup.json';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -429,5 +429,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    

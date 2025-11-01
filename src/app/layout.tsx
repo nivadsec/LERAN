@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'iTalk Academic',
+  title: 'Lernova',
   description: 'پلتفرم هوشمند خودارزیابی و نظم شخصی برای موفقیت تحصیلی',
 };
 

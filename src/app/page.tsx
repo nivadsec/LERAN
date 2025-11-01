@@ -133,7 +133,7 @@ function Logo() {
                 />
             </svg>
             <span className="ml-2 text-xl font-bold font-headline text-primary">
-            آی‌تاک
+            لرنوا
             </span>
         </>
     )
@@ -154,10 +154,10 @@ function HeroSection() {
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline">
               مسیر موفقیت تحصیلی خود را با
               <br />
-              آی‌تاک هوشمندانه طی کنید
+              لرنوا هوشمندانه طی کنید
             </h1>
             <p className="max-w-[700px] text-muted-foreground md:text-xl">
-              آی‌تاک با ابزارهای هوشمند و تحلیل داده، به شما کمک می‌کند تا نقاط
+              لرنوا با ابزارهای هوشمند و تحلیل داده، به شما کمک می‌کند تا نقاط
               ضعف و قوت خود را بشناسید، برنامه‌ریزی دقیقی داشته باشید و به اهداف
               تحصیلی خود برسید.
             </p>
@@ -231,7 +231,7 @@ function Footer() {
   return (
     <footer className="relative flex justify-center py-6 w-full shrink-0 items-center px-4 md:px-6 z-10">
       <p className="text-xs text-muted-foreground">
-        © 1404 آی‌تاک. تمام حقوق محفوظ است. | طراحی و توسعه توسط حسین طاهری
+        © 1404 لرنوا. تمام حقوق محفوظ است. | طراحی و توسعه توسط حسین طاهری
       </p>
     </footer>
   );

@@ -136,7 +136,7 @@ export default function LoginPage() {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="ml-2 text-3xl font-bold font-headline text-primary">آی‌تاک</span>
+            <span className="ml-2 text-3xl font-bold font-headline text-primary">لرنوا</span>
           </Link>
         </div>
         
