@@ -27,6 +27,7 @@ const formSchema = z.object({
 
 interface Announcement {
     id: string;
+    title: string;
     message: string;
 }
 
@@ -52,7 +53,7 @@ function LatestAnnouncement() {
     return (
         <Alert className="text-right">
             <Megaphone className="h-4 w-4" />
-            <AlertTitle className="font-bold">اطلاعیه</AlertTitle>
+            <AlertTitle className="font-bold">{latestAnnouncement.title}</AlertTitle>
             <AlertDescription>
                 {latestAnnouncement.message}
             </AlertDescription>

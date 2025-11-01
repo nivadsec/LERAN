@@ -386,6 +386,10 @@
           "type": "string",
           "description": "Unique identifier for the Announcement entity."
         },
+        "title": {
+          "type": "string",
+          "description": "The title of the announcement."
+        },
         "message": {
           "type": "string",
           "description": "The content of the announcement."
@@ -407,6 +411,7 @@
       },
       "required": [
         "id",
+        "title",
         "message",
         "createdAt",
         "targetAudience"
@@ -669,5 +674,3 @@
     "reasoning": "The Firestore structure is designed to support the iTalk Academic platform, emphasizing self-assessment and personalized learning. The structure prioritizes authorization independence, clarity, and scalability. User-owned data is organized under user-specific paths, while collaborative data, if needed in future, would utilize membership maps.  Authorization Independence is achieved via path-based ownership. Since each student's data is stored under `/users/{userId}`, access control can be implemented without needing to `get()` data from other collections or documents.  The structure also supports secure `list` operations by segregating data with different access needs into separate collections, ensuring that rules are not filters."
   }
 }
-
-    

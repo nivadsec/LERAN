@@ -15,6 +15,7 @@ import { format } from 'date-fns-jalali';
 
 export interface Announcement {
   id: string;
+  title: string;
   message: string;
   createdAt: {
     seconds: number;
@@ -161,7 +162,8 @@ export default function AdminAnnouncementsPage() {
                     </Button>
                   </div>
                   <div className="text-right flex-1">
-                    <p className="text-sm">{ann.message}</p>
+                    <p className="font-bold">{ann.title}</p>
+                    <p className="text-sm mt-1">{ann.message}</p>
                     <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
                   </div>
                 </Card>
