@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig, History } from 'lucide-react';
+import { CalendarDays, BookCopy, Target, TrendingUp, Sparkles, CheckCircle, BarChartHorizontalBig, History, PlusCircle, Trash2 } from 'lucide-react';
 import { format, addDays } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
@@ -20,7 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 const subjectDetailSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, "نام درس الزامی است."),
   targetTime: z.coerce.number().min(0),
   actualTime: z.coerce.number().min(0),
   targetTests: z.coerce.number().min(0),
@@ -49,14 +50,13 @@ const initialSubjects = [
     { name: 'فیزیک', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
     { name: 'شیمی', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
     { name: 'زیست', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-    { name: 'عمومی ۱', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
-    { name: 'عمومی ۲', targetTime: 0, actualTime: 0, targetTests: 0, actualTests: 0 },
 ]
 
 export default function WeeklyReportPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [newSubjectName, setNewSubjectName] = useState('');
 
   const today = new Date();
   const startOfWeek = today; // Placeholder
@@ -73,11 +73,31 @@ export default function WeeklyReportPage() {
     },
   });
 
-  const { fields } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'subjects',
   });
   
+  const handleAddSubject = () => {
+    if (newSubjectName.trim() === '') {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "نام درس نمی‌تواند خالی باشد.",
+        })
+        return;
+    }
+    append({
+        name: newSubjectName,
+        targetTime: 0,
+        actualTime: 0,
+        targetTests: 0,
+        actualTests: 0,
+    });
+    setNewSubjectName('');
+  }
+
+
   const watchedSubjects = form.watch('subjects');
   const totalTargetTime = watchedSubjects.reduce((acc, sub) => acc + (sub.targetTime || 0), 0);
   const totalActualTime = watchedSubjects.reduce((acc, sub) => acc + (sub.actualTime || 0), 0);
@@ -91,6 +111,10 @@ export default function WeeklyReportPage() {
 
   const { data: pastReports, isLoading: areReportsLoading } = useCollection<WeeklyReport>(weeklyReportsQuery);
 
+    const formatNumber = (num: number | undefined) => {
+        if (num === undefined || isNaN(num)) return '۰';
+        return new Intl.NumberFormat('fa-IR').format(num);
+    }
 
   const onSubmit = (data: WeeklyReportFormValues) => {
     if (!user || !firestore) {
@@ -116,7 +140,13 @@ export default function WeeklyReportPage() {
           title: 'گزارش هفتگی ثبت شد',
           description: 'گزارش شما با موفقیت در سیستم ذخیره شد.',
         });
-        form.reset();
+        form.reset({
+             weekNumber: 1,
+             subjects: initialSubjects,
+             whatWentWell: '',
+             whatCouldBeBetter: '',
+             goalsForNextWeek: '',
+        });
       })
       .catch((error) => {
         const contextualError = new FirestorePermissionError({
@@ -159,32 +189,50 @@ export default function WeeklyReportPage() {
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead className="text-center">تست (انجام‌شده)</TableHead>
-                            <TableHead className="text-center">تست (هدف)</TableHead>
-                            <TableHead className="text-center">مطالعه (انجام‌شده)</TableHead>
-                            <TableHead className="text-center">مطالعه (هدف)</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
                             <TableHead className="text-right">درس</TableHead>
+                            <TableHead className="text-center">مطالعه (هدف)</TableHead>
+                            <TableHead className="text-center">مطالعه (انجام‌شده)</TableHead>
+                            <TableHead className="text-center">تست (هدف)</TableHead>
+                            <TableHead className="text-center">تست (انجام‌شده)</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
                         {fields.map((field, index) => (
                             <TableRow key={field.id}>
-                                <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTests`)} className="min-w-[80px] text-center" /></TableCell>
-                                <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTests`)} className="min-w-[80px] text-center" /></TableCell>
-                                <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTime`)} className="min-w-[80px] text-center" /></TableCell>
-                                <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTime`)} className="min-w-[80px] text-center" /></TableCell>
+                                <TableCell>
+                                    <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
                                 <TableCell className="font-medium text-right">{field.name}</TableCell>
+                                <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTime`)} className="min-w-[80px] text-center font-code" /></TableCell>
+                                <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTime`)} className="min-w-[80px] text-center font-code" /></TableCell>
+                                <TableCell><Input type="number" {...form.register(`subjects.${index}.targetTests`)} className="min-w-[80px] text-center font-code" /></TableCell>
+                                <TableCell><Input type="number" {...form.register(`subjects.${index}.actualTests`)} className="min-w-[80px] text-center font-code" /></TableCell>
                             </TableRow>
                         ))}
                          <TableRow className="bg-muted/50 font-bold">
-                            <TableCell className="text-center">{totalActualTests}</TableCell>
-                            <TableCell className="text-center">{totalTargetTests}</TableCell>
-                            <TableCell className="text-center">{totalActualTime}</TableCell>
-                            <TableCell className="text-center">{totalTargetTime}</TableCell>
-                            <TableCell className="text-right">مجموع</TableCell>
+                            <TableCell colSpan={2} className="text-right">مجموع</TableCell>
+                            <TableCell className="text-center font-code">{formatNumber(totalTargetTime)}</TableCell>
+                            <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
+                            <TableCell className="text-center font-code">{formatNumber(totalTargetTests)}</TableCell>
+                            <TableCell className="text-center font-code">{formatNumber(totalActualTests)}</TableCell>
                         </TableRow>
                         </TableBody>
                     </Table>
+                    </div>
+                     <div className="flex items-center gap-2 mt-4">
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddSubject}>
+                            <PlusCircle className="ml-2 h-4 w-4" />
+                            افزودن
+                        </Button>
+                        <Input
+                            placeholder="نام درس جدید را وارد کنید"
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            className="max-w-xs"
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -202,25 +250,25 @@ export default function WeeklyReportPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-right">هفته قبل</TableHead>
                                     <TableHead className="text-right">این هفته</TableHead>
+                                    <TableHead className="text-right">هفته قبل</TableHead>
                                     <TableHead className="text-right">شاخص</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                  <TableRow>
-                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
-                                    <TableCell className="font-bold">{totalActualTime.toLocaleString()} ساعت</TableCell>
+                                    <TableCell className="font-bold font-code">{formatNumber(totalActualTime)} ساعت</TableCell>
+                                    <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
                                     <TableCell>کل زمان مطالعه</TableCell>
                                 </TableRow>
                                  <TableRow>
-                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
-                                    <TableCell className="font-bold">{totalActualTests.toLocaleString()} تست</TableCell>
+                                    <TableCell className="font-bold font-code">{formatNumber(totalActualTests)} تست</TableCell>
+                                    <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
                                     <TableCell>کل تست‌ها</TableCell>
                                 </TableRow>
                                  <TableRow>
-                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
                                     <TableCell><Input placeholder="مهم‌ترین دستاورد این هفته..." className="text-right"/></TableCell>
+                                    <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
                                     <TableCell>دستاوردهای کلیدی</TableCell>
                                 </TableRow>
                             </TableBody>
@@ -336,11 +384,11 @@ export default function WeeklyReportPage() {
                                     <div className="flex justify-around items-center text-center">
                                         <div className="space-y-1">
                                             <p className="text-sm text-muted-foreground">کل مطالعه</p>
-                                            <p className="font-bold">{reportTotalTime} ساعت</p>
+                                            <p className="font-bold font-code">{formatNumber(reportTotalTime)} ساعت</p>
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-sm text-muted-foreground">کل تست</p>
-                                            <p className="font-bold">{reportTotalTests} عدد</p>
+                                            <p className="font-bold font-code">{formatNumber(reportTotalTests)} عدد</p>
                                         </div>
                                     </div>
                                     <Button variant="outline" className="w-full">مشاهده جزئیات</Button>
@@ -362,3 +410,5 @@ export default function WeeklyReportPage() {
     </div>
   );
 }
+
+    
