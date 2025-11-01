@@ -264,7 +264,8 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
         },
         {
             id: 'content', label: 'محتوا و ارتباطات', icon: BookOpen, subItems: [
-                { id: 'qna', href: '/qna', label: 'پرسش و پاسخ', icon: HelpCircle },
+                { id: 'qna', href: '/qna', label: 'پرسش و پاسخ با مشاور', icon: HelpCircle },
+                { id: 'lernova-advisor', href: '/qna', label: 'مشاور لرنوا (AI)', icon: Bot },
                 { id: 'consulting-content', href: '/consulting-content', label: 'مطالب مشاوره‌ای', icon: Library },
                 { id: 'recommendations', href: '/recommendations', label: 'توصیه‌ها', icon: ThumbsUp },
                 { id: 'surveys', href: '/surveys', label: 'پرسشنامه‌ها', icon: FileText },
@@ -329,7 +330,7 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                 </SidebarMenuSub>
             )}
 
-            {(features['qna'] || features['consulting-content'] || features['recommendations'] || features['surveys']) && (
+            {(features['qna'] || features['lernova-advisor'] || features['consulting-content'] || features['recommendations'] || features['surveys']) && (
                 <SidebarMenuSub>
                     <SidebarMenuSubButton tooltip="محتوا و ارتباطات">
                         <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:-rotate-180" />
@@ -338,6 +339,7 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                     </SidebarMenuSubButton>
                     <SidebarMenuSubContent>
                         {features['qna'] && <SidebarMenuSubItem asChild><Link href="/qna" className="justify-end"><span>پرسش و پاسخ</span><HelpCircle className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
+                        {features['lernova-advisor'] && <SidebarMenuSubItem asChild><Link href="/qna" className="justify-end"><span>مشاور لرنوا (AI)</span><Bot className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['consulting-content'] && <SidebarMenuSubItem asChild><Link href="/consulting-content" className="justify-end"><span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['recommendations'] && <SidebarMenuSubItem asChild><Link href="/recommendations" className="justify-end"><span>توصیه‌ها</span><ThumbsUp className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['surveys'] && <SidebarMenuSubItem asChild><Link href="/surveys" className="justify-end"><span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
