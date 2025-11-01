@@ -4,25 +4,11 @@
  * @fileOverview Defines an AI flow for "Lernova", an expert academic advisor.
  *
  * - lernovaAdvisor - The main function to get advice.
- * - LernovaAdvisorInput - The input type for the function (student's question).
- * - LernovaAdvisorOutput - The output type for the function (advisor's answer).
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { LernovaAdvisorInputSchema, LernovaAdvisorOutputSchema, type LernovaAdvisorInput, type LernovaAdvisorOutput } from './lernova-advisor.schema';
 
-export const LernovaAdvisorInputSchema = z.string().describe("The student's question for the academic advisor.");
-export const LernovaAdvisorOutputSchema = z.string().describe("Lernova's response to the student.");
-
-export type LernovaAdvisorInput = z.infer<typeof LernovaAdvisorInputSchema>;
-export type LernovaAdvisorOutput = z.infer<typeof LernovaAdvisorOutputSchema>;
-
-export async function lernovaAdvisor(
-  input: LernovaAdvisorInput
-): Promise<LernovaAdvisorOutput> {
-  const { output } = await lernovaAdvisorPrompt(input);
-  return output!;
-}
 
 const lernovaAdvisorPrompt = ai.definePrompt({
   name: 'lernovaAdvisorPrompt',
@@ -46,14 +32,20 @@ Student's question:
 `,
 });
 
-const lernovaAdvisorFlow = ai.defineFlow(
-  {
-    name: 'lernovaAdvisorFlow',
-    inputSchema: LernovaAdvisorInputSchema,
-    outputSchema: LernovaAdvisorOutputSchema,
-  },
-  async (question) => {
-    const { output } = await lernovaAdvisorPrompt(question);
-    return output!;
-  }
-);
+export async function lernovaAdvisor(
+  input: LernovaAdvisorInput
+): Promise<LernovaAdvisorOutput> {
+   const lernovaAdvisorFlow = ai.defineFlow(
+    {
+      name: 'lernovaAdvisorFlow',
+      inputSchema: LernovaAdvisorInputSchema,
+      outputSchema: LernovaAdvisorOutputSchema,
+    },
+    async (question) => {
+      const { output } = await lernovaAdvisorPrompt(question);
+      return output!;
+    }
+  );
+
+  return await lernovaAdvisorFlow(input);
+}
