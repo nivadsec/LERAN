@@ -55,7 +55,8 @@ import {
   Sparkles,
   Video,
   PenSquare,
-  CalendarClock
+  CalendarClock,
+  Bed,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -299,6 +300,11 @@ function StudentNav() {
                    <SidebarMenuSubItem asChild>
                     <Link href="/self-assessment" className="justify-end">
                       <span>خودارزیابی هوشمند</span><Bot className="mr-2 h-4 w-4" />
+                    </Link>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem asChild>
+                    <Link href="/sleep-system-design" className="justify-end">
+                      <span>طراحی سیستم خواب</span><Bed className="mr-2 h-4 w-4" />
                     </Link>
                   </SidebarMenuSubItem>
               </SidebarMenuSubContent>
