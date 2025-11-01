@@ -250,7 +250,7 @@ export default function WeeklyReportPage() {
                             </TableRow>
                         ))}
                          <TableRow className="bg-muted/50 font-bold">
-                            <TableCell colSpan={2} className="text-right">مجموع</TableCell>
+                            <TableCell className="text-right" colSpan={2}>مجموع</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalTargetTime)}</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalActualTime)}</TableCell>
                             <TableCell className="text-center font-code">{formatNumber(totalTargetTests)}</TableCell>
@@ -294,19 +294,19 @@ export default function WeeklyReportPage() {
                             </TableHeader>
                             <TableBody>
                                  <TableRow>
-                                    <TableCell className="font-bold font-code">{formatNumber(totalActualTime)} ساعت</TableCell>
+                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTime)} ساعت</TableCell>
                                     <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
-                                    <TableCell>کل زمان مطالعه</TableCell>
+                                    <TableCell className="text-right">کل زمان مطالعه</TableCell>
                                 </TableRow>
                                  <TableRow>
-                                    <TableCell className="font-bold font-code">{formatNumber(totalActualTests)} تست</TableCell>
+                                    <TableCell className="font-bold font-code text-right">{formatNumber(totalActualTests)} تست</TableCell>
                                     <TableCell><Input placeholder="اختیاری" className="text-right font-code"/></TableCell>
-                                    <TableCell>کل تست‌ها</TableCell>
+                                    <TableCell className="text-right">کل تست‌ها</TableCell>
                                 </TableRow>
                                  <TableRow>
                                     <TableCell><Input placeholder="مهم‌ترین دستاورد این هفته..." className="text-right"/></TableCell>
                                     <TableCell><Input placeholder="اختیاری" className="text-right"/></TableCell>
-                                    <TableCell>دستاوردهای کلیدی</TableCell>
+                                    <TableCell className="text-right">دستاوردهای کلیدی</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
