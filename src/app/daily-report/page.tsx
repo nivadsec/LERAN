@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,11 +9,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { PlusCircle, Trash2, History, Clock, Percent, Smile, Calendar } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Slider } from '@/components/ui/slider';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns-jalali';
+import { Separator } from '@/components/ui/separator';
 
 const studyItemSchema = z.object({
   lesson: z.string(),
@@ -38,6 +42,15 @@ const formSchema = z.object({
 });
 
 type DailyReportFormValues = z.infer<typeof formSchema>;
+
+interface DailyReport extends DailyReportFormValues {
+    id: string;
+    createdAt: Timestamp;
+    totals: {
+        totalStudyTime: number;
+        overallTestPercentage: number;
+    }
+}
 
 export default function DailyReportPage() {
   const { toast } = useToast();
@@ -67,9 +80,8 @@ export default function DailyReportPage() {
   const watchedItems = useWatch({
       control: form.control,
       name: "studyItems"
-  })
+  });
 
-  // Calculate totals
   const totalStudyTime = watchedItems.reduce((acc, item) => acc + (item.studyTime || 0), 0);
   const totalTestCount = watchedItems.reduce((acc, item) => acc + (item.testCount || 0), 0);
   const totalTestCorrect = watchedItems.reduce((acc, item) => acc + (item.testCorrect || 0), 0);
@@ -77,6 +89,12 @@ export default function DailyReportPage() {
   const totalTestTime = watchedItems.reduce((acc, item) => acc + (item.testTime || 0), 0);
   const overallTestPercentage = totalTestCount > 0 ? Math.round(((totalTestCorrect - totalTestWrong / 3) / totalTestCount) * 100) : 0;
 
+  const dailyReportsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'users', user.uid, 'dailyReports'), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: pastReports, isLoading: areReportsLoading } = useCollection<DailyReport>(dailyReportsQuery);
 
   const onSubmit = async (values: DailyReportFormValues) => {
     if (isUserLoading) {
@@ -141,6 +159,7 @@ export default function DailyReportPage() {
   };
 
   return (
+    <div className="space-y-8">
     <Card>
       <CardHeader className="text-right">
         <CardTitle>ثبت گزارش روزانه</CardTitle>
@@ -258,9 +277,7 @@ export default function DailyReportPage() {
                 <FormField control={form.control} name="mobileHours" render={({ field }) => (
                     <FormItem><FormLabel>میزان موبایل</FormLabel><FormControl><Input type="number" placeholder="ساعت" {...field} /></FormControl></FormItem>
                 )} />
-                <FormField control={form.control} name="studyTime" render={() => (
-                    <FormItem><FormLabel>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
-                )} />
+                <FormItem><FormLabel>میزان مطالعه</FormLabel><FormControl><Input value={`${Math.floor(totalStudyTime / 60)}h ${totalStudyTime % 60}m`} readOnly /></FormControl></FormItem>
             </div>
 
             <div className="flex justify-start pt-4">
@@ -272,5 +289,75 @@ export default function DailyReportPage() {
         </Form>
       </CardContent>
     </Card>
+
+    <Separator />
+
+    <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-right flex items-center justify-end gap-2">
+            تاریخچه گزارش‌ها
+            <History className="h-6 w-6 text-primary" />
+        </h2>
+        {areReportsLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader><Skeleton className="h-6 w-1/2 ml-auto" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-5 w-3/4 ml-auto" />
+                            <Skeleton className="h-5 w-1/2 ml-auto" />
+                            <Skeleton className="h-10 w-24" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        ) : pastReports && pastReports.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {pastReports.map(report => (
+                    <Card key={report.id}>
+                        <CardHeader>
+                            <CardTitle className="text-right flex justify-between items-center">
+                                <span>گزارش</span>
+                                <span className="text-sm font-normal text-muted-foreground flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" />
+                                    {report.reportDate}
+                                </span>
+                            </CardTitle>
+                             <CardDescription className="text-right pt-2">
+                                ثبت شده در: {report.createdAt ? format(new Date(report.createdAt.seconds * 1000), 'yyyy/MM/dd HH:mm') : 'نامشخص'}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-right">
+                             <div className="flex justify-around items-center text-center">
+                                <div className="space-y-1">
+                                    <p className="text-sm text-muted-foreground">مطالعه</p>
+                                    <p className="font-bold flex items-center gap-1"><Clock className="h-4 w-4"/> {report.totals.totalStudyTime} دقیقه</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm text-muted-foreground">درصد تست</p>
+                                    <p className="font-bold flex items-center gap-1"><Percent className="h-4 w-4"/> {report.totals.overallTestPercentage}%</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm text-muted-foreground">وضعیت</p>
+                                    <p className="font-bold flex items-center gap-1"><Smile className="h-4 w-4"/> {report.mentalState}/10</p>
+                                </div>
+                            </div>
+                            <Button variant="outline" className="w-full">مشاهده جزئیات</Button>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        ) : (
+            <Card className="flex flex-col items-center justify-center gap-4 border-2 border-dashed p-12 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                    <History className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="font-semibold">هنوز گزارشی ثبت نکرده‌اید</p>
+                <p className="text-sm text-muted-foreground">برای شروع، اولین گزارش روزانه خود را در فرم بالا ثبت کنید.</p>
+            </Card>
+        )}
+    </div>
+    </div>
   );
 }
+
+    
