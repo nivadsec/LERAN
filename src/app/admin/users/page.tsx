@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, PlusCircle, KeyRound, Eye, EyeOff, User, Edit, Bot } from 'lucide-react';
+import { Search, PlusCircle, KeyRound, Eye, EyeOff, User, Edit, Bot, Wrench } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, setDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -63,6 +63,7 @@ export const featureList = [
     { id: 'sleep-system-design', label: 'طراحی سیستم خواب' },
     { id: 'qna', label: 'پرسش و پاسخ با مشاور' },
     { id: 'lernova-advisor', label: 'مشاور اختصاصی لرنوا (AI)' },
+    { id: 'panel-support-bot', label: 'پشتیبان فنی پنل (AI)', icon: Wrench },
     { id: 'consulting-content', label: 'مطالب مشاوره‌ای' },
     { id: 'recommendations', label: 'توصیه‌ها' },
     { id: 'surveys', label: 'پرسشنامه‌ها' },

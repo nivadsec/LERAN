@@ -347,6 +347,7 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                 </SidebarMenuSub>
             )}
             
+            {features['panel-support-bot'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="پشتیبان فنی" isActive={pathname.startsWith('/support')}><Link href="/support"><span>پشتیبان فنی</span><Wrench /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['review-calendar'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}><Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-class'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}><Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-tests'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}><Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link></SidebarMenuButton></SidebarMenuItem>}
