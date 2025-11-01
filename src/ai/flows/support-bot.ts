@@ -17,12 +17,6 @@ export const SupportBotOutputSchema = z.string().describe("The support bot's res
 export type SupportBotInput = z.infer<typeof SupportBotInputSchema>;
 export type SupportBotOutput = z.infer<typeof SupportBotOutputSchema>;
 
-export async function supportBot(
-  input: SupportBotInput
-): Promise<SupportBotOutput> {
-  return supportBotFlow(input);
-}
-
 const supportBotPrompt = ai.definePrompt({
   name: 'supportBotPrompt',
   input: { schema: SupportBotInputSchema },
@@ -43,14 +37,21 @@ User's question:
 `,
 });
 
-const supportBotFlow = ai.defineFlow(
-  {
-    name: 'supportBotFlow',
-    inputSchema: SupportBotInputSchema,
-    outputSchema: SupportBotOutputSchema,
-  },
-  async (question) => {
-    const { output } = await supportBotPrompt(question);
-    return output!;
-  }
-);
+
+export async function supportBot(
+  input: SupportBotInput
+): Promise<SupportBotOutput> {
+  const supportBotFlow = ai.defineFlow(
+    {
+      name: 'supportBotFlow',
+      inputSchema: SupportBotInputSchema,
+      outputSchema: SupportBotOutputSchema,
+    },
+    async (question) => {
+      const { output } = await supportBotPrompt(question);
+      return output!;
+    }
+  );
+
+  return supportBotFlow(input);
+}
