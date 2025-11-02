@@ -2,18 +2,14 @@
  * @fileoverview Firestore Security Rules for the Lernova platform.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for student data,
- * ensuring that students can only access their own information. Admins have
- * broader read access for oversight. Announcements and Articles are publicly readable.
+ * This ruleset enforces a strict user-ownership model for student data and
+ * utilizes custom claims for role-based access control (RBAC), specifically for admins.
+ * This approach is more secure and performant than reading role documents.
  *
  * Data Structure:
- * - /users/{userId}: Student profiles, owned by the user.
- * - /users/{userId}/...: Various subcollections for student data, readable by admin.
- * - /classes/{classId}: Class information, restricted access.
- * - /teachers/{teacherId}: Teacher profiles, restricted access.
- * - /announcements/{announcementId}: General announcements, publicly readable.
- * - /articles/{articleId}: Blog articles, publicly readable.
- * - /dateChangeRequests/{requestId}: Student requests for admin approval.
+ * - /users/{userId}: Student profiles.
+ * - /users/{userId}/...: Various subcollections for student data.
+ * - /announcements/{announcementId}, /articles/{articleId}, etc: Public or role-restricted data.
  *
  */
 rules_version = '2';
@@ -31,6 +27,7 @@ service cloud.firestore {
     }
     
     // Helper function to check if the user has an 'admin' custom claim.
+    // This is the most secure and efficient way to check for admin privileges.
     function isAdmin() {
       return request.auth.token.admin == true;
     }
