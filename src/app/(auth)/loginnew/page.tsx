@@ -11,15 +11,54 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { Eye, EyeOff } from "lucide-react";
+import { doc, getDoc, collection, query, orderBy, limit } from "firebase/firestore";
+import { Eye, EyeOff, Megaphone } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر باشد." }),
 });
+
+interface Announcement {
+    id: string;
+    title: string;
+    message: string;
+}
+
+function LatestAnnouncement() {
+    const firestore = useFirestore();
+    const announcementsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'), limit(1));
+    }, [firestore]);
+
+    const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full" />;
+    }
+
+    if (!announcements || announcements.length === 0) {
+        return null;
+    }
+
+    const latestAnnouncement = announcements[0];
+
+    return (
+        <Alert className="text-right">
+            <Megaphone className="h-4 w-4" />
+            <AlertTitle className="font-bold">{latestAnnouncement.title}</AlertTitle>
+            <AlertDescription>
+                {latestAnnouncement.message}
+            </AlertDescription>
+        </Alert>
+    )
+}
 
 
 export default function LoginNewPage() {
@@ -161,6 +200,7 @@ export default function LoginNewPage() {
             </Form>
           </CardContent>
         </Card>
+        <LatestAnnouncement />
       </div>
     </div>
   )
