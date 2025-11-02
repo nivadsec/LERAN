@@ -135,13 +135,6 @@ export default function LoginNewPage() {
                     <FormItem className="grid gap-2 text-right">
                        <div className="flex items-center">
                          <FormLabel htmlFor="password">رمز عبور</FormLabel>
-                          <Link
-                            href="/forgot-password"
-                            className="mr-auto inline-block text-sm underline"
-                            prefetch={false}
-                          >
-                            فراموشی رمز عبور؟
-                          </Link>
                         </div>
                       <FormControl>
                         <div className="relative">
