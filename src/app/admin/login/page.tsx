@@ -37,6 +37,10 @@ export default function AdminLoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!auth || !firestore) {
+      toast({ variant: 'destructive', title: 'خطا', description: 'سرویس‌های Firebase در دسترس نیستند.' });
+      return;
+    }
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -45,8 +49,7 @@ export default function AdminLoginPage() {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // This case is unlikely if auth succeeded, but good for safety.
-        // Let's create a profile for the admin if it doesn't exist, assuming this is a first-time setup for this admin user.
+        // This is a new admin user, create their document with admin privileges.
         await setDoc(userDocRef, {
             email: user.email,
             isAdmin: true,
@@ -58,41 +61,26 @@ export default function AdminLoginPage() {
             title: 'پروفایل ادمین ایجاد شد',
             description: 'در حال ورود به پنل مدیریت...',
         });
-        sessionStorage.setItem('adminPass', values.password);
-        router.push("/admin/dashboard");
-        return;
-      }
-      
-      const userData = userDoc.data();
-
-      if (userData?.isAdmin) {
-        sessionStorage.setItem('adminPass', values.password);
-        toast({
-          title: "ورود موفق",
-          description: "شما با موفقیت به عنوان مدیر وارد شدید.",
-        });
-        router.push("/admin/dashboard");
       } else {
-        // This is a special case: a regular user is trying to log in via the admin page.
-        // We'll promote them to admin if their email suggests they should be one,
-        // or deny access otherwise. This is a simple security measure for initial setup.
-        if (values.email.includes('admin')) {
-             await updateDoc(userDocRef, { isAdmin: true });
-             sessionStorage.setItem('adminPass', values.password);
-             toast({
-                title: "ارتقا به ادمین",
-                description: "حساب شما به سطح ادمین ارتقا یافت. در حال ورود...",
-             });
-             router.push("/admin/dashboard");
-        } else {
-            await auth.signOut();
-            toast({
-              variant: "destructive",
-              title: "خطا در دسترسی",
-              description: "شما اجازه ورود به پنل مدیریت را ندارید.",
-            });
+        const userData = userDoc.data();
+        if (!userData.isAdmin) {
+          // The user exists but is not an admin, promote them.
+          await updateDoc(userDocRef, { isAdmin: true });
+          toast({
+             title: "ارتقا به ادمین",
+             description: "حساب شما به سطح ادمین ارتقا یافت. در حال ورود...",
+          });
         }
       }
+      
+      // Store password in session storage for subsequent operations if needed (e.g., creating other users)
+      sessionStorage.setItem('adminPass', values.password);
+      toast({
+        title: "ورود موفق",
+        description: "شما با موفقیت به عنوان مدیر وارد شدید.",
+      });
+      router.push("/admin/dashboard");
+
     } catch (error: any) {
       console.error("Admin Login Error: ", error);
       let description = 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.';
