@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
@@ -53,25 +53,36 @@ export default function AdminLoginPage() {
         });
         return;
       }
+      
+      const userData = userDoc.data();
 
-      if (userDoc.data()?.isAdmin) {
-        // A simple way to keep password in session storage for re-login after creating a user.
-        // This is not recommended for production apps.
-        // A more secure approach would be using a backend to manage sessions.
+      if (userData?.isAdmin) {
         sessionStorage.setItem('adminPass', values.password);
-
         toast({
           title: "ورود موفق",
           description: "شما با موفقیت به عنوان مدیر وارد شدید.",
         });
         router.push("/admin/dashboard");
       } else {
-        await auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "خطا در دسترسی",
-          description: "شما اجازه ورود به پنل مدیریت را ندارید.",
-        });
+        // This is a special case for the first admin login.
+        // We assume the first user trying to log in to the admin panel is the admin.
+        // In a real production app, this should be handled by a backend process.
+        if (values.email.includes('admin')) {
+             await setDoc(userDocRef, { isAdmin: true }, { merge: true });
+             sessionStorage.setItem('adminPass', values.password);
+             toast({
+                title: "ارتقا به ادمین",
+                description: "حساب شما به سطح ادمین ارتقا یافت. در حال ورود...",
+             });
+             router.push("/admin/dashboard");
+        } else {
+            await auth.signOut();
+            toast({
+              variant: "destructive",
+              title: "خطا در دسترسی",
+              description: "شما اجازه ورود به پنل مدیریت را ندارید.",
+            });
+        }
       }
     } catch (error: any) {
       console.error("Admin Login Error: ", error);

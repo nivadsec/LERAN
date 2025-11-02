@@ -14,7 +14,9 @@ service cloud.firestore {
     
     // Helper function to check if the user has an 'isAdmin' flag in their user document.
     function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
     /**
@@ -23,8 +25,7 @@ service cloud.firestore {
      * @path /configs/{configId}
      */
     match /configs/{configId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
     
     /**
@@ -37,18 +38,20 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow read: if isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId)) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(request.resource.data.senderId);
+      allow create: if isOwner(request.resource.data.senderId) || isAdmin();
     }
 
     /**
      * @description Allows students to manage their own profile and admins to list all users.
+     * The `get` rule is separated to break the circular dependency for `isAdmin()`.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId);
+      allow list: if isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
-      allow list, delete: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
