@@ -44,7 +44,17 @@ export default function AdminLoginPage() {
       const userDocRef = doc(firestore, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (userDoc.exists() && userDoc.data()?.isAdmin) {
+      if (!userDoc.exists()) {
+        await auth.signOut();
+        toast({
+          variant: "destructive",
+          title: "ورود ناموفق",
+          description: "حساب کاربری شما یافت نشد یا توسط مدیر دیگری حذف شده است.",
+        });
+        return;
+      }
+
+      if (userDoc.data()?.isAdmin) {
         // A simple way to keep password in session storage for re-login after creating a user.
         // This is not recommended for production apps.
         // A more secure approach would be using a backend to manage sessions.
