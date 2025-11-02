@@ -7,7 +7,7 @@ import { doc, collection, query, orderBy, limit, Timestamp, updateDoc } from 'fi
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare } from 'lucide-react';
+import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -156,13 +156,14 @@ export default function StudentDetailPage() {
 
     setIsAnalyzing(true);
     setAnalysisResult(null);
+    
+    // Sanitize reports for JSON stringification
+    const sanitizedReports = reports.map(r => ({
+        ...r,
+        createdAt: r.createdAt.toDate().toISOString(), // Convert Timestamp to ISO string
+    }));
 
-    const reportsJson = JSON.stringify(reports.map(r => ({
-        date: r.reportDate,
-        studyTimeMinutes: r.totals.totalStudyTime,
-        testPercentage: r.totals.overallTestPercentage,
-        mentalState: r.mentalState,
-    })), null, 2);
+    const reportsJson = JSON.stringify(sanitizedReports, null, 2);
 
     try {
         const result = await analyzeStudentPerformance({ recentReportsData: reportsJson });
@@ -252,22 +253,24 @@ export default function StudentDetailPage() {
                 )}
                  {analysisResult && (
                     <div className="mt-6 space-y-6 text-right">
-                        <div className="space-y-2">
-                            <h3 className="font-bold text-lg">خلاصه عملکرد</h3>
-                            <p className="text-muted-foreground">{analysisResult.summary}</p>
-                        </div>
-                         <div className="space-y-2">
-                            <h3 className="font-bold text-lg">روندهای کلیدی</h3>
-                            <ul className="list-disc list-inside space-y-1">
-                                {analysisResult.keyTrends.map((trend, i) => <li key={i}>{trend}</li>)}
-                            </ul>
-                        </div>
-                         <div className="space-y-2">
-                            <h3 className="font-bold text-lg">پیشنهاد برای معلم</h3>
-                             <ul className="list-disc list-inside space-y-1">
-                                {analysisResult.suggestionsForTeacher.map((suggestion, i) => <li key={i}>{suggestion}</li>)}
-                            </ul>
-                        </div>
+                      <div>
+                          <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Lightbulb className="text-yellow-500" /> خلاصه عملکرد</h3>
+                          <p className="text-muted-foreground leading-relaxed">{analysisResult.summary}</p>
+                      </div>
+                      <Separator />
+                      <div>
+                          <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Activity className="text-blue-500" /> روندهای کلیدی</h3>
+                          <ul className="space-y-2 list-disc pr-5">
+                              {analysisResult.keyTrends.map((trend, i) => <li key={i}>{trend}</li>)}
+                          </ul>
+                      </div>
+                       <Separator />
+                      <div>
+                          <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Target className="text-green-600" /> پیشنهاد برای شما</h3>
+                           <ul className="space-y-2 list-disc pr-5">
+                              {analysisResult.suggestionsForTeacher.map((suggestion, i) => <li key={i}>{suggestion}</li>)}
+                          </ul>
+                      </div>
                     </div>
                  )}
              </CardContent>
