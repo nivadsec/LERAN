@@ -7,11 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, User, Bot, HelpCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { lernovaAdvisor, LernovaAdvisorInput } from '@/ai/flows/lernova-advisor';
+import { lernovaAdvisor } from '@/ai/flows/lernova-advisor';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Message {
@@ -39,16 +37,6 @@ export default function QnAPage() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const configDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'configs', 'lernova-advisor');
-  }, [firestore]);
-
-  const { data: configData, isLoading: isConfigLoading } = useDoc<{ persona: string }>(configDocRef);
-  const persona = configData?.persona || DEFAULT_PERSONA;
-
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +49,8 @@ export default function QnAPage() {
     setIsLoading(true);
 
     try {
-      const response = await lernovaAdvisor({ question: currentInput, persona });
+      // Use the default persona since we cannot fetch it for non-admin users
+      const response = await lernovaAdvisor({ question: currentInput, persona: DEFAULT_PERSONA });
       const botMessage: Message = { sender: 'bot', text: response };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -156,29 +145,25 @@ export default function QnAPage() {
           </div>
         </ScrollArea>
         <div className="border-t p-4">
-            {isConfigLoading ? (
-                <Skeleton className="h-10 w-full" />
-            ) : (
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <Button type="submit" size="icon" disabled={isLoading || input.trim() === ''}>
-                    <Send className="h-5 w-5" />
-                    </Button>
-                    <Textarea
-                    placeholder="سوال خود را از لرنوا بپرسید..."
-                    className="flex-1 resize-none"
-                    rows={1}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                        }
-                    }}
-                    disabled={isLoading}
-                    />
-                </form>
-            )}
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <Button type="submit" size="icon" disabled={isLoading || input.trim() === ''}>
+                <Send className="h-5 w-5" />
+                </Button>
+                <Textarea
+                placeholder="سوال خود را از لرنوا بپرسید..."
+                className="flex-1 resize-none"
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                    }
+                }}
+                disabled={isLoading}
+                />
+            </form>
         </div>
       </CardContent>
     </Card>

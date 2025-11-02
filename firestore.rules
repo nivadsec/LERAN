@@ -31,25 +31,41 @@ service cloud.firestore {
     }
     
     // Helper function to check if the user has an 'isAdmin' flag in their user document.
-    // This function can now work correctly because the rule for /users/{userId}
-    // allows a user to read their own document.
     function isAdmin() {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
+    
+    /**
+     * @description Rules for application configurations.
+     * Only admins can read and write.
+     * @path /configs/{configId}
+     */
+    match /configs/{configId} {
+      allow read, write: if isAdmin();
+    }
+    
+    /**
+     * @description Rules for messages.
+     * Users can read messages where they are the sender or recipient.
+     * Users can only create messages where they are the sender.
+     * Admins can read/list all messages.
+     * @path /messages/{messageId}
+     */
+    match /messages/{messageId} {
+      allow read: if (isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId))) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isOwner(request.resource.data.senderId);
+    }
 
     /**
-     * @description Student Profile Access Rules (REVISED)
-     * - This breaks the circular dependency that caused the permission error.
-     * - Any authenticated user can read their OWN profile. This is crucial for isAdmin() to work.
-     * - Admins can read any profile and list all profiles.
-     * - Users can create and update their own profile.
+     * @description Allows students to manage their own profile and admins to list all users.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow create, update: if isOwner(userId);
-      allow delete, list: if isAdmin();
-      // This is the key change: Separating `get` from `list` and allowing self-reads.
       allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) || isAdmin(); // allow admin to create users
+      allow update: if isOwner(userId) || isAdmin();
+      allow list, delete: if isAdmin();
     }
 
     /**
