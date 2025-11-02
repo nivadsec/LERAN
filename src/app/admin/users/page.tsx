@@ -401,7 +401,7 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
                 panelStatus: values.panelStatus,
                 features: values.features,
                 signupDate: new Date().toISOString(),
-                isAdmin: false,
+                isAdmin: false, // Explicitly set isAdmin to false for new students
             };
 
             await setDoc(doc(firestore, "users", newUser.uid), studentData);
