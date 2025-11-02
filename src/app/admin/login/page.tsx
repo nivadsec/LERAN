@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
@@ -87,11 +87,11 @@ export default function AdminLoginPage() {
           description = 'دسترسی به دلیل تلاش‌های زیاد موقتا مسدود شده است. لطفاً بعداً دوباره امتحان کنید.'
       }
 
-      const contextualError = new FirestorePermissionError({
-          path: `users/${values.email}`, // Placeholder path
-          operation: 'get',
+      toast({
+        variant: "destructive",
+        title: "خطا در ورود",
+        description: description,
       });
-      errorEmitter.emit('permission-error', contextualError);
     }
   };
 

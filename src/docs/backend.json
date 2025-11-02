@@ -519,7 +519,12 @@
     "providers": [
       "password",
       "anonymous"
-    ]
+    ],
+    "customClaims": {
+        "admin": {
+            "type": "boolean"
+        }
+    }
   },
   "firestore": {
     "structure": [
