@@ -7,13 +7,14 @@ import { doc, collection, query, orderBy, limit, Timestamp, updateDoc } from 'fi
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb, ChevronLeft } from 'lucide-react';
+import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb, ChevronLeft, Sparkles } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeStudentPerformance, type StudentPerformanceAnalysisOutput } from '@/ai/flows/student-performance-analyzer';
+import { analyzeSingleDailyReport, type DailyReportAnalysisOutput } from '@/ai/flows/daily-report-analyzer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -117,20 +118,24 @@ function FeedbackForm({ reportId, studentId, initialFeedback }: { reportId: stri
   );
 }
 
-
 const formatNumber = (num?: number) => {
     if (num === undefined || isNaN(num)) return '۰';
     return new Intl.NumberFormat('fa-IR').format(num);
 };
 
+// --- Main Page Component ---
 export default function StudentDetailPage() {
   const params = useParams();
   const userId = params.userId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<StudentPerformanceAnalysisOutput | null>(null);
+  const [isAnalyzingOverall, setIsAnalyzingOverall] = useState(false);
+  const [overallAnalysisResult, setOverallAnalysisResult] = useState<StudentPerformanceAnalysisOutput | null>(null);
+  
+  const [isAnalyzingDaily, setIsAnalyzingDaily] = useState<string | null>(null); // Holds reportId being analyzed
+  const [dailyAnalysisResult, setDailyAnalysisResult] = useState<Record<string, DailyReportAnalysisOutput>>({});
+
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
   const userDocRef = useMemoFirebase(() => {
@@ -152,7 +157,7 @@ export default function StudentDetailPage() {
   }, [selectedReportId, reports]);
 
 
-  const handleAnalyzePerformance = async () => {
+  const handleAnalyzeOverallPerformance = async () => {
     if (!reports || reports.length === 0) {
         toast({
             variant: "destructive",
@@ -162,32 +167,48 @@ export default function StudentDetailPage() {
         return;
     }
 
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
+    setIsAnalyzingOverall(true);
+    setOverallAnalysisResult(null);
     
-    // Sanitize reports for JSON stringification
     const sanitizedReports = reports.map(r => ({
         ...r,
-        createdAt: r.createdAt.toDate().toISOString(), // Convert Timestamp to ISO string
+        createdAt: r.createdAt.toDate().toISOString(),
     }));
 
     const reportsJson = JSON.stringify(sanitizedReports, null, 2);
 
     try {
         const result = await analyzeStudentPerformance({ recentReportsData: reportsJson });
-        setAnalysisResult(result);
+        setOverallAnalysisResult(result);
     } catch (error) {
-        console.error("Error analyzing performance:", error);
+        console.error("Error analyzing overall performance:", error);
         toast({
             variant: "destructive",
             title: "خطا در تحلیل هوشمند",
             description: "مشکلی در ارتباط با سرور هوش مصنوعی رخ داد.",
         });
     } finally {
-        setIsAnalyzing(false);
+        setIsAnalyzingOverall(false);
     }
   };
-
+  
+  const handleAnalyzeDailyPerformance = async (report: DailyReport) => {
+    setIsAnalyzingDaily(report.id);
+    try {
+        const reportJson = JSON.stringify({ ...report, createdAt: report.createdAt.toDate().toISOString() });
+        const result = await analyzeSingleDailyReport({ reportData: reportJson });
+        setDailyAnalysisResult(prev => ({ ...prev, [report.id]: result }));
+    } catch (error) {
+        console.error("Error analyzing daily report:", error);
+        toast({
+            variant: "destructive",
+            title: "خطا در تحلیل روزانه",
+            description: "مشکلی در ارتباط با هوش مصنوعی رخ داد.",
+        });
+    } finally {
+        setIsAnalyzingDaily(null);
+    }
+  }
 
   if (isStudentLoading || areReportsLoading) {
     return (
@@ -237,7 +258,7 @@ export default function StudentDetailPage() {
              <CardHeader>
                 <CardTitle className="text-right flex items-center justify-end gap-2">
                     <BrainCircuit className="h-6 w-6 text-primary"/>
-                    تحلیل عملکرد هوشمند (AI)
+                    تحلیل کلی عملکرد (AI)
                 </CardTitle>
                 <CardDescription className="text-right">
                     با کلیک بر روی دکمه، گزارش‌های اخیر دانش‌آموز توسط هوش مصنوعی تحلیل شده و نتایج آن به شما نمایش داده می‌شود.
@@ -245,12 +266,12 @@ export default function StudentDetailPage() {
              </CardHeader>
              <CardContent>
                 <div className="flex justify-start">
-                    <Button onClick={handleAnalyzePerformance} disabled={isAnalyzing}>
-                      {isAnalyzing ? "در حال تحلیل..." : "شروع تحلیل هوشمند"}
-                      {!isAnalyzing && <Bot className="mr-2 h-5 w-5" />}
+                    <Button onClick={handleAnalyzeOverallPerformance} disabled={isAnalyzingOverall}>
+                      {isAnalyzingOverall ? "در حال تحلیل کلی..." : "شروع تحلیل روند کلی"}
+                      {!isAnalyzingOverall && <Bot className="mr-2 h-5 w-5" />}
                     </Button>
                 </div>
-                {isAnalyzing && (
+                {isAnalyzingOverall && (
                     <div className="space-y-4 mt-6">
                         <Skeleton className="h-6 w-1/3 ml-auto" />
                         <Skeleton className="h-4 w-full ml-auto" />
@@ -259,24 +280,24 @@ export default function StudentDetailPage() {
                         <Skeleton className="h-4 w-full ml-auto" />
                     </div>
                 )}
-                 {analysisResult && (
+                 {overallAnalysisResult && (
                     <div className="mt-6 space-y-6 text-right">
                       <div>
                           <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Lightbulb className="text-yellow-500" /> خلاصه عملکرد</h3>
-                          <p className="text-muted-foreground leading-relaxed">{analysisResult.summary}</p>
+                          <p className="text-muted-foreground leading-relaxed">{overallAnalysisResult.summary}</p>
                       </div>
                       <Separator />
                       <div>
                           <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Activity className="text-blue-500" /> روندهای کلیدی</h3>
                           <ul className="space-y-2 list-disc pr-5">
-                              {analysisResult.keyTrends.map((trend, i) => <li key={i}>{trend}</li>)}
+                              {overallAnalysisResult.keyTrends.map((trend, i) => <li key={i}>{trend}</li>)}
                           </ul>
                       </div>
                        <Separator />
                       <div>
                           <h3 className="font-bold text-lg flex items-center justify-end gap-2 mb-2"><Target className="text-green-600" /> پیشنهاد برای شما</h3>
                            <ul className="space-y-2 list-disc pr-5">
-                              {analysisResult.suggestionsForTeacher.map((suggestion, i) => <li key={i}>{suggestion}</li>)}
+                              {overallAnalysisResult.suggestionsForTeacher.map((suggestion, i) => <li key={i}>{suggestion}</li>)}
                           </ul>
                       </div>
                     </div>
@@ -386,6 +407,51 @@ export default function StudentDetailPage() {
                                         <p className="font-bold font-code">{formatNumber(selectedReport.totals.totalStudyTime)} دقیقه</p>
                                     </div>
                                 </div>
+                                
+                                <Separator />
+
+                                <Card className="bg-muted/20">
+                                    <CardHeader>
+                                        <CardTitle className="text-right flex items-center justify-between gap-2">
+                                            <Button
+                                                onClick={() => handleAnalyzeDailyPerformance(selectedReport)}
+                                                disabled={isAnalyzingDaily === selectedReport.id}
+                                                size="sm"
+                                            >
+                                                {isAnalyzingDaily === selectedReport.id ? 'در حال تحلیل...' : 'تحلیل گزارش این روز (AI)'}
+                                                {isAnalyzingDaily !== selectedReport.id && <Sparkles className="mr-2 h-4 w-4" />}
+                                            </Button>
+                                            <span className="text-lg">تحلیل هوشمند روزانه</span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    {isAnalyzingDaily === selectedReport.id && (
+                                        <CardContent>
+                                            <Skeleton className="h-4 w-1/3 ml-auto" />
+                                            <Skeleton className="h-4 w-full mt-2 ml-auto" />
+                                        </CardContent>
+                                    )}
+                                    {dailyAnalysisResult[selectedReport.id] && (
+                                        <CardContent className="space-y-4 text-right">
+                                            <div>
+                                                <h4 className="font-bold flex items-center justify-end gap-2 mb-1"><Lightbulb className="text-yellow-500" /> خلاصه روز</h4>
+                                                <p className="text-sm text-muted-foreground">{dailyAnalysisResult[selectedReport.id].dailySummary}</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold flex items-center justify-end gap-2 mb-1"><CheckCircle className="text-green-500" /> نقاط قوت</h4>
+                                                <ul className="list-disc pr-5 text-sm space-y-1">
+                                                    {dailyAnalysisResult[selectedReport.id].positivePoints.map((point, i) => <li key={i}>{point}</li>)}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold flex items-center justify-end gap-2 mb-1"><Target className="text-destructive" /> نقاط قابل بهبود</h4>
+                                                <ul className="list-disc pr-5 text-sm space-y-1">
+                                                    {dailyAnalysisResult[selectedReport.id].improvementAreas.map((area, i) => <li key={i}>{area}</li>)}
+                                                </ul>
+                                            </div>
+                                        </CardContent>
+                                    )}
+                                </Card>
+
                                 <Separator />
                                 <FeedbackForm reportId={selectedReport.id} studentId={userId} initialFeedback={selectedReport.teacherFeedback} />
                             </CardContent>
