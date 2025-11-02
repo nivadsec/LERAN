@@ -208,7 +208,7 @@ export default function LoginPage() {
                        <div className="flex items-center">
                          <FormLabel htmlFor="password">رمز عبور</FormLabel>
                           <Link
-                            href="/forgot-password"
+                            href="/login/forgot-password"
                             className="mr-auto inline-block text-sm underline"
                             prefetch={false}
                           >

@@ -136,7 +136,7 @@ export default function LoginNewPage() {
                        <div className="flex items-center">
                          <FormLabel htmlFor="password">رمز عبور</FormLabel>
                           <Link
-                            href="/forgot-password"
+                            href="/loginnew/forgot-password"
                             className="mr-auto inline-block text-sm underline"
                             prefetch={false}
                           >
