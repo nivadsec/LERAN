@@ -32,16 +32,20 @@ service cloud.firestore {
     
     // Helper function to check if the user has an 'isAdmin' flag in their user document.
     function isAdmin() {
+      // This get() is allowed by the "allow read: if isOwner(userId)" rule below.
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     /**
-     * @description Allows students to manage their own profile and admins to list all users.
+     * @description Student Profile Access Rules
+     * - Users can create and update their own profile.
+     * - Users can read their own profile. This is crucial for the isAdmin() function to work.
+     * - Admins can read any profile, list all profiles, and delete any profile.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow list, delete: if isAdmin();
       allow create, update: if isOwner(userId);
+      allow delete, list: if isAdmin();
       allow read: if isOwner(userId) || isAdmin();
     }
 
