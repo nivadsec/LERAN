@@ -13,17 +13,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, PlusCircle, KeyRound, Eye, EyeOff, User, Edit, Bot, Wrench } from 'lucide-react';
+import { Search, PlusCircle, KeyRound, Eye, EyeOff, User, Edit, Bot, Wrench, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, setDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, where, getDocs, setDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
@@ -85,6 +85,7 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -122,6 +123,40 @@ export default function AdminUsersPage() {
     setEditingStudent(student);
     setDialogOpen(true);
   };
+  
+  const handleDeleteClick = (student: Student) => {
+    setStudentToDelete(student);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
+    
+    const studentDocRef = doc(firestore, "users", studentToDelete.id);
+    
+    try {
+      // Deleting the user document from Firestore
+      await deleteDoc(studentDocRef);
+
+      // Note: Deleting the user from Firebase Authentication requires Admin SDK
+      // which is not available on the client-side. The user's auth record remains.
+      
+      toast({
+        title: "دانش‌آموز حذف شد",
+        description: `پروفایل ${studentToDelete.firstName} ${studentToDelete.lastName} با موفقیت حذف شد.`,
+      });
+
+      setAllStudents(prev => prev.filter(s => s.id !== studentToDelete.id));
+    } catch (error) {
+       const contextualError = new FirestorePermissionError({
+            path: studentDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    } finally {
+        setStudentToDelete(null);
+    }
+  };
+
 
   const handleAddClick = () => {
     setEditingStudent(null);
@@ -166,7 +201,7 @@ export default function AdminUsersPage() {
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead className="text-right w-[100px]">اقدامات</TableHead>
+                    <TableHead className="text-right w-[180px]">اقدامات</TableHead>
                     <TableHead className="text-center">وضعیت پنل</TableHead>
                     <TableHead className="text-right">ایمیل</TableHead>
                     <TableHead className="text-right">نام دانش آموز</TableHead>
@@ -176,7 +211,7 @@ export default function AdminUsersPage() {
                  {isLoading ? (
                     [...Array(3)].map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell><Skeleton className="h-9 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-9 w-full" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-12 mx-auto" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -185,10 +220,14 @@ export default function AdminUsersPage() {
                   ) : filteredStudents && filteredStudents.length > 0 ? (
                     filteredStudents.map((student) => (
                       <TableRow key={student.id}>
-                        <TableCell>
+                        <TableCell className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleEditClick(student)}>
                             <Edit className="ml-1 h-4 w-4" />
                             ویرایش
+                          </Button>
+                           <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(student)}>
+                            <Trash2 className="ml-1 h-4 w-4" />
+                            حذف
                           </Button>
                         </TableCell>
                         <TableCell className="text-center">
@@ -225,6 +264,22 @@ export default function AdminUsersPage() {
         student={editingStudent}
         onSuccess={fetchStudents}
       />
+      
+      <AlertDialog open={!!studentToDelete} onOpenChange={(open) => !open && setStudentToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>آیا از حذف دانش‌آموز مطمئن هستید؟</AlertDialogTitle>
+                <AlertDialogDescription>
+                    این عمل غیرقابل بازگشت است. پروفایل و تمام داده‌های دانش‌آموز (گزارش‌ها، تحلیل‌ها و ...) برای همیشه حذف خواهد شد.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setStudentToDelete(null)}>انصراف</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete}>حذف</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
@@ -312,8 +367,12 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
               setIsOpen(false);
               onSuccess();
           } catch(error) {
-              console.error("Error updating user:", error);
-              toast({ variant: "destructive", title: "خطا در ویرایش", description: "مشکلی در هنگام ویرایش اطلاعات رخ داد." });
+              const contextualError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: values,
+               });
+              errorEmitter.emit('permission-error', contextualError);
           }
 
       } else { // Creating new student
@@ -353,7 +412,12 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
 
         } catch (error: any) {
             console.error("Error creating user:", error);
-            toast({ variant: "destructive", title: "خطا در ایجاد دانش‌آموز", description: error.code === 'auth/email-already-in-use' ? "این ایمیل قبلاً ثبت شده است." : "مشکلی در هنگام ایجاد کاربر رخ داد."});
+            const contextualError = new FirestorePermissionError({
+                path: `users/${values.email}`, // Path is dynamic so using email as placeholder
+                operation: 'create',
+                requestResourceData: values,
+            });
+            errorEmitter.emit('permission-error', contextualError);
         } finally {
             try {
                 await signInWithEmailAndPassword(auth, adminUser.email, adminPass);
