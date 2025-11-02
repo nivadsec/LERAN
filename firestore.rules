@@ -76,6 +76,14 @@ service cloud.firestore {
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin(); // Admin can update for feedback
     }
+
+    /**
+     * @description Group collection query for admin dashboard analytics.
+     * Allows admin to query across all users' daily reports.
+     */
+    match /{path=**}/dailyReports/{reportId} {
+        allow get, list: if isAdmin();
+    }
     
     /**
      * @description Allows students to manage their own weekly reports; admins can read them.
