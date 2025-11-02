@@ -26,6 +26,19 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+    
+    /**
+     * @description Rules for messages.
+     * Users can read messages where they are the sender or recipient.
+     * Users can only create messages where they are the sender.
+     * Admins can read/list all messages.
+     * @path /messages/{messageId}
+     */
+    match /messages/{messageId} {
+      allow read: if isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId)) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(request.resource.data.senderId);
+    }
 
     /**
      * @description Allows students to manage their own profile and admins to list all users.

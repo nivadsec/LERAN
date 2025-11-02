@@ -67,6 +67,21 @@
         },
         "required": ["id", "data"]
     },
+    "Message": {
+        "title": "Message",
+        "description": "Represents a single message between a student and an admin.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "senderId": { "type": "string" },
+            "recipientId": { "type": "string" },
+            "text": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "isRead": { "type": "boolean" },
+            "isFromAdmin": { "type": "boolean" }
+        },
+        "required": ["id", "senderId", "recipientId", "text", "createdAt"]
+    },
     "DailyReport": {
       "title": "DailyReport",
       "description": "Represents a student's detailed daily performance report.",
@@ -518,6 +533,19 @@
             "description": "Collection for storing general application configurations. Admins can write, all users can read.",
             "params": [
                 { "name": "configId", "description": "The unique ID for the configuration document, e.g., 'lernova-advisor'." }
+            ]
+        }
+      },
+      {
+        "path": "/messages/{messageId}",
+        "definition": {
+            "entityName": "Message",
+            "schema": {
+                "$ref": "#/backend/entities/Message"
+            },
+            "description": "Collection for storing messages between users and admins. Users can only read/write messages where they are the sender or recipient. Admins have broader access.",
+            "params": [
+                { "name": "messageId", "description": "The unique ID for the message." }
             ]
         }
       },
