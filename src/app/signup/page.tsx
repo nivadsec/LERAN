@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
@@ -56,8 +56,10 @@ export default function SignupPage() {
         email: values.email,
         grade: values.grade,
         major: values.major,
-        signupDate: new Date().toISOString(),
+        signupDate: serverTimestamp(),
         isAdmin: false,
+        panelStatus: false, // Panel is inactive by default
+        registrationStatus: 'pending', // Registration is pending approval
         features: {
             'daily-report': true,
             'weekly-report': true,
@@ -65,16 +67,17 @@ export default function SignupPage() {
         }
       };
 
-      // Store additional user data in Firestore
       await setDoc(doc(firestore, "users", user.uid), userData);
 
+      // Sign the user out immediately after registration
+      await auth.signOut();
+
       toast({
-        title: "ثبت‌نام موفق",
-        description: "حساب کاربری شما با موفقیت ایجاد شد.",
+        title: "ثبت‌نام شما ارسال شد",
+        description: "حساب شما ایجاد شد و پس از تایید توسط مدیر، فعال خواهد شد.",
       });
 
-      // After signup, redirect to the student dashboard
-      router.push("/dashboard");
+      router.push("/login");
       
     } catch (error: any) {
       console.error("Signup Error: ", error);
@@ -243,7 +246,7 @@ export default function SignupPage() {
                   )}
                 />
                 <Button type="submit" className="w-full mt-2" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "در حال ایجاد حساب..." : "ایجاد حساب کاربری"}
+                  {form.formState.isSubmitting ? "در حال ارسال درخواست..." : "ارسال درخواست ثبت‌نام"}
                 </Button>
               </form>
             </Form>

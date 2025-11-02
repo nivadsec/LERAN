@@ -94,12 +94,35 @@ export default function LoginPage() {
         return;
       }
 
+      const userData = userDoc.data();
+
+      if (userData.registrationStatus === 'pending') {
+          await auth.signOut();
+          toast({
+              title: "حساب در انتظار تایید",
+              description: "حساب کاربری شما هنوز توسط مدیر تایید نشده است.",
+              variant: "default",
+              duration: 5000,
+          });
+          return;
+      }
+      
+      if (userData.registrationStatus === 'denied') {
+          await auth.signOut();
+          toast({
+              title: "دسترسی امکان‌پذیر نیست",
+              description: "درخواست ثبت‌نام شما توسط مدیر رد شده است.",
+              variant: "destructive",
+          });
+          return;
+      }
+
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت وارد شدید.",
       });
 
-      if (userDoc.data()?.isAdmin) {
+      if (userData.isAdmin) {
         sessionStorage.setItem('adminPass', values.password);
         router.push("/admin/dashboard");
       } else {
