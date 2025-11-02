@@ -17,7 +17,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "ایمیل معتبر نیست." }),
 });
 
-export default function ForgotPasswordPage() {
+export default function ForgotPasswordNewPage() {
   const { toast } = useToast();
   const auth = useAuth();
 
@@ -30,6 +30,14 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      if (!auth) {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: "سرویس احراز هویت در دسترس نیست.",
+        });
+        return;
+      }
       await sendPasswordResetEmail(auth, values.email);
       toast({
         title: "ایمیل بازیابی ارسال شد",
@@ -112,7 +120,7 @@ export default function ForgotPasswordPage() {
               </form>
             </Form>
             <div className="mt-4 text-center text-sm">
-              <Link href="/login" className="underline inline-flex items-center gap-1" prefetch={false}>
+              <Link href="/loginnew" className="underline inline-flex items-center gap-1" prefetch={false}>
                  بازگشت به صفحه ورود
                 <ArrowLeft className="h-4 w-4" />
               </Link>

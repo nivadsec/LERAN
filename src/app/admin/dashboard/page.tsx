@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,43 +113,60 @@ export default function AdminDashboardPage() {
   }, [searchTerm, allStudentsData]);
 
 
-  const fetchAllStudentsData = async () => {
+  const fetchAllStudentsData = () => {
     if (!firestore) return;
     setIsDataLoading(true);
-    try {
-        const usersQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
-        const usersSnapshot = await getDocs(usersQuery);
-        const students: StudentData[] = [];
 
-        for (const userDoc of usersSnapshot.docs) {
+    const usersQuery = query(collection(firestore, 'users'), where('isAdmin', '!=', true));
+    
+    getDocs(usersQuery).then(async (usersSnapshot) => {
+        const studentsPromises = usersSnapshot.docs.map(async (userDoc) => {
             const userData = userDoc.data() as UserProfile;
             userData.id = userDoc.id;
 
             const reportsRef = collection(firestore, 'users', userDoc.id, 'dailyReports');
-            const reportsSnapshot = await getDocs(reportsRef);
-            const dailyReports = reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyReport));
             
-            const totalStudyMinutes = dailyReports.reduce((acc, r) => acc + (r.totals?.totalStudyTime || 0), 0);
-            const totalMentalState = dailyReports.reduce((acc, r) => acc + (r.mentalState || 0), 0);
+            try {
+                const reportsSnapshot = await getDocs(reportsRef);
+                const dailyReports = reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyReport));
+                
+                const totalStudyMinutes = dailyReports.reduce((acc, r) => acc + (r.totals?.totalStudyTime || 0), 0);
+                const totalMentalState = dailyReports.reduce((acc, r) => acc + (r.mentalState || 0), 0);
 
-            students.push({
-                ...userData,
-                dailyReports,
-                avgStudyHours: dailyReports.length > 0 ? (totalStudyMinutes / 60) / dailyReports.length : 0,
-                avgMentalState: dailyReports.length > 0 ? totalMentalState / dailyReports.length : 0,
-            });
-        }
-        setAllStudentsData(students);
-    } catch (error) {
-        console.error("Error fetching students data:", error);
-        toast({
-            variant: "destructive",
-            title: "خطا در دریافت اطلاعات",
-            description: "مشکلی در دریافت اطلاعات دانش‌آموزان رخ داده است."
+                return {
+                    ...userData,
+                    dailyReports,
+                    avgStudyHours: dailyReports.length > 0 ? (totalStudyMinutes / 60) / dailyReports.length : 0,
+                    avgMentalState: dailyReports.length > 0 ? totalMentalState / dailyReports.length : 0,
+                };
+            } catch (error) {
+                // If fetching subcollection fails, still return student data but with empty reports.
+                const contextualError = new FirestorePermissionError({
+                    path: reportsRef.path,
+                    operation: 'list'
+                });
+                errorEmitter.emit('permission-error', contextualError);
+                return {
+                    ...userData,
+                    dailyReports: [],
+                    avgStudyHours: 0,
+                    avgMentalState: 0
+                } as StudentData;
+            }
         });
-    } finally {
+
+        const resolvedStudents = await Promise.all(studentsPromises);
+        setAllStudentsData(resolvedStudents);
         setIsDataLoading(false);
-    }
+
+    }).catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          path: 'users',
+          operation: 'list'
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        setIsDataLoading(false);
+    });
   };
 
 

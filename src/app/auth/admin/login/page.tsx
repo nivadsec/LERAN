@@ -53,8 +53,11 @@ export default function AdminLoginPage() {
         });
         return;
       }
+      
+      const idTokenResult = await user.getIdTokenResult();
+      const isAdmin = idTokenResult.claims.admin === true;
 
-      if (userDoc.data()?.isAdmin) {
+      if (isAdmin) {
         // A simple way to keep password in session storage for re-login after creating a user.
         // This is not recommended for production apps.
         // A more secure approach would be using a backend to manage sessions.
