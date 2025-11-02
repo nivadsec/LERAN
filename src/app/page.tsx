@@ -11,6 +11,8 @@ import { getSdks } from '@/firebase/sdks';
 import { firebaseConfig } from '@/firebase/config';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+export const revalidate = 0;
+
 interface Article {
     id: string;
     slug: string;
