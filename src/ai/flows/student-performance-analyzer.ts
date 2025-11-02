@@ -11,11 +11,11 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const StudentPerformanceAnalysisInputSchema = z.object({
+const StudentPerformanceAnalysisInputSchema = z.object({
   recentReportsData: z.string().describe('A JSON string representing an array of the student\'s most recent daily reports. Each report includes study time, test performance, and mental state.'),
 });
 
-export const StudentPerformanceAnalysisOutputSchema = z.object({
+const StudentPerformanceAnalysisOutputSchema = z.object({
   summary: z.string().describe('A brief, overall summary of the student\'s performance and general state based on the provided reports.'),
   keyTrends: z.array(z.string()).describe('A list of notable positive or negative trends, such as declining study hours, improving test scores, or consistent low mental state.'),
   suggestionsForTeacher: z.array(z.string()).describe('A list of actionable suggestions for the teacher or consultant to help the student, based on the identified trends.'),
