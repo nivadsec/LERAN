@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
@@ -49,7 +49,6 @@ export default function AdminLoginPage() {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // This is a new admin user, create their document with admin privileges.
         await setDoc(userDocRef, {
             email: user.email,
             isAdmin: true,
@@ -64,7 +63,6 @@ export default function AdminLoginPage() {
       } else {
         const userData = userDoc.data();
         if (!userData.isAdmin) {
-          // The user exists but is not an admin, promote them.
           await updateDoc(userDocRef, { isAdmin: true });
           toast({
              title: "ارتقا به ادمین",
@@ -73,7 +71,6 @@ export default function AdminLoginPage() {
         }
       }
       
-      // Store password in session storage for subsequent operations if needed (e.g., creating other users)
       sessionStorage.setItem('adminPass', values.password);
       toast({
         title: "ورود موفق",
@@ -89,11 +86,12 @@ export default function AdminLoginPage() {
       } else if (error.code === 'auth/too-many-requests') {
           description = 'دسترسی به دلیل تلاش‌های زیاد موقتا مسدود شده است. لطفاً بعداً دوباره امتحان کنید.'
       }
-      toast({
-        variant: "destructive",
-        title: "خطا در ورود",
-        description: description,
+
+      const contextualError = new FirestorePermissionError({
+          path: `users/${values.email}`, // Placeholder path
+          operation: 'get',
       });
+      errorEmitter.emit('permission-error', contextualError);
     }
   };
 

@@ -30,11 +30,10 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     
-    // Helper function to check if the user has an 'isAdmin' flag in their user document.
+    // Helper function to check if the user has an 'isAdmin' custom claim.
+    // NOTE: This now checks the auth token, not the database, to avoid circular dependencies.
     function isAdmin() {
-      return isSignedIn() &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return request.auth.token.admin == true;
     }
     
     /**
@@ -61,11 +60,11 @@ service cloud.firestore {
 
     /**
      * @description Allows students to manage their own profile and admins to list all users.
-     * The `get` rule is separated to break the circular dependency for `isAdmin()`.
+     * The logic for isAdmin is now based on custom claims, removing circular dependencies.
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
