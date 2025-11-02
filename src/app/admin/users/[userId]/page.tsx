@@ -7,15 +7,16 @@ import { doc, collection, query, orderBy, limit, Timestamp, updateDoc } from 'fi
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb } from 'lucide-react';
+import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeStudentPerformance, type StudentPerformanceAnalysisOutput } from '@/ai/flows/student-performance-analyzer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 
 interface UserProfile {
@@ -130,6 +131,7 @@ export default function StudentDetailPage() {
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<StudentPerformanceAnalysisOutput | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
   const userDocRef = useMemoFirebase(() => {
     if (!userId) return null;
@@ -143,6 +145,12 @@ export default function StudentDetailPage() {
 
   const { data: student, isLoading: isStudentLoading } = useDoc<UserProfile>(userDocRef);
   const { data: reports, isLoading: areReportsLoading } = useCollection<DailyReport>(reportsQuery);
+  
+  const selectedReport = useMemo(() => {
+      if (!selectedReportId || !reports) return null;
+      return reports.find(r => r.id === selectedReportId);
+  }, [selectedReportId, reports]);
+
 
   const handleAnalyzePerformance = async () => {
     if (!reports || reports.length === 0) {
@@ -277,30 +285,43 @@ export default function StudentDetailPage() {
         </Card>
 
         <div>
-            <h2 className="text-xl font-bold text-right mb-4">گزارش‌های روزانه اخیر</h2>
+            <h2 className="text-xl font-bold text-right mb-4">بررسی گزارش‌های روزانه اخیر</h2>
             {reports && reports.length > 0 ? (
-                <div className="space-y-6">
-                    {reports.map(report => (
-                        <Card key={report.id} className="text-right">
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {reports.map(report => (
+                            <Button 
+                                key={report.id}
+                                variant={selectedReportId === report.id ? "default" : "outline"}
+                                onClick={() => setSelectedReportId(report.id)}
+                                className="flex flex-col h-auto p-2"
+                            >
+                                <span className="font-semibold">{format(report.createdAt.toDate(), 'eeee')}</span>
+                                <span className="text-xs font-code">{report.reportDate}</span>
+                            </Button>
+                        ))}
+                    </div>
+                    {selectedReport ? (
+                         <Card key={selectedReport.id} className="text-right">
                             <CardHeader>
                                 <CardTitle className="flex justify-between items-center">
                                     <span>گزارش روز</span>
                                      <span className="text-sm font-normal text-muted-foreground flex items-center gap-1 font-code">
                                         <Calendar className="h-4 w-4" />
-                                        {report.reportDate}
+                                        {selectedReport.reportDate}
                                     </span>
                                 </CardTitle>
                                 <CardDescription className="pt-1">
-                                    ثبت شده در: {format(report.createdAt.toDate(), 'yyyy/MM/dd HH:mm')}
+                                    ثبت شده در: {format(selectedReport.createdAt.toDate(), 'yyyy/MM/dd HH:mm')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center p-4 bg-muted/50 rounded-lg">
-                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">بیداری</p><p className="font-bold font-code">{report.wakeupTime || '-'}</p></div>
-                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">شروع مطالعه</p><p className="font-bold font-code">{report.studyStartTime || '-'}</p></div>
-                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">ساعت کلاس</p><p className="font-bold font-code">{formatNumber(report.classHours)}</p></div>
-                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">ساعت خواب</p><p className="font-bold font-code">{formatNumber(report.sleepHours)}</p></div>
-                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">وضعیت روانی</p><p className="font-bold font-code">{formatNumber(report.mentalState)}/۱۰</p></div>
+                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">بیداری</p><p className="font-bold font-code">{selectedReport.wakeupTime || '-'}</p></div>
+                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">شروع مطالعه</p><p className="font-bold font-code">{selectedReport.studyStartTime || '-'}</p></div>
+                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">ساعت کلاس</p><p className="font-bold font-code">{formatNumber(selectedReport.classHours)}</p></div>
+                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">ساعت خواب</p><p className="font-bold font-code">{formatNumber(selectedReport.sleepHours)}</p></div>
+                                    <div className="space-y-1"><p className="text-xs text-muted-foreground">وضعیت روانی</p><p className="font-bold font-code">{formatNumber(selectedReport.mentalState)}/۱۰</p></div>
                                </div>
 
                                 <div className="overflow-x-auto rounded-md border">
@@ -318,7 +339,7 @@ export default function StudentDetailPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {report.studyItems.map((item, index) => (
+                                            {selectedReport.studyItems.map((item, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell>{item.lesson}</TableCell>
                                                     <TableCell>{item.topic}</TableCell>
@@ -332,12 +353,12 @@ export default function StudentDetailPage() {
                                             ))}
                                             <TableRow className="bg-muted/80 font-bold">
                                                 <TableCell colSpan={2} className="text-right">مجموع</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.totalStudyTime)}</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.totalTestCount)}</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.totalTestCorrect)}</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.totalTestWrong)}</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.totalTestTime)}</TableCell>
-                                                <TableCell className="text-center font-code">{formatNumber(report.totals.overallTestPercentage)}%</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.totalStudyTime)}</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.totalTestCount)}</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.totalTestCorrect)}</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.totalTestWrong)}</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.totalTestTime)}</TableCell>
+                                                <TableCell className="text-center font-code">{formatNumber(selectedReport.totals.overallTestPercentage)}%</TableCell>
                                             </TableRow>
                                         </TableBody>
                                     </Table>
@@ -347,29 +368,34 @@ export default function StudentDetailPage() {
                                     <div className="flex flex-col items-center gap-1">
                                         <Smartphone className="h-5 w-5 text-muted-foreground" />
                                         <p className="text-sm">موبایل</p>
-                                        <p className="font-bold font-code">{formatNumber(report.mobileHours)} ساعت</p>
+                                        <p className="font-bold font-code">{formatNumber(selectedReport.mobileHours)} ساعت</p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
                                         <Bomb className="h-5 w-5 text-muted-foreground" />
                                         <p className="text-sm">اتلاف وقت</p>
-                                        <p className="font-bold font-code">{formatNumber(report.wastedHours)} ساعت</p>
+                                        <p className="font-bold font-code">{formatNumber(selectedReport.wastedHours)} ساعت</p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
                                         <Percent className="h-5 w-5 text-muted-foreground" />
                                         <p className="text-sm">درصد تست کل</p>
-                                        <p className="font-bold font-code">{formatNumber(report.totals.overallTestPercentage)} %</p>
+                                        <p className="font-bold font-code">{formatNumber(selectedReport.totals.overallTestPercentage)} %</p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
                                         <Clock className="h-5 w-5 text-muted-foreground" />
                                         <p className="text-sm">مطالعه کل</p>
-                                        <p className="font-bold font-code">{formatNumber(report.totals.totalStudyTime)} دقیقه</p>
+                                        <p className="font-bold font-code">{formatNumber(selectedReport.totals.totalStudyTime)} دقیقه</p>
                                     </div>
                                 </div>
                                 <Separator />
-                                <FeedbackForm reportId={report.id} studentId={userId} initialFeedback={report.teacherFeedback} />
+                                <FeedbackForm reportId={selectedReport.id} studentId={userId} initialFeedback={selectedReport.teacherFeedback} />
                             </CardContent>
                         </Card>
-                    ))}
+                    ) : (
+                        <Card className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed">
+                             <ChevronLeft className="h-8 w-8 text-muted-foreground mb-4" />
+                            <p className="font-semibold">لطفاً یک گزارش را برای مشاهده جزئیات انتخاب کنید.</p>
+                        </Card>
+                    )}
                 </div>
             ) : (
                 <Alert>
