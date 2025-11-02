@@ -41,8 +41,7 @@ service cloud.firestore {
      * @path /configs/{configId}
      */
     match /configs/{configId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
     
     /**
@@ -55,7 +54,7 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow read: if isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId)) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(request.resource.data.senderId);
+      allow create: if isOwner(request.resource.data.senderId) || isAdmin();
     }
 
     /**
