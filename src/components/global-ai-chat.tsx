@@ -8,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Send, User, Bot, Wrench } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { lernovaAdvisor, LernovaAdvisorInput } from '@/ai/flows/lernova-advisor';
-import { supportBot, SupportBotInput } from '@/ai/flows/support-bot';
+import { lernovaAdvisor } from '@/ai/flows/lernova-advisor';
+import { supportBot } from '@/ai/flows/support-bot';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { type featureList } from '@/app/admin/users/page';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -20,12 +22,13 @@ interface Message {
 }
 
 interface ChatPaneProps {
-  aiFlow: (input: string) => Promise<string>;
+  aiFlow: (input: any) => Promise<string>;
   initialMessage: { title: string; description: string; Icon: React.ElementType };
   placeholder: string;
+  flowInput: object;
 }
 
-function ChatPane({ aiFlow, initialMessage, placeholder }: ChatPaneProps) {
+function ChatPane({ aiFlow, initialMessage, placeholder, flowInput }: ChatPaneProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,11 +41,12 @@ function ChatPane({ aiFlow, initialMessage, placeholder }: ChatPaneProps) {
 
     const userMessage: Message = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await aiFlow(input);
+      const response = await aiFlow({ ...flowInput, question: currentInput });
       const botMessage: Message = { sender: 'bot', text: response };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -52,7 +56,7 @@ function ChatPane({ aiFlow, initialMessage, placeholder }: ChatPaneProps) {
         title: 'خطا در ارتباط',
         description: 'مشکلی در ارتباط با سرور هوش مصنوعی رخ داده است. لطفاً دوباره تلاش کنید.',
       });
-      setMessages(prev => prev.slice(0, prev.length -1)); // Revert user message on error
+      setMessages(prev => prev.filter(m => m.text !== currentInput)); // Revert user message on error
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +153,14 @@ interface GlobalAIChatButtonProps {
 }
 
 export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
-  
+  const firestore = useFirestore();
+
+  const advisorConfigDoc = useMemoFirebase(() => doc(firestore, 'configs', 'lernova-advisor'), [firestore]);
+  const supportConfigDoc = useMemoFirebase(() => doc(firestore, 'configs', 'panel-support-bot'), [firestore]);
+
+  const { data: advisorConfig } = useDoc<{ persona: string }>(advisorConfigDoc);
+  const { data: supportConfig } = useDoc<{ persona: string }>(supportConfigDoc);
+
   const hasLernovaAdvisor = features?.['lernova-advisor'];
   const hasSupportBot = features?.['panel-support-bot'];
 
@@ -176,7 +187,7 @@ export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
              <SheetTitle className="text-right">
                 <TabsList className="grid w-full grid-cols-2">
                     {hasLernovaAdvisor && <TabsTrigger value="advisor">مشاور لرنوا</TabsTrigger>}
-                    {hasSupportBot && <TabsTrigger value="support" disabled>پشتیبان فنی (بزودی)</TabsTrigger>}
+                    {hasSupportBot && <TabsTrigger value="support">پشتیبان فنی</TabsTrigger>}
                 </TabsList>
              </SheetTitle>
           </SheetHeader>
@@ -185,6 +196,7 @@ export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
             <TabsContent value="advisor" className="flex-1 mt-0">
                 <ChatPane
                 aiFlow={lernovaAdvisor}
+                flowInput={{ persona: advisorConfig?.persona || '' }}
                 initialMessage={{
                     title: 'چطور می‌تونم کمکت کنم؟',
                     description: 'سوالات خودت رو در مورد برنامه‌ریزی درسی، روش‌های مطالعه، مدیریت استرس و هر چیزی که به موفقیت تحصیلیت مربوط می‌شه، از من بپرس!',
@@ -197,11 +209,16 @@ export function GlobalAIChatButton({ features }: GlobalAIChatButtonProps) {
 
           {hasSupportBot && (
             <TabsContent value="support" className="flex-1 mt-0">
-                <div className="flex flex-col items-center justify-center h-full p-6 text-center text-muted-foreground">
-                    <Wrench className="w-12 h-12 mb-4" />
-                    <h3 className="text-lg font-semibold">پشتیبان فنی (بزودی)</h3>
-                    <p className="max-w-sm mt-2">این بخش در حال آماده‌سازی است و به‌زودی برای پاسخ به سوالات شما در مورد کار با پنل فعال خواهد شد.</p>
-                </div>
+               <ChatPane
+                aiFlow={supportBot}
+                flowInput={{ persona: supportConfig?.persona || '' }}
+                initialMessage={{
+                    title: 'پشتیبان فنی لرنوا',
+                    description: 'اگر در مورد نحوه استفاده از پنل یا مشکلات فنی سوالی داری، از من بپرس.',
+                    Icon: Wrench
+                }}
+                placeholder="سوال فنی خود را بپرسید..."
+                />
             </TabsContent>
           )}
 

@@ -23,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, PlusCircle, KeyRound, Eye, EyeOff, User, Edit, Bot, Wrench, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth, useFirestore, useUser, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, where, getDocs, setDoc, doc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, setDoc, doc, updateDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
@@ -403,7 +403,7 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
                 major: values.major,
                 panelStatus: values.panelStatus,
                 features: values.features,
-                signupDate: new Date().toISOString(),
+                signupDate: serverTimestamp(),
                 isAdmin: false, // Explicitly set isAdmin to false for new students
             };
 

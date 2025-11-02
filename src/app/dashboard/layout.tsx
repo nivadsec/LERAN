@@ -311,7 +311,6 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                     </SidebarMenuSubButton>
                     <SidebarMenuSubContent>
                         {features['qna'] && <SidebarMenuSubItem asChild><Link href="/qna" className="justify-end"><span>پرسش و پاسخ</span><HelpCircle className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
-                        {features['lernova-advisor'] && <SidebarMenuSubItem asChild><Link href="/qna" className="justify-end"><span>مشاور لرنوا (AI)</span><Bot className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['consulting-content'] && <SidebarMenuSubItem asChild><Link href="/consulting-content" className="justify-end"><span>مطالب مشاوره‌ای</span><Library className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['recommendations'] && <SidebarMenuSubItem asChild><Link href="/recommendations" className="justify-end"><span>توصیه‌ها</span><ThumbsUp className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
                         {features['surveys'] && <SidebarMenuSubItem asChild><Link href="/surveys" className="justify-end"><span>پرسشنامه‌ها</span><FileText className="mr-2 h-4 w-4" /></Link></SidebarMenuSubItem>}
@@ -319,7 +318,6 @@ function StudentNav({ features }: { features?: UserProfile['features'] }) {
                 </SidebarMenuSub>
             )}
             
-            {features['panel-support-bot'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="پشتیبان فنی" disabled><Link href="/support"><span>پشتیبان فنی (بزودی)</span><Wrench /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['review-calendar'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="تقویم مرور" isActive={pathname.startsWith('/review-calendar')}><Link href="/review-calendar"><span>تقویم مرور</span><CalendarClock /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-class'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="کلاس آنلاین" isActive={pathname.startsWith('/online-class')}><Link href="/online-class"><span>کلاس آنلاین</span><Video /></Link></SidebarMenuButton></SidebarMenuItem>}
             {features['online-tests'] && <SidebarMenuItem><SidebarMenuButton asChild tooltip="آزمون آنلاین" isActive={pathname.startsWith('/online-tests')}><Link href="/online-tests"><span>آزمون آنلاین</span><PenSquare /></Link></SidebarMenuButton></SidebarMenuItem>}
