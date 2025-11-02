@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Check, X, Mailbox, Trash2, UserPlus, ClipboardClock } from 'lucide-react';
+import { Check, X, Mailbox, Trash2, UserPlus, History } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -297,11 +297,11 @@ function DateChangeRequests() {
 
 
 export default function AdminRequestsPage() {
+    const firestore = useFirestore();
     const registrationRequestsQuery = useMemoFirebase(() => {
-        const firestore = useFirestore();
         if (!firestore) return null;
         return query(collection(firestore, 'users'), where('registrationStatus', '==', 'pending'));
-    }, []);
+    }, [firestore]);
 
     const { data: registrationRequests } = useCollection(registrationRequestsQuery);
     const registrationCount = registrationRequests?.length || 0;
@@ -321,7 +321,7 @@ export default function AdminRequestsPage() {
                     {registrationCount > 0 && <Badge className="mr-2">{registrationCount}</Badge>}
                 </TabsTrigger>
                 <TabsTrigger value="other">
-                     <ClipboardClock className="ml-2 h-4 w-4" />
+                     <History className="ml-2 h-4 w-4" />
                      سایر درخواست‌ها
                 </TabsTrigger>
             </TabsList>
