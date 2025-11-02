@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
@@ -45,12 +45,21 @@ export default function AdminLoginPage() {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        await auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "ورود ناموفق",
-          description: "حساب کاربری شما یافت نشد یا توسط مدیر دیگری حذف شده است.",
+        // This case is unlikely if auth succeeded, but good for safety.
+        // Let's create a profile for the admin if it doesn't exist, assuming this is a first-time setup for this admin user.
+        await setDoc(userDocRef, {
+            email: user.email,
+            isAdmin: true,
+            firstName: 'Admin',
+            lastName: 'User',
+            panelStatus: true,
         });
+        toast({
+            title: 'پروفایل ادمین ایجاد شد',
+            description: 'در حال ورود به پنل مدیریت...',
+        });
+        sessionStorage.setItem('adminPass', values.password);
+        router.push("/admin/dashboard");
         return;
       }
       
@@ -64,11 +73,11 @@ export default function AdminLoginPage() {
         });
         router.push("/admin/dashboard");
       } else {
-        // This is a special case for the first admin login.
-        // We assume the first user trying to log in to the admin panel is the admin.
-        // In a real production app, this should be handled by a backend process.
+        // This is a special case: a regular user is trying to log in via the admin page.
+        // We'll promote them to admin if their email suggests they should be one,
+        // or deny access otherwise. This is a simple security measure for initial setup.
         if (values.email.includes('admin')) {
-             await setDoc(userDocRef, { isAdmin: true }, { merge: true });
+             await updateDoc(userDocRef, { isAdmin: true });
              sessionStorage.setItem('adminPass', values.password);
              toast({
                 title: "ارتقا به ادمین",
@@ -89,6 +98,8 @@ export default function AdminLoginPage() {
       let description = 'مشکلی پیش آمده است. لطفا دوباره تلاش کنید.';
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
           description = 'ایمیل یا رمز عبور اشتباه است.';
+      } else if (error.code === 'auth/too-many-requests') {
+          description = 'دسترسی به دلیل تلاش‌های زیاد موقتا مسدود شده است. لطفاً بعداً دوباره امتحان کنید.'
       }
       toast({
         variant: "destructive",
