@@ -37,11 +37,12 @@ service cloud.firestore {
     
     /**
      * @description Rules for application configurations.
-     * Only admins can read and write.
+     * Admins can write, any authenticated user can read.
      * @path /configs/{configId}
      */
     match /configs/{configId} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
     
     /**
@@ -52,7 +53,7 @@ service cloud.firestore {
      * @path /messages/{messageId}
      */
     match /messages/{messageId} {
-      allow read: if (isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId))) || isAdmin();
+      allow read: if isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId)) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(request.resource.data.senderId);
     }
@@ -63,7 +64,7 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId);
       allow list: if isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
