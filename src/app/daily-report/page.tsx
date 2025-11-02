@@ -238,9 +238,9 @@ export default function DailyReportPage() {
                 </FormItem>
               )} />
             </div>
-
-            {/* Main Table */}
-            <div className="overflow-x-auto rounded-lg border">
+            
+            {/* Main Table for Desktop */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -273,11 +273,7 @@ export default function DailyReportPage() {
                             <TableCell className="border-l"><Input type="number" className="text-center font-code" placeholder="دقیقه" {...form.register(`studyItems.${index}.testTime`)} /></TableCell>
                             <TableCell>
                                 <div className="text-center font-code">{formatNumber(percentage)}%</div>
-                                <Input 
-                                    type="hidden"
-                                    value={percentage}
-                                    {...form.register(`studyItems.${index}.testPercentage`)}
-                                 />
+                                <Input type="hidden" value={percentage} {...form.register(`studyItems.${index}.testPercentage`)} />
                             </TableCell>
                             <TableCell>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -300,6 +296,44 @@ export default function DailyReportPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {fields.map((field, index) => {
+                  const watchedTest = form.watch(`studyItems.${index}`);
+                  const percentage = (watchedTest.testCount || 0) > 0 
+                      ? Math.round((( (watchedTest.testCorrect || 0) - (watchedTest.testWrong || 0) / 3) / (watchedTest.testCount || 1)) * 100)
+                      : 0;
+                  return (
+                    <Card key={field.id} className="bg-muted/50">
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        <div className="space-y-2 text-right">
+                          <Input className="font-bold text-lg" placeholder="نام درس" {...form.register(`studyItems.${index}.lesson`)} />
+                          <Input placeholder="مبحث خوانده شده" {...form.register(`studyItems.${index}.topic`)} />
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-right">
+                          <FormItem><FormLabel>زمان مطالعه (دقیقه)</FormLabel><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.studyTime`)} /></FormItem>
+                          <FormItem><FormLabel>زمان تست (دقیقه)</FormLabel><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testTime`)} /></FormItem>
+                        </div>
+                        <Separator />
+                         <div className="grid grid-cols-2 gap-4 text-right">
+                           <FormItem><FormLabel>تست کل</FormLabel><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testCount`)} /></FormItem>
+                           <FormItem><FormLabel>درصد</FormLabel><Input className="text-center font-code" value={`${formatNumber(percentage)}%`} readOnly /></FormItem>
+                           <FormItem><FormLabel>درست</FormLabel><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testCorrect`)} /></FormItem>
+                           <FormItem><FormLabel>غلط</FormLabel><Input type="number" className="text-center font-code" {...form.register(`studyItems.${index}.testWrong`)} /></FormItem>
+                         </div>
+                      </CardContent>
+                    </Card>
+                  )
+              })}
+            </div>
+
+
              <Button type="button" variant="outline" size="sm" onClick={() => append({ lesson: '', topic: '', studyTime: 0, testCount: 0, testCorrect: 0, testWrong: 0, testTime: 0, testPercentage: 0 })}>
                 <PlusCircle className="ml-2 h-4 w-4" />
                 افزودن آیتم

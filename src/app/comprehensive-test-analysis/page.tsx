@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -102,27 +103,27 @@ export default function ComprehensiveTestAnalysisPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <FormField name="exam_date" control={form.control} render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="w-full">
                           <FormLabel className="flex items-center justify-end gap-1"><CalendarDays className="h-4 w-4"/>تاریخ آزمون</FormLabel>
                           <FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                     )} />
                     <FormField name="total_score" control={form.control} render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="w-full">
                           <FormLabel className="flex items-center justify-end gap-1"><Star className="h-4 w-4"/>تراز کل</FormLabel>
                           <FormControl><Input type="number" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                     )} />
                     <FormField name="rank_city" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>رتبه شهر</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem className="w-full"><FormLabel>رتبه شهر</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField name="rank_region" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>رتبه منطقه</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem className="w-full"><FormLabel>رتبه منطقه</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField name="rank_country" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>رتبه کشور</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem className="w-full"><FormLabel>رتبه کشور</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </CardContent>
             </Card>
@@ -159,38 +160,38 @@ export default function ComprehensiveTestAnalysisPage() {
                                <TabsContent value="before_exam">
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-right">
                                         <FormField name={`exam_analysis.${index}.before_exam.previous_score`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درصد قبلی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>درصد قبلی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_first`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۱</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>هدف ۱</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_second`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۲</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>هدف ۲</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_third`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۳</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>هدف ۳</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField name={`exam_analysis.${index}.before_exam.goal_fourth`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>هدف ۴</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>هدف ۴</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                </TabsContent>
                                <TabsContent value="execution">
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                          <FormField name={`exam_analysis.${index}.execution.correct`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درست</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>درست</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.wrong`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>غلط</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>غلط</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                           <FormField name={`exam_analysis.${index}.execution.blank`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.total`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>تعداد کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>تعداد کل</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.execution.time_spent`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>زمان (دقیقه)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                      <FormField name={`exam_analysis.${index}.execution.notes`} control={form.control} render={({ field }) => (
@@ -200,13 +201,13 @@ export default function ComprehensiveTestAnalysisPage() {
                                <TabsContent value="after_exam">
                                     <div className="grid grid-cols-3 gap-3">
                                          <FormField name={`exam_analysis.${index}.after_exam.score`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>درصد نهایی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>درصد نهایی</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                          <FormField name={`exam_analysis.${index}.after_exam.accuracy_rate`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نرخ دقت</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>نرخ دقت</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                           <FormField name={`exam_analysis.${index}.after_exam.skip_ratio`} control={form.control} render={({ field }) => (
-                                          <FormItem><FormLabel>نرخ نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                          <FormItem className="w-full"><FormLabel>نرخ نزده</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                </TabsContent>
@@ -225,3 +226,5 @@ export default function ComprehensiveTestAnalysisPage() {
     </div>
   );
 }
+
+    

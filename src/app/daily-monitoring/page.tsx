@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PlusCircle, Trash2, ShieldCheck, Clock, BrainCircuit, Star } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { TimePicker } from '@/components/ui/time-picker';
+import { Separator } from '@/components/ui/separator';
 
 const activitySchema = z.object({
   activity: z.string().min(1, "فعالیت الزامی است."),
@@ -92,7 +94,8 @@ export default function DailyMonitoringPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -128,6 +131,37 @@ export default function DailyMonitoringPage() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4">
+                {fields.map((field, index) => (
+                  <Card key={field.id} className="bg-muted/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                       <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        <div className="w-full">
+                          <Input className="text-base font-bold text-right" placeholder="فعالیت" {...form.register(`activities.${index}.activity`)} />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       <div className="grid grid-cols-2 gap-4">
+                         <FormItem><FormLabel>شروع</FormLabel><Input {...form.register(`activities.${index}.startTime`)} className="text-center" dir="ltr" /></FormItem>
+                         <FormItem><FormLabel>پایان</FormLabel><Input {...form.register(`activities.${index}.endTime`)} className="text-center" dir="ltr" /></FormItem>
+                       </div>
+                       <Separator />
+                       <div className="grid grid-cols-2 gap-4">
+                         <FormItem><FormLabel>باکس زمانی</FormLabel><Input type="number" {...form.register(`activities.${index}.timeBoxing`)} className="text-center" /></FormItem>
+                         <FormItem><FormLabel>نوع</FormLabel><Input {...form.register(`activities.${index}.activityType`)} className="text-center" /></FormItem>
+                         <FormItem><FormLabel>تمرکز (۰-۱۰)</FormLabel><Input type="number" {...form.register(`activities.${index}.focus`)} className="text-center" /></FormItem>
+                         <FormItem><FormLabel>رضایت (۰-۵)</FormLabel><Input type="number" {...form.register(`activities.${index}.satisfaction`)} className="text-center" /></FormItem>
+                       </div>
+                       <FormItem><FormLabel>توضیحات</FormLabel><Input {...form.register(`activities.${index}.notes`)} /></FormItem>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
             </CardContent>
           </Card>
 
@@ -203,3 +237,5 @@ export default function DailyMonitoringPage() {
     </div>
   );
 }
+
+    
