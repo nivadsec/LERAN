@@ -305,14 +305,17 @@ function UserDialog({ isOpen, setIsOpen, student, onSuccess }: UserDialogProps) 
   });
   
   useEffect(() => {
-    if (student) {
+    const studentData = student ? student : null;
+    const initialFeatures = {
+        ...defaultFeatures,
+        ...(studentData?.features || {}),
+    };
+
+    if (studentData) {
       form.reset({
-        ...student,
+        ...studentData,
         password: '', // Don't pre-fill password
-        features: {
-            ...defaultFeatures,
-            ...student.features,
-        }
+        features: initialFeatures,
       });
     } else {
       form.reset({

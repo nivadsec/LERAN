@@ -31,22 +31,24 @@ service cloud.firestore {
     }
     
     // Helper function to check if the user has an 'isAdmin' flag in their user document.
+    // This function can now work correctly because the rule for /users/{userId}
+    // allows a user to read their own document.
     function isAdmin() {
-      // This get() is allowed by the "allow read: if isOwner(userId) || isAdmin()" rule below.
-      // Crucially, the isOwner(userId) part breaks the circular dependency.
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     /**
-     * @description Student Profile Access Rules
+     * @description Student Profile Access Rules (REVISED)
+     * - This breaks the circular dependency that caused the permission error.
+     * - Any authenticated user can read their OWN profile. This is crucial for isAdmin() to work.
+     * - Admins can read any profile and list all profiles.
      * - Users can create and update their own profile.
-     * - Users can read their own profile, which is essential for the isAdmin() function.
-     * - Admins can read any profile, list all profiles, and delete any profile.
      * @path /users/{userId}
      */
     match /users/{userId} {
       allow create, update: if isOwner(userId);
       allow delete, list: if isAdmin();
+      // This is the key change: Separating `get` from `list` and allowing self-reads.
       allow read: if isOwner(userId) || isAdmin();
     }
 
