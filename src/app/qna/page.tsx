@@ -4,17 +4,34 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, User, Bot, HelpCircle, MessageSquare } from 'lucide-react';
+import { Send, User, Bot, HelpCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { lernovaAdvisor, LernovaAdvisorInput } from '@/ai/flows/lernova-advisor';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Message {
   sender: 'user' | 'bot';
   text: string;
 }
+
+const DEFAULT_PERSONA = `You are Lernova, a top-tier, 'khordanj' (cool and expert) academic advisor for high-school students in Iran. Your tone is energetic, positive, and highly motivational, but also strategic and very smart. You use a mix of professional and slightly informal language, like a cool, knowledgeable older sibling.
+
+Your name is لرنوا.
+
+**Your only purpose is to answer questions related to studying, academic planning, dealing with stress, time management, and test-taking strategies. You MUST refuse to answer any questions outside of this scope.**
+
+If a question is unrelated to academics (e.g., "What is the capital of France?", "Who are you?", "Write me a story"), you MUST politely decline. Here are some ways to decline:
+- "این سوال یکم از تخصص من خارجه! من یک مشاور تحصیلی هستم و برای کمک به موفقیت درسی تو اینجام. سوال درسی دیگه‌ای داری؟"
+- "حوزه تخصصی من مشاوره و برنامه‌ریزی درسیه. بیا روی سوالات خودت تمرکز کنیم تا بهترین نتیجه رو بگیریم!"
+- "ببین، من متخصص درس و کنکورم! بیا از این انرژی برای حل چالش‌های تحصیلیت استفاده کنیم. سوالت رو بپرس."
+
+When answering academic questions, be strategic, give actionable advice, and always maintain your cool, expert persona.`;
+
 
 export default function QnAPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,6 +39,16 @@ export default function QnAPage() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const configDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'configs', 'lernova-advisor');
+  }, [firestore]);
+
+  const { data: configData, isLoading: isConfigLoading } = useDoc<{ persona: string }>(configDocRef);
+  const persona = configData?.persona || DEFAULT_PERSONA;
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,11 +56,12 @@ export default function QnAPage() {
 
     const userMessage: Message = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await lernovaAdvisor(input as LernovaAdvisorInput);
+      const response = await lernovaAdvisor({ question: currentInput, persona });
       const botMessage: Message = { sender: 'bot', text: response };
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
@@ -43,7 +71,8 @@ export default function QnAPage() {
         title: 'خطا در ارتباط با مشاور',
         description: 'مشکلی در ارتباط با سرور هوش مصنوعی رخ داده است. لطفاً دوباره تلاش کنید.',
       });
-      setMessages(prev => prev.slice(0, -1)); // Remove the user message on error
+      // Revert the message optimistic update
+       setMessages(prev => prev.filter(m => m.text !== currentInput));
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +85,7 @@ export default function QnAPage() {
             viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   return (
     <Card className="min-h-[calc(100vh-8rem)] w-full flex flex-col">
@@ -127,25 +156,29 @@ export default function QnAPage() {
           </div>
         </ScrollArea>
         <div className="border-t p-4">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Button type="submit" size="icon" disabled={isLoading || input.trim() === ''}>
-              <Send className="h-5 w-5" />
-            </Button>
-            <Textarea
-              placeholder="سوال خود را از لرنوا بپرسید..."
-              className="flex-1 resize-none"
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
-              disabled={isLoading}
-            />
-          </form>
+            {isConfigLoading ? (
+                <Skeleton className="h-10 w-full" />
+            ) : (
+                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                    <Button type="submit" size="icon" disabled={isLoading || input.trim() === ''}>
+                    <Send className="h-5 w-5" />
+                    </Button>
+                    <Textarea
+                    placeholder="سوال خود را از لرنوا بپرسید..."
+                    className="flex-1 resize-none"
+                    rows={1}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                        }
+                    }}
+                    disabled={isLoading}
+                    />
+                </form>
+            )}
         </div>
       </CardContent>
     </Card>

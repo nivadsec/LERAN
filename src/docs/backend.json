@@ -56,6 +56,17 @@
         "email"
       ]
     },
+    "Config": {
+        "title": "Config",
+        "description": "Represents a generic configuration document.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "data": { "type": "object" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "data"]
+    },
     "DailyReport": {
       "title": "DailyReport",
       "description": "Represents a student's detailed daily performance report.",
@@ -497,6 +508,19 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/configs/{configId}",
+        "definition": {
+            "entityName": "Config",
+            "schema": {
+                "$ref": "#/backend/entities/Config"
+            },
+            "description": "Collection for storing general application configurations. Admins can write, all users can read.",
+            "params": [
+                { "name": "configId", "description": "The unique ID for the configuration document, e.g., 'lernova-advisor'." }
+            ]
+        }
+      },
       {
         "path": "/users/{userId}",
         "definition": {
