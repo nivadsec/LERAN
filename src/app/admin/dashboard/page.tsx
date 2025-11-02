@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
 
     }).catch((error) => {
         const contextualError = new FirestorePermissionError({
-          path: usersQuery.path,
+          path: 'users',
           operation: 'list'
         });
         errorEmitter.emit('permission-error', contextualError);
