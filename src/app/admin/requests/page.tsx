@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, X, Mailbox } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Check, X, Mailbox, Trash2 } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface DateChangeRequest {
@@ -24,6 +25,7 @@ interface DateChangeRequest {
 export default function AdminRequestsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [requestToDelete, setRequestToDelete] = useState<DateChangeRequest | null>(null);
 
   const requestsQuery = useMemoFirebase(() => collection(firestore, 'dateChangeRequests'), [firestore]);
   const { data: requests, isLoading } = useCollection<DateChangeRequest>(requestsQuery);
@@ -39,13 +41,35 @@ export default function AdminRequestsPage() {
       });
     } catch (error) {
       console.error('Error updating request:', error);
-      toast({
-        variant: 'destructive',
-        title: 'خطا',
-        description: 'مشکلی در به‌روزرسانی درخواست رخ داد.',
+      const contextualError = new FirestorePermissionError({
+        path: requestDocRef.path,
+        operation: 'update',
+        requestResourceData: { status },
       });
+      errorEmitter.emit('permission-error', contextualError);
     }
   };
+
+  const handleDeleteRequest = async () => {
+    if (!firestore || !requestToDelete) return;
+    const requestDocRef = doc(firestore, 'dateChangeRequests', requestToDelete.id);
+    try {
+        await deleteDoc(requestDocRef);
+        toast({
+            title: 'موفقیت',
+            description: 'درخواست با موفقیت حذف شد.',
+        });
+    } catch(error) {
+        console.error('Error deleting request:', error);
+        const contextualError = new FirestorePermissionError({
+            path: requestDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    } finally {
+        setRequestToDelete(null);
+    }
+  }
 
   const getStatusVariant = (status: DateChangeRequest['status']) => {
     switch (status) {
@@ -65,6 +89,7 @@ export default function AdminRequestsPage() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader className="text-right">
         <CardTitle>بررسی درخواست‌ها</CardTitle>
@@ -75,7 +100,7 @@ export default function AdminRequestsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right w-[200px]">اقدامات</TableHead>
+                <TableHead className="text-right w-[250px]">اقدامات</TableHead>
                 <TableHead className="text-center">وضعیت</TableHead>
                 <TableHead className="text-right">تاریخ</TableHead>
                 <TableHead className="text-right">نوع درخواست</TableHead>
@@ -117,6 +142,14 @@ export default function AdminRequestsPage() {
                         <X className="ml-1 h-4 w-4" />
                         رد
                       </Button>
+                       <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setRequestToDelete(req)}
+                      >
+                        <Trash2 className="ml-1 h-4 w-4" />
+                        حذف
+                      </Button>
                     </TableCell>
                     <TableCell className="text-center">
                         <Badge variant={getStatusVariant(req.status)}>{getStatusText(req.status)}</Badge>
@@ -144,5 +177,21 @@ export default function AdminRequestsPage() {
         </div>
       </CardContent>
     </Card>
+
+     <AlertDialog open={!!requestToDelete} onOpenChange={(open) => !open && setRequestToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>آیا از حذف این درخواست مطمئن هستید؟</AlertDialogTitle>
+            <AlertDialogDescription>
+                این عمل غیرقابل بازگشت است و درخواست برای همیشه حذف خواهد شد.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRequestToDelete(null)}>انصراف</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteRequest}>حذف</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
