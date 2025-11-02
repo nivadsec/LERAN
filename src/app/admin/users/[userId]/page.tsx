@@ -3,11 +3,11 @@
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, limit, Timestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, collection, query, orderBy, limit, Timestamp, updateDoc } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb } from 'lucide-react';
+import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -57,6 +57,63 @@ interface DailyReport {
     overallTestPercentage: number;
   };
   createdAt: Timestamp;
+  teacherFeedback?: string;
+}
+
+// --- Feedback Form Component ---
+function FeedbackForm({ reportId, studentId, initialFeedback }: { reportId: string, studentId: string, initialFeedback?: string }) {
+  const [feedback, setFeedback] = useState(initialFeedback || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    if (!firestore) {
+      toast({ variant: "destructive", title: "خطا", description: "سرویس پایگاه داده در دسترس نیست." });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const reportDocRef = doc(firestore, 'users', studentId, 'dailyReports', reportId);
+
+    try {
+      await updateDoc(reportDocRef, {
+        teacherFeedback: feedback
+      });
+      toast({ title: "موفقیت", description: "بازخورد شما با موفقیت ثبت شد." });
+    } catch (error) {
+       const contextualError = new FirestorePermissionError({
+            path: reportDocRef.path,
+            operation: 'update',
+            requestResourceData: { teacherFeedback: feedback },
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-5 w-5 text-primary"/>
+        <h4 className="font-semibold">بازخورد معلم</h4>
+      </div>
+      <Textarea
+        placeholder="بازخورد یا توصیه خود را در اینجا برای این گزارش بنویسید..."
+        className="min-h-[100px] text-right"
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+      />
+      <Button type="submit" disabled={isSubmitting || !feedback.trim()}>
+        {isSubmitting ? 'در حال ارسال...' : 'ارسال بازخورد'}
+        {!isSubmitting && <Send className="mr-2 h-4 w-4" />}
+      </Button>
+    </form>
+  );
 }
 
 
@@ -67,7 +124,7 @@ const formatNumber = (num?: number) => {
 
 export default function StudentDetailPage() {
   const params = useParams();
-  const { userId } = params;
+  const userId = params.userId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -75,13 +132,13 @@ export default function StudentDetailPage() {
   const [analysisResult, setAnalysisResult] = useState<StudentPerformanceAnalysisOutput | null>(null);
 
   const userDocRef = useMemoFirebase(() => {
-    if (!userId || typeof userId !== 'string') return null;
-    return doc(firestore, 'users', userId as string);
+    if (!userId) return null;
+    return doc(firestore, 'users', userId);
   }, [firestore, userId]);
 
   const reportsQuery = useMemoFirebase(() => {
-    if (!userId || typeof userId !== 'string') return null;
-    return query(collection(firestore, 'users', userId as string, 'dailyReports'), orderBy('createdAt', 'desc'), limit(7));
+    if (!userId) return null;
+    return query(collection(firestore, 'users', userId, 'dailyReports'), orderBy('createdAt', 'desc'), limit(7));
   }, [firestore, userId]);
 
   const { data: student, isLoading: isStudentLoading } = useDoc<UserProfile>(userDocRef);
@@ -216,20 +273,6 @@ export default function StudentDetailPage() {
              </CardContent>
         </Card>
 
-         <Card>
-            <CardHeader>
-                <CardTitle className="text-right">ارسال بازخورد و توصیه</CardTitle>
-            </CardHeader>
-             <CardContent className="space-y-4">
-                <Textarea placeholder="بازخورد یا توصیه خود را در اینجا برای دانش‌آموز بنویسید..." className="min-h-[120px] text-right" />
-                <Button>
-                    ارسال بازخورد
-                    <Send className="mr-2 h-4 w-4"/>
-                </Button>
-             </CardContent>
-        </Card>
-
-
         <div>
             <h2 className="text-xl font-bold text-right mb-4">گزارش‌های روزانه اخیر</h2>
             {reports && reports.length > 0 ? (
@@ -319,6 +362,8 @@ export default function StudentDetailPage() {
                                         <p className="font-bold font-code">{formatNumber(report.totals.totalStudyTime)} دقیقه</p>
                                     </div>
                                 </div>
+                                <Separator />
+                                <FeedbackForm reportId={report.id} studentId={userId} initialFeedback={report.teacherFeedback} />
                             </CardContent>
                         </Card>
                     ))}

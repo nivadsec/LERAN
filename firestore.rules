@@ -45,12 +45,13 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows students to manage their own reports; admins can read them.
+     * @description Allows students to manage their own reports; admins can read and provide feedback.
      * @path /users/{userId}/dailyReports/{reportId}
      */
     match /users/{userId}/dailyReports/{reportId} {
       allow read, list: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin(); // Admin can update for feedback
     }
     
     /**

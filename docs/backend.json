@@ -95,6 +95,10 @@
             "totalTestTime": { "type": "number" },
             "overallTestPercentage": { "type": "number" }
           }
+        },
+        "teacherFeedback": {
+          "type": "string",
+          "description": "Feedback provided by the teacher/consultant on this specific report."
         }
       },
       "required": ["id", "studentId", "reportDate", "studyItems"]
