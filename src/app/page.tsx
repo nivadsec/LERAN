@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Menu, Newspaper } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { getApps, initializeApp, getApp } from 'firebase/app';
@@ -83,6 +83,9 @@ function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="right">
+             <SheetHeader>
+                <SheetTitle className="sr-only">منوی اصلی</SheetTitle>
+             </SheetHeader>
             <div className="grid gap-4 py-6">
                <Link href="/" className="flex items-center justify-center mb-6" prefetch={false}>
                  <Logo/>
