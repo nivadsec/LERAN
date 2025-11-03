@@ -41,28 +41,11 @@ export default function AdminLoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        await auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "ورود ناموفق",
-          description: "حساب کاربری شما یافت نشد یا توسط مدیر دیگری حذف شده است.",
-        });
-        return;
-      }
-      
-      const idTokenResult = await user.getIdTokenResult();
+      const idTokenResult = await user.getIdTokenResult(true);
       const isAdmin = idTokenResult.claims.admin === true;
 
       if (isAdmin) {
-        // A simple way to keep password in session storage for re-login after creating a user.
-        // This is not recommended for production apps.
-        // A more secure approach would be using a backend to manage sessions.
         sessionStorage.setItem('adminPass', values.password);
-
         toast({
           title: "ورود موفق",
           description: "شما با موفقیت به عنوان مدیر وارد شدید.",

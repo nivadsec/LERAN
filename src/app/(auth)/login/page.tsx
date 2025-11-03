@@ -78,9 +78,25 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      if (!auth || !firestore) {
+        toast({ variant: 'destructive', title: 'خطا', description: 'سرویس احراز هویت در دسترس نیست.' });
+        return;
+      }
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
+      // Force refresh the token to get custom claims
+      const idTokenResult = await user.getIdTokenResult(true);
+      const isAdmin = idTokenResult.claims.admin === true;
+
+      if (isAdmin) {
+        sessionStorage.setItem('adminPass', values.password);
+        router.push("/admin/dashboard");
+        toast({ title: "ورود موفق", description: "به پنل مدیریت خوش آمدید." });
+        return;
+      }
+
+      // If not an admin, check student status
       const userDocRef = doc(firestore, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -122,12 +138,7 @@ export default function LoginPage() {
         description: "شما با موفقیت وارد شدید.",
       });
 
-      if (userData.isAdmin) {
-        sessionStorage.setItem('adminPass', values.password);
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
 
     } catch (error: any) {
       console.error("Login Error: ", error);
@@ -246,12 +257,7 @@ export default function LoginPage() {
             <Button variant="outline" className="w-full mt-4" asChild>
                 <Link href="/signup">ایجاد حساب دانش‌آموزی</Link>
             </Button>
-            <div className="mt-4 text-center text-sm">
-              <Link href="/admin/login" className="underline" prefetch={false}>
-                ورود مدیر
-              </Link>
-            </div>
-             <div className="mt-2 text-center text-sm">
+             <div className="mt-4 text-center text-sm">
                 <Link href="/" className="underline" prefetch={false}>
                 بازگشت به صفحه اصلی
                 </Link>
