@@ -34,11 +34,12 @@ service cloud.firestore {
     
     /**
      * @description Rules for application configurations.
-     * Admins can write, any authenticated user can read.
+     * Any authenticated user can read, only admins can write.
      * @path /configs/{configId}
      */
     match /configs/{configId} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
     
     /**
