@@ -110,6 +110,16 @@ service cloud.firestore {
     }
 
     /**
+     * @description Allows students to manage their own sleep systems; admins can read them.
+     * @path /users/{userId}/sleepSystems/{systemId}
+     */
+    match /users/{userId}/sleepSystems/{systemId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+
+    /**
      * @description Placeholder rules for classes. Access will be defined later.
      * @path /classes/{classId}
      */

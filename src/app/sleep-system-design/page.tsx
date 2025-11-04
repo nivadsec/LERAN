@@ -9,14 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Bed, Moon, Sun, Info, Target } from 'lucide-react';
+import { Bed, Moon, Sun, Info, Target, Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore } from '@/firebase';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 const currentStatusSchema = z.object({
   night: z.string(),
-  bedtime: z.string(),
-  wakeTime: z.string(),
-  quality: z.coerce.number().min(1).max(5),
-  feeling: z.coerce.number().min(1).max(5),
+  bedtime: z.string().optional(),
+  wakeTime: z.string().optional(),
+  quality: z.coerce.number().min(0).max(5).optional(),
+  feeling: z.coerce.number().min(0).max(5).optional(),
 });
 
 const formSchema = z.object({
@@ -32,11 +35,15 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function SleepSystemDesignPage() {
+  const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       currentStatus: [
-        { night: 'شب اول', bedtime: 'مثال: ۱۱:۳۰', wakeTime: 'مثال: ۷:۰۰ صبح', quality: 4, feeling: 2 },
+        { night: 'شب اول', bedtime: 'مثال: ۲۳:۳۰', wakeTime: 'مثال: ۰۷:۰۰', quality: 4, feeling: 2 },
         { night: 'شب دوم', bedtime: '', wakeTime: '', quality: 0, feeling: 0 },
         { night: 'شب سوم', bedtime: '', wakeTime: '', quality: 0, feeling: 0 },
       ],
@@ -54,9 +61,22 @@ export default function SleepSystemDesignPage() {
     name: 'currentStatus',
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log(data);
-    // Firestore saving logic would go here
+  const onSubmit = async (data: FormValues) => {
+    if (!user || !firestore) {
+      toast({ variant: 'destructive', title: 'خطا', description: 'برای ذخیره اطلاعات باید وارد شوید.' });
+      return;
+    }
+    try {
+      const docRef = doc(firestore, 'users', user.uid, 'sleepSystems', 'main');
+      await setDoc(docRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+      toast({ title: 'موفقیت', description: 'کاربرگ خواب شما با موفقیت ذخیره شد.' });
+    } catch (error) {
+      console.error('Error saving sleep system:', error);
+      toast({ variant: 'destructive', title: 'خطا', description: 'مشکلی در ذخیره اطلاعات رخ داد.' });
+    }
   };
 
   return (
@@ -169,6 +189,7 @@ export default function SleepSystemDesignPage() {
 
           <div className="flex justify-start">
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+              <Save className="ml-2 h-4 w-4" />
               {form.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره کاربرگ خواب"}
             </Button>
           </div>

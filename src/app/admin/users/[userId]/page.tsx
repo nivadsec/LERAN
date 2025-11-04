@@ -3,11 +3,11 @@
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, limit, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, Timestamp, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb, ChevronLeft, Sparkles } from 'lucide-react';
+import { User, Calendar, Clock, Smile, Percent, Bot, Send, BrainCircuit, BookOpen, Target, Brain, Bed, Smartphone, Bomb, MessageSquare, CheckCircle, Activity, Lightbulb, ChevronLeft, Sparkles, History } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +18,8 @@ import { analyzeSingleDailyReport, type DailyReportAnalysisOutput } from '@/ai/f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Input } from '@/components/ui/input';
 
 interface UserProfile {
   firstName?: string;
@@ -137,6 +138,10 @@ export default function StudentDetailPage() {
   const [dailyAnalysisResult, setDailyAnalysisResult] = useState<Record<string, DailyReportAnalysisOutput>>({});
 
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  
+  const [isResetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetConfirmationText, setResetConfirmationText] = useState("");
+
 
   const userDocRef = useMemoFirebase(() => {
     if (!userId) return null;
@@ -210,6 +215,44 @@ export default function StudentDetailPage() {
     }
   }
 
+  const handleResetReports = async () => {
+    if (!firestore || !userId) {
+        toast({ variant: 'destructive', title: 'خطا', description: 'سرویس پایگاه داده در دسترس نیست.'});
+        return;
+    }
+    if (resetConfirmationText !== 'RESET') {
+        toast({ variant: 'destructive', title: 'تایید ناموفق', description: 'متن تایید را به درستی وارد نکرده‌اید.'});
+        return;
+    }
+
+    toast({ title: 'در حال ریست کردن گزارش‌ها...', description: 'این فرآیند ممکن است چند لحظه طول بکشد.'});
+
+    const collectionsToReset = [
+        'dailyReports', 'weeklyReports', 'testAnalyses', 'examAnalyses', 'focusSessions', 'studyTopics', 'sleepSystems'
+    ];
+
+    try {
+        for (const collectionName of collectionsToReset) {
+            const collectionRef = collection(firestore, 'users', userId, collectionName);
+            const snapshot = await getDocs(collectionRef);
+            if (snapshot.empty) continue;
+            
+            const batch = writeBatch(firestore);
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+
+        toast({ title: 'موفقیت', description: 'تمام گزارش‌ها و داده‌های دانش‌آموز با موفقیت حذف شد.'});
+    } catch (error) {
+        console.error("Error resetting reports:", error);
+        toast({ variant: 'destructive', title: 'خطا در ریست کردن', description: 'مشکلی در هنگام حذف داده‌ها رخ داد.'});
+    } finally {
+        setResetConfirmOpen(false);
+        setResetConfirmationText("");
+    }
+  }
+
+
   if (isStudentLoading || areReportsLoading) {
     return (
         <div className="space-y-6">
@@ -239,12 +282,16 @@ export default function StudentDetailPage() {
     <div className="space-y-8">
         <Card>
             <CardHeader className="text-right">
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col-reverse md:flex-row justify-between items-start">
                     <div>
                         <CardTitle className="text-2xl">
                         پروفایل {student.firstName} {student.lastName}
                         </CardTitle>
                         <CardDescription>جزئیات و عملکرد اخیر دانش‌آموز</CardDescription>
+                         <Button variant="destructive" size="sm" className="mt-4" onClick={() => setResetConfirmOpen(true)}>
+                            <History className="ml-2 h-4 w-4" />
+                            ریست گزارش‌ها
+                        </Button>
                     </div>
                      <div className="flex items-center p-1 bg-muted rounded-lg text-sm">
                         <span className="font-mono text-muted-foreground">{student.email}</span>
@@ -473,6 +520,30 @@ export default function StudentDetailPage() {
                 </Alert>
             )}
         </div>
+
+        <AlertDialog open={isResetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader className="text-right">
+                    <AlertDialogTitle>آیا از ریست کردن تمام گزارش‌ها مطمئن هستید؟</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        این یک عمل غیرقابل بازگشت است و تمام داده‌های گزارش (روزانه، هفتگی، تحلیل‌ها، خواب و ...) برای این دانش‌آموز برای همیشه حذف خواهد شد. برای تایید، عبارت <code className="font-mono bg-destructive/20 text-destructive p-1 rounded-md">RESET</code> را در کادر زیر وارد کنید.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input 
+                    dir="ltr"
+                    value={resetConfirmationText}
+                    onChange={(e) => setResetConfirmationText(e.target.value)}
+                    placeholder="RESET"
+                />
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setResetConfirmationText("")}>انصراف</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetReports} disabled={resetConfirmationText !== 'RESET'}>
+                        تایید و ریست کامل
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
     </div>
   );
 }

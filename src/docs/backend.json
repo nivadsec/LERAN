@@ -56,6 +56,36 @@
         "email"
       ]
     },
+    "SleepSystem": {
+        "title": "SleepSystem",
+        "description": "Represents a student's sleep audit and design worksheet.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "studentId": { "type": "string" },
+            "updatedAt": { "type": "string", "format": "date-time" },
+            "currentStatus": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "night": { "type": "string" },
+                        "bedtime": { "type": "string" },
+                        "wakeTime": { "type": "string" },
+                        "quality": { "type": "number" },
+                        "feeling": { "type": "number" }
+                    }
+                }
+            },
+            "obstacle1": { "type": "string" },
+            "obstacle2": { "type": "string" },
+            "obstacle3": { "type": "string" },
+            "rule1": { "type": "string" },
+            "rule2": { "type": "string" },
+            "rule3": { "type": "string" }
+        },
+        "required": ["id", "studentId", "updatedAt"]
+    },
     "Config": {
         "title": "Config",
         "description": "Represents a generic configuration document.",
@@ -676,6 +706,20 @@
               "name": "topicId",
               "description": "The unique identifier for the study topic."
             }
+          ]
+        }
+      },
+       {
+        "path": "/users/{userId}/sleepSystems/{systemId}",
+        "definition": {
+          "entityName": "SleepSystem",
+          "schema": {
+            "$ref": "#/backend/entities/SleepSystem"
+          },
+          "description": "Subcollection for a student's sleep audit and design worksheet. Only the student can read/write their own.",
+          "params": [
+            { "name": "userId", "description": "The student's unique ID." },
+            { "name": "systemId", "description": "The unique ID for the sleep system document (e.g., 'main')." }
           ]
         }
       },
