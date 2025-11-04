@@ -1,0 +1,189 @@
+/**
+ * @fileoverview Firestore Security Rules for the Lernova platform.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for student data and
+ * utilizes custom claims for role-based access control (RBAC), specifically for admins.
+ * This approach is more secure and performant than reading role documents.
+ *
+ * Data Structure:
+ * - /users/{userId}: Student profiles.
+ * - /users/{userId}/...: Various subcollections for student data.
+ * - /announcements/{announcementId}, /articles/{articleId}, etc: Public or role-restricted data.
+ *
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the requested user ID matches the authenticated user ID
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Helper function to check if the user has an 'admin' custom claim.
+    // This is the most secure and efficient way to check for admin privileges.
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+    
+    /**
+     * @description Rules for application configurations.
+     * Any authenticated user can read, only admins can write.
+     * @path /configs/{configId}
+     */
+    match /configs/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    /**
+     * @description Rules for messages.
+     * Users can read messages where they are the sender or recipient.
+     * Users can only create messages where they are the sender.
+     * Admins can read/list all messages.
+     * @path /messages/{messageId}
+     */
+    match /messages/{messageId} {
+      allow read: if isSignedIn() && (isOwner(resource.data.senderId) || isOwner(resource.data.recipientId)) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(request.resource.data.senderId) || isAdmin();
+    }
+
+    /**
+     * @description Allows students to manage their own profile and admins to list all users.
+     * The logic for isAdmin is now based on custom claims, removing circular dependencies.
+     * @path /users/{userId}
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows students to manage their own reports; admins can read and provide feedback.
+     * @path /users/{userId}/dailyReports/{reportId}
+     */
+    match /users/{userId}/dailyReports/{reportId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin(); // Admin can update for feedback
+    }
+
+    /**
+     * @description Group collection query for admin dashboard analytics.
+     * Allows admin to query across all users' daily reports.
+     */
+    match /{path=**}/dailyReports/{reportId} {
+        allow get, list: if isAdmin();
+    }
+    
+    /**
+     * @description Allows students to manage their own weekly reports; admins can read them.
+     * @path /users/{userId}/weeklyReports/{reportId}
+     */
+    match /users/{userId}/weeklyReports/{reportId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+     /**
+      * @description Allows students to manage their own analyses; admins can read them.
+      * @path /users/{userId}/testAnalyses/{analysisId}
+      */
+    match /users/{userId}/testAnalyses/{analysisId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+     /**
+      * @description Allows students to manage their own analyses; admins can read them.
+      * @path /users/{userId}/examAnalyses/{analysisId}
+      */
+    match /users/{userId}/examAnalyses/{analysisId} {
+       allow read, list: if isOwner(userId) || isAdmin();
+       allow write: if isOwner(userId);
+    }
+
+    /**
+     * @description Allows students to manage their own sessions; admins can read them.
+     * @path /users/{userId}/focusSessions/{sessionId}
+     */
+    match /users/{userId}/focusSessions/{sessionId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+     /**
+      * @description Allows students to manage their own topics; admins can read them.
+      * @path /users/{userId}/studyTopics/{topicId}
+      */
+    match /users/{userId}/studyTopics/{topicId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+    }
+
+    /**
+     * @description Placeholder rules for classes. Access will be defined later.
+     * @path /classes/{classId}
+     */
+    match /classes/{classId} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description Placeholder rules for teachers. Access will be defined later.
+     * @path /teachers/{teacherId}
+     */
+    match /teachers/{teacherId} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin(); 
+    }
+
+     /**
+      * @description Allows students and admins to read smart alerts.
+      * @path /users/{userId}/smartAlerts/{alertId}
+      */
+    match /users/{userId}/smartAlerts/{alertId} {
+      allow read, list: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin(); // Only backend/admins can create alerts
+    }
+
+    /**
+     * @description Allows anyone to read announcements; only admins can manage them.
+     * @path /announcements/{announcementId}
+     */
+    match /announcements/{announcementId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Allows anyone to read articles; only admins can manage them.
+     * @path /articles/{articleId}
+     */
+    match /articles/{articleId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    
+    /**
+     * @description Manages student requests. Students create, admins manage.
+     * @path /dateChangeRequests/{requestId}
+     */
+    match /dateChangeRequests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow read: if isSignedIn() && (isOwner(resource.data.studentId) || isAdmin());
+      allow list, update: if isAdmin();
+    }
+  }
+}
