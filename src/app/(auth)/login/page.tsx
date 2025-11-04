@@ -85,18 +85,6 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // Force refresh the token to get custom claims
-      const idTokenResult = await user.getIdTokenResult(true);
-      const isAdmin = idTokenResult.claims.admin === true;
-
-      if (isAdmin) {
-        sessionStorage.setItem('adminPass', values.password);
-        router.push("/admin/dashboard");
-        toast({ title: "ورود موفق", description: "به پنل مدیریت خوش آمدید." });
-        return;
-      }
-
-      // If not an admin, check student status
       const userDocRef = doc(firestore, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -111,6 +99,14 @@ export default function LoginPage() {
       }
 
       const userData = userDoc.data();
+      const isAdmin = userData.isAdmin === true;
+
+      if (isAdmin) {
+        sessionStorage.setItem('adminPass', values.password);
+        router.push("/admin/dashboard");
+        toast({ title: "ورود موفق", description: "به پنل مدیریت خوش آمدید." });
+        return;
+      }
 
       if (userData.registrationStatus === 'pending') {
           await auth.signOut();

@@ -3,13 +3,13 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for student data and
- * utilizes custom claims for role-based access control (RBAC), specifically for admins.
- * This approach is more secure and performant than reading role documents.
+ * uses a separate permissions document for role-based access control (RBAC),
+ * specifically for admins, to avoid circular dependencies.
  *
  * Data Structure:
  * - /users/{userId}: Student profiles.
  * - /users/{userId}/...: Various subcollections for student data.
- * - /announcements/{announcementId}, /articles/{articleId}, etc: Public or role-restricted data.
+ * - /permissions/user_roles: A document containing a list of admin UIDs.
  *
  */
 rules_version = '2';
@@ -26,10 +26,10 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     
-    // Helper function to check if the user has an 'admin' custom claim.
-    // This is the most secure and efficient way to check for admin privileges.
+    // Helper function to check if the user is an admin by checking a separate permissions document.
+    // This avoids circular dependencies when checking list permissions on /users.
     function isAdmin() {
-      return request.auth.token.admin == true;
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/permissions/user_roles).data.admins;
     }
     
     /**
@@ -57,7 +57,8 @@ service cloud.firestore {
 
     /**
      * @description Allows students to manage their own profile and admins to list all users.
-     * The logic for isAdmin is now based on custom claims, removing circular dependencies.
+     * The `list` rule now depends on the `isAdmin()` function which checks a separate document,
+     * breaking the circular dependency.
      * @path /users/{userId}
      */
     match /users/{userId} {
@@ -184,6 +185,14 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
       allow read: if isSignedIn() && (isOwner(resource.data.studentId) || isAdmin());
       allow list, update: if isAdmin();
+    }
+
+    /**
+     * @description Manages admin role assignments. Only admins can modify this.
+     * @path /permissions/user_roles
+     */
+    match /permissions/user_roles {
+      allow read, write: if isAdmin();
     }
   }
 }
