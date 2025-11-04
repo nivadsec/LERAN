@@ -29,7 +29,7 @@ service cloud.firestore {
     // Helper function to check if the user is an admin by checking a separate permissions document.
     // This avoids circular dependencies when checking list permissions on /users.
     function isAdmin() {
-      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/permissions/user_roles).data.admins;
+      return isSignedIn() && request.auth.uid == '41fdpi5ugHZmxalGoNlYN1RXlBB2';
     }
     
     /**
@@ -185,14 +185,6 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
       allow read: if isSignedIn() && (isOwner(resource.data.studentId) || isAdmin());
       allow list, update: if isAdmin();
-    }
-
-    /**
-     * @description Manages admin role assignments. Only admins can modify this.
-     * @path /permissions/user_roles
-     */
-    match /permissions/user_roles {
-      allow read, write: if isAdmin();
     }
   }
 }
