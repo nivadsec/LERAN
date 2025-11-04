@@ -1,5 +1,6 @@
 /**
  * @fileoverview Firestore Security Rules — Stable Final Version (Document-based RBAC)
+ * This is the definitive version to resolve admin access issues.
  */
 
 rules_version = '2';
