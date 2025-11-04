@@ -89,16 +89,6 @@ export default function LoginPage() {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        const idTokenResult = await user.getIdTokenResult(true);
-        const isAdminClaim = idTokenResult.claims.admin === true;
-
-        if (isAdminClaim) {
-           sessionStorage.setItem('adminPass', values.password);
-           router.push("/admin/dashboard");
-           toast({ title: "ورود موفق", description: "به پنل مدیریت خوش آمدید." });
-           return;
-        }
-
         await auth.signOut();
         toast({
           variant: "destructive",
@@ -277,5 +267,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
-    

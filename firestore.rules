@@ -15,11 +15,9 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // ✅ Safe admin check: Reads admin list from /permissions/user_roles.
-    // We allow all authenticated users to read this single doc to prevent circular dependencies.
+    // ✅ Safe admin check: Hardcoded UID for the admin.
+    // This is a practical solution for a fixed, single-admin setup.
     function isAdmin() {
-      // This is a placeholder for the actual admin check. 
-      // The logic will be replaced by a check against a 'permissions' document.
       return request.auth.uid == '41fdpi5ugHZmxalGoNlYN1RXlBB2';
     }
 
@@ -54,10 +52,6 @@ service cloud.firestore {
       allow read, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
-    }
-
-    match /{path=**}/dailyReports/{reportId} {
-      allow get, list: if isAdmin();
     }
 
     /** WEEKLY REPORTS **/
@@ -119,18 +113,6 @@ service cloud.firestore {
       allow read: if isSignedIn() &&
                     (isOwner(resource.data.studentId) || isAdmin());
       allow list, update: if isAdmin();
-    }
-
-    /** PERMISSIONS DOC **/
-    match /permissions/user_roles {
-      // 👇 fix circular dependency
-      allow read: if isSignedIn();        // all authenticated users can read this list to resolve isAdmin()
-      allow write: if isAdmin();          // only admins can modify it
-    }
-
-    /** FALLBACK **/
-    match /users/{userId}/{document=**} {
-      allow read, list, write: if false;
     }
   }
 }
