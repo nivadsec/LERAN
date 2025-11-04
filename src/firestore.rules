@@ -18,9 +18,9 @@ service cloud.firestore {
     // ✅ Safe admin check: Reads admin list from /permissions/user_roles.
     // We allow all authenticated users to read this single doc to prevent circular dependencies.
     function isAdmin() {
-      // This is a placeholder for the actual admin check. 
-      // The logic will be replaced by a check against a 'permissions' document.
-      return request.auth.uid == '41fdpi5ugHZmxalGoNlYN1RXlBB2';
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/permissions/user_roles) &&
+        request.auth.uid in get(/databases/$(database)/documents/permissions/user_roles).data.admins;
     }
 
     /** CONFIGS **/
@@ -134,5 +134,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
