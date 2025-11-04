@@ -1,19 +1,5 @@
 {
   "entities": {
-    "UserRoles": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserRoles",
-      "type": "object",
-      "description": "Defines user roles and permissions.",
-      "properties": {
-        "admins": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "List of UIDs of users with admin privileges."
-        }
-      },
-      "required": ["admins"]
-    },
     "Student": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Student",
@@ -531,25 +517,19 @@
   },
   "auth": {
     "providers": [
-      "password"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/permissions/user_roles",
-        "definition": {
-          "entityName": "UserRoles",
-          "schema": { "$ref": "#/entities/UserRoles" },
-          "description": "Central permissions document that lists admin UIDs. All signed-in users can read this, only admins can write.",
-          "params": []
-        }
-      },
-      {
         "path": "/configs/{configId}",
         "definition": {
             "entityName": "Config",
-            "schema": { "$ref": "#/entities/Config" },
+            "schema": {
+                "$ref": "#/backend/entities/Config"
+            },
             "description": "Collection for storing general application configurations. Admins can write, all users can read.",
             "params": [
                 { "name": "configId", "description": "The unique ID for the configuration document, e.g., 'lernova-advisor'." }
@@ -560,7 +540,9 @@
         "path": "/messages/{messageId}",
         "definition": {
             "entityName": "Message",
-            "schema": { "$ref": "#/entities/Message" },
+            "schema": {
+                "$ref": "#/backend/entities/Message"
+            },
             "description": "Collection for storing messages between users and admins. Users can only read/write messages where they are the sender or recipient. Admins have broader access.",
             "params": [
                 { "name": "messageId", "description": "The unique ID for the message." }
@@ -571,7 +553,9 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "Student",
-          "schema": { "$ref": "#/entities/Student" },
+          "schema": {
+            "$ref": "#/backend/entities/Student"
+          },
           "description": "Collection to store student profiles. Only the authenticated user (student) or an admin can read/write their own profile. This path establishes ownership.",
           "params": [
             {
@@ -585,7 +569,9 @@
         "path": "/users/{userId}/dailyReports/{reportId}",
         "definition": {
           "entityName": "DailyReport",
-          "schema": { "$ref": "#/entities/DailyReport" },
+          "schema": {
+            "$ref": "#/backend/entities/DailyReport"
+          },
           "description": "Subcollection to store daily reports for each student. Only the authenticated user (student) or an admin can read/write their own reports. Path-based ownership ensures authorization independence.",
           "params": [
             {
@@ -603,7 +589,9 @@
         "path": "/users/{userId}/weeklyReports/{reportId}",
         "definition": {
           "entityName": "WeeklyReport",
-          "schema": { "$ref": "#/entities/WeeklyReport" },
+          "schema": {
+            "$ref": "#/backend/entities/WeeklyReport"
+          },
           "description": "Subcollection for students' weekly self-assessments.",
           "params": [
             { "name": "userId", "description": "The student's unique ID." },
@@ -615,7 +603,9 @@
         "path": "/users/{userId}/testAnalyses/{analysisId}",
         "definition": {
           "entityName": "TestAnalysis",
-          "schema": { "$ref": "#/entities/TestAnalysis" },
+          "schema": {
+            "$ref": "#/backend/entities/TestAnalysis"
+          },
           "description": "Subcollection to store a student's trend analysis for a specific subject over multiple tests.",
           "params": [
             {
@@ -633,7 +623,9 @@
         "path": "/users/{userId}/examAnalyses/{analysisId}",
         "definition": {
             "entityName": "ExamAnalysis",
-            "schema": { "$ref": "#/entities/ExamAnalysis" },
+            "schema": {
+                "$ref": "#/backend/entities/ExamAnalysis"
+            },
             "description": "Subcollection to store detailed exam analyses for each student. Only the authenticated user (student) can read/write their own analyses.",
             "params": [
                 {
@@ -651,7 +643,9 @@
         "path": "/users/{userId}/focusSessions/{sessionId}",
         "definition": {
           "entityName": "FocusSession",
-          "schema": { "$ref": "#/entities/FocusSession" },
+          "schema": {
+            "$ref": "#/backend/entities/FocusSession"
+          },
           "description": "Subcollection to store focus session ratings for each student. Only the authenticated student can create, read, update, or delete their own focus sessions.",
           "params": [
             {
@@ -669,7 +663,9 @@
         "path": "/users/{userId}/studyTopics/{topicId}",
         "definition": {
           "entityName": "StudyTopic",
-          "schema": { "$ref": "#/entities/StudyTopic" },
+          "schema": {
+            "$ref": "#/backend/entities/StudyTopic"
+          },
           "description": "Subcollection to store topics for spaced repetition. Only the authenticated student can manage their own study topics.",
           "params": [
             {
@@ -687,7 +683,9 @@
         "path": "/classes/{classId}",
         "definition": {
           "entityName": "Class",
-          "schema": { "$ref": "#/entities/Class" },
+          "schema": {
+            "$ref": "#/backend/entities/Class"
+          },
           "description": "Collection to store class information. Teachers and admins have read access; only admins can create/update/delete. The teacherId field determines the teacher responsible for the class.",
           "params": [
             {
@@ -701,7 +699,9 @@
         "path": "/teachers/{teacherId}",
         "definition": {
           "entityName": "Teacher",
-          "schema": { "$ref": "#/entities/Teacher" },
+          "schema": {
+            "$ref": "#/backend/entities/Teacher"
+          },
           "description": "Collection to store teacher profiles.  Only admins can create/update/delete teacher profiles. Teachers can read their own profile.",
           "params": [
             {
@@ -715,7 +715,9 @@
         "path": "/users/{userId}/smartAlerts/{alertId}",
         "definition": {
           "entityName": "SmartAlert",
-          "schema": { "$ref": "#/entities/SmartAlert" },
+          "schema": {
+            "$ref": "#/backend/entities/SmartAlert"
+          },
           "description": "Subcollection to store smart alerts for each student. Only the authenticated user (student) and admins can read alerts associated with their account.",
           "params": [
             {
@@ -733,7 +735,9 @@
         "path": "/announcements/{announcementId}",
         "definition": {
           "entityName": "Announcement",
-          "schema": { "$ref": "#/entities/Announcement" },
+          "schema": {
+            "$ref": "#/backend/entities/Announcement"
+          },
           "description": "Top-level collection for general announcements. Admins can create/update/delete. All users can read.",
           "params": [
             {
@@ -747,7 +751,9 @@
         "path": "/dateChangeRequests/{requestId}",
         "definition": {
           "entityName": "DateChangeRequest",
-          "schema": { "$ref": "#/entities/DateChangeRequest" },
+          "schema": {
+            "$ref": "#/backend/entities/DateChangeRequest"
+          },
           "description": "Top-level collection for students to request permissions, e.g., to edit a past report. Students can create, admins can read and update status.",
           "params": [
             {
@@ -761,7 +767,9 @@
         "path": "/articles/{articleId}",
         "definition": {
           "entityName": "Article",
-          "schema": { "$ref": "#/entities/Article" },
+          "schema": {
+            "$ref": "#/backend/entities/Article"
+          },
           "description": "Collection to store articles for the public blog. Admins can write, all users can read.",
           "params": [
             { "name": "articleId", "description": "The unique identifier for the article." }
