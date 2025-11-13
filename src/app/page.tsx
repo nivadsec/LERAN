@@ -5,13 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { getApps, initializeApp, getApp } from 'firebase/app';
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
-import { getSdks } from '@/firebase/sdks';
-import { firebaseConfig } from '@/firebase/config';
+import { getLatestArticles } from '@/firebase/api';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export const revalidate = 0;
+export const revalidate = 3600; // Revalidate every hour
 
 interface Article {
     id: string;
@@ -26,22 +23,8 @@ interface Article {
 const heroStudentImage = PlaceHolderImages.find(p => p.id === 'hero-student');
 const defaultImageUrl = heroStudentImage ? heroStudentImage.imageUrl : 'https://picsum.photos/seed/1/600/400';
 
-async function getLatestArticles(): Promise<Article[]> {
-    try {
-        const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-        const { firestore } = getSdks(app);
-        const articlesRef = collection(firestore, 'articles');
-        const q = query(articlesRef, orderBy('createdAt', 'desc'), limit(3));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Article));
-    } catch (error) {
-        console.error("Error fetching articles: ", error);
-        return [];
-    }
-}
-
 export default async function Home() {
-  const articles = await getLatestArticles();
+  const articles = await getLatestArticles(3);
 
   return (
     <div className="flex flex-col min-h-dvh bg-background">
